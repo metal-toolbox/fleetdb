@@ -13,20 +13,20 @@ import (
 	"go.infratographer.com/x/versionx"
 	"go.uber.org/zap"
 
-	dbm "go.hollow.sh/serverservice/db"
-	"go.hollow.sh/serverservice/internal/config"
+	dbm "go.hollow.sh/fleetdb/db"
+	"go.hollow.sh/fleetdb/internal/config"
 )
 
 var (
-	appName = "serverservice"
+	appName = "fleetdb"
 	cfgFile string
 	logger  *zap.SugaredLogger
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "serverservice",
-	Short: "Server Service for Hollow ecosystem",
+	Use:   "fleetdb",
+	Short: "FleetDB for Hollow ecosystem",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -69,7 +69,7 @@ func initConfig() {
 	}
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.SetEnvPrefix("serverservice")
+	viper.SetEnvPrefix("fleetdb")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.

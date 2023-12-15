@@ -8,8 +8,8 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"go.hollow.sh/serverservice/internal/dbtools"
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/dbtools"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 // TestDatabaseTest is used to force the test commands in this package to run during

@@ -1,10 +1,10 @@
-package serverservice
+package fleetdb
 
 import (
 	"github.com/gin-gonic/gin"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 func (r *Router) serverCredentialTypesList(c *gin.Context) {

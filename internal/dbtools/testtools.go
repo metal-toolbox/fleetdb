@@ -23,11 +23,11 @@ import (
 	// import gocdk secret drivers
 	_ "gocloud.dev/secrets/localsecrets"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 // TestDBURI is the URI for the test database
-var TestDBURI = os.Getenv("SERVERSERVICE_CRDB_URI")
+var TestDBURI = os.Getenv("FLEETDB_CRDB_URI")
 var testDB *sqlx.DB
 var testKeeper *secrets.Keeper
 

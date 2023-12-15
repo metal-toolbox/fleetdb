@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"database/sql"
@@ -8,7 +8,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 func (r *Router) bomsUpload(c *gin.Context) {

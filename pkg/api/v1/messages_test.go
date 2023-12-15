@@ -1,5 +1,5 @@
 //nolint:wsl
-package serverservice
+package fleetdb
 
 import (
 	"testing"
@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"github.com/volatiletech/null/v8"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 func TestSerialization(t *testing.T) {

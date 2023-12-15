@@ -1,4 +1,4 @@
-package serverservice_test
+package fleetdb_test
 
 import (
 	"net/http"
@@ -13,9 +13,9 @@ import (
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"
 
-	"go.hollow.sh/serverservice/internal/dbtools"
-	"go.hollow.sh/serverservice/internal/httpsrv"
-	hollow "go.hollow.sh/serverservice/pkg/api/v1"
+	"go.hollow.sh/fleetdb/internal/dbtools"
+	"go.hollow.sh/fleetdb/internal/httpsrv"
+	hollow "go.hollow.sh/fleetdb/pkg/api/v1"
 )
 
 type integrationServer struct {

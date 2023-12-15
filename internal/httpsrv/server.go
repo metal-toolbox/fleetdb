@@ -18,7 +18,7 @@ import (
 	"go.uber.org/zap"
 	"gocloud.dev/secrets"
 
-	v1api "go.hollow.sh/serverservice/pkg/api/v1"
+	v1api "go.hollow.sh/fleetdb/pkg/api/v1"
 )
 
 // Server implements the HTTP Server
@@ -164,7 +164,7 @@ func (s *Server) readinessCheck(c *gin.Context) {
 	})
 }
 
-// version returns the serverservice build information.
+// version returns the fleetdb build information.
 func (s *Server) version(c *gin.Context) {
 	c.JSON(http.StatusOK, versionx.BuildDetails().String())
 }

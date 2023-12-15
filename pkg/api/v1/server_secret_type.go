@@ -1,9 +1,9 @@
-package serverservice
+package fleetdb
 
 import (
 	"time"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 const (

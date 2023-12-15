@@ -1,7 +1,7 @@
-package serverservice
+package fleetdb
 
 import (
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 // ServerComponentType provides a way to group server components by the type

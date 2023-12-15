@@ -1,4 +1,4 @@
-package serverservice_test
+package fleetdb_test
 
 import (
 	"context"
@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	hollow "go.hollow.sh/serverservice/pkg/api/v1"
+	hollow "go.hollow.sh/fleetdb/pkg/api/v1"
 )
 
 func TestServerComponentTypeServiceCreate(t *testing.T) {

@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"fmt"
@@ -6,7 +6,7 @@ import (
 
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 // ComponentFirmwareSetListParams allows you to filter the results

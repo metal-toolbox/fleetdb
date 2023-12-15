@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"bytes"

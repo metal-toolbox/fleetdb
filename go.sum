@@ -683,6 +683,8 @@ go.etcd.io/etcd/api/v3 v3.5.4/go.mod h1:5GB2vv4A4AOn3yk7MftYGHkUfGtDHnEraIjym4dY
 go.etcd.io/etcd/client/pkg/v3 v3.5.4/go.mod h1:IJHfcCEKxYu1Os13ZdwCwIUTUVGYTSAM3YSwc9/Ac1g=
 go.etcd.io/etcd/client/v2 v2.305.4/go.mod h1:Ud+VUwIi9/uQHOMA+4ekToJ12lTxlv0zB/+DHwTGEbU=
 go.etcd.io/etcd/client/v3 v3.5.4/go.mod h1:ZaRkVgBZC+L+dLCjTcF1hRXpgZXQPOvnA/Ak/gq3kiY=
+go.hollow.sh/serverservice v0.16.2 h1:0wt0XJC/rm4OdovB6g8Fsx7BT2X71pG0keJiiLZaY+w=
+go.hollow.sh/serverservice v0.16.2/go.mod h1:Zr99vSFO++ZlDjEf9rtPWi3TiMgMswJCW3D6LIFmMDM=
 go.hollow.sh/toolbox v0.6.1 h1:3E6JofImSCe63XayczbGfDxIXUjmBziMBBmbwook8WA=
 go.hollow.sh/toolbox v0.6.1/go.mod h1:nl+5RDDyYY/+wukOUzHHX2mOyWKRjlTOXUcGxny+tns=
 go.infratographer.com/x v0.3.7 h1:kkykoVtC8XrmvC4oZwHWa/15+dv9RhQHgSm8KoEb/Nc=
@@ -1211,7 +1213,6 @@ google.golang.org/genproto v0.0.0-20220429170224-98d788798c3e/go.mod h1:8w6bsBMX
 google.golang.org/genproto v0.0.0-20220505152158-f39f71e6c8f3/go.mod h1:RAyBrSAP7Fh3Nc84ghnVLDPuV51xc9agzmm4Ph6i0Q4=
 google.golang.org/genproto v0.0.0-20220519153652-3a47de7e79bd/go.mod h1:RAyBrSAP7Fh3Nc84ghnVLDPuV51xc9agzmm4Ph6i0Q4=
 google.golang.org/genproto v0.0.0-20230815205213-6bfd019c3878 h1:Iveh6tGCJkHAjJgEqUQYGDGgbwmhjoAOz8kO/ajxefY=
-google.golang.org/genproto v0.0.0-20230815205213-6bfd019c3878/go.mod h1:yZTlhN0tQnXo3h00fuXNCxJdLdIdnVFVBaRJ5LWBbw4=
 google.golang.org/genproto/googleapis/api v0.0.0-20230815205213-6bfd019c3878 h1:WGq4lvB/mlicysM/dUT3SBvijH4D3sm/Ny1A4wmt2CI=
 google.golang.org/genproto/googleapis/api v0.0.0-20230815205213-6bfd019c3878/go.mod h1:KjSP20unUpOx5kyQUFa7k4OJg0qeJ7DEZflGDu2p6Bk=
 google.golang.org/genproto/googleapis/rpc v0.0.0-20230815205213-6bfd019c3878 h1:lv6/DhyiFFGsmzxbsUUTOkN29II+zeWHxvT8Lpdxsv0=

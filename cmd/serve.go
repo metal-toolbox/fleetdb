@@ -17,9 +17,9 @@ import (
 	// import gocdk secret drivers
 	_ "gocloud.dev/secrets/localsecrets"
 
-	"go.hollow.sh/serverservice/internal/config"
-	"go.hollow.sh/serverservice/internal/dbtools"
-	"go.hollow.sh/serverservice/internal/httpsrv"
+	"go.hollow.sh/fleetdb/internal/config"
+	"go.hollow.sh/fleetdb/internal/dbtools"
+	"go.hollow.sh/fleetdb/internal/httpsrv"
 )
 
 var (
@@ -77,10 +77,10 @@ func init() {
 	rootCmd.PersistentFlags().String("nats-stream-name", appName, "prefix for NATS subjects")
 	viperx.MustBindFlag(viper.GetViper(), "nats.stream.name", rootCmd.PersistentFlags().Lookup("nats-stream-name"))
 
-	rootCmd.PersistentFlags().String("nats-stream-prefix", "com.hollow.sh.serverservice.events", "NATS stream prefix")
+	rootCmd.PersistentFlags().String("nats-stream-prefix", "com.hollow.sh.fleetdb.events", "NATS stream prefix")
 	viperx.MustBindFlag(viper.GetViper(), "nats.stream.prefix", rootCmd.PersistentFlags().Lookup("nats-stream-prefix"))
 
-	rootCmd.PersistentFlags().StringSlice("nats-stream-subjects", []string{"com.hollow.sh.serverservice.events.>"}, "NATS stream subject(s)")
+	rootCmd.PersistentFlags().StringSlice("nats-stream-subjects", []string{"com.hollow.sh.fleetdb.events.>"}, "NATS stream subject(s)")
 	viperx.MustBindFlag(viper.GetViper(), "nats.stream.subjects", rootCmd.PersistentFlags().Lookup("nats-stream-subjects"))
 
 	rootCmd.PersistentFlags().String("nats-stream-urn-ns", "hollow", "NATS stream URN namespace value")

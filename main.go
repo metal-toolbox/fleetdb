@@ -3,7 +3,7 @@ package main
 
 //go:generate sqlboiler crdb --add-soft-deletes
 
-import "go.hollow.sh/serverservice/cmd"
+import "go.hollow.sh/fleetdb/cmd"
 
 func main() {
 	cmd.Execute()

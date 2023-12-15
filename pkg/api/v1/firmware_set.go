@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"encoding/json"
@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 // ComponentFirmwareSet represents a group of firmwares

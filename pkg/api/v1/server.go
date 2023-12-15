@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"time"
@@ -7,7 +7,7 @@ import (
 	"github.com/google/uuid"
 	"github.com/volatiletech/null/v8"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 // Server represents a server in a facility

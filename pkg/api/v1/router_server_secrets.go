@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"fmt"
@@ -9,8 +9,8 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
-	"go.hollow.sh/serverservice/internal/dbtools"
-	"go.hollow.sh/serverservice/internal/models"
+	"go.hollow.sh/fleetdb/internal/dbtools"
+	"go.hollow.sh/fleetdb/internal/models"
 )
 
 func (r *Router) serverCredentialGet(c *gin.Context) {

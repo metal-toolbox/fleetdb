@@ -54,11 +54,11 @@ sqlboiler crdb --add-soft-deletes
 Export the DB URI required for integration tests.
 
 ```bash
-export SERVERSERVICE_CRDB_URI="host=localhost port=26257 user=root sslmode=disable dbname=serverservice_test"
+export FLEETDB_CRDB_URI="host=localhost port=26257 user=root sslmode=disable dbname=fleetdb_test"
 ```
 
 Run test.
 
 ```bash
-go test -timeout 30s -tags testtools -run ^TestIntegrationServerListComponents$ go.hollow.sh/serverservice/pkg/api/v1 -v
+go test -timeout 30s -tags testtools -run ^TestIntegrationServerListComponents$ go.hollow.sh/fleetdb/pkg/api/v1 -v
 ```

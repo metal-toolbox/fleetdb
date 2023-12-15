@@ -1,4 +1,4 @@
-project_name: serverservice
+project_name: fleetdb
 before:
   hooks:
     - go mod download

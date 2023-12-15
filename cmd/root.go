@@ -18,7 +18,7 @@ import (
 )
 
 var (
-	appName = "serverservice"
+	appName = "fleetdb"
 	cfgFile string
 	logger  *zap.SugaredLogger
 )
@@ -69,7 +69,7 @@ func initConfig() {
 	}
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
-	viper.SetEnvPrefix("serverservice")
+	viper.SetEnvPrefix("fleetdb")
 	viper.AutomaticEnv() // read in environment variables that match
 
 	// If a config file is found, read it in.

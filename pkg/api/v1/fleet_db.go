@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"context"
@@ -24,7 +24,7 @@ const (
 	bomByMacBMCAddressEndpoint          = "bmc-mac-address"
 )
 
-// ClientInterface provides an interface for the expected calls to interact with a server service api
+// ClientInterface provides an interface for the expected calls to interact with a fleetdb api
 type ClientInterface interface {
 	Create(context.Context, Server) (*uuid.UUID, *ServerResponse, error)
 	Delete(context.Context, Server) (*ServerResponse, error)
@@ -63,7 +63,7 @@ type ClientInterface interface {
 	GetBomInfoByBMCMacAddr(context.Context, string) (*Bom, *ServerResponse, error)
 }
 
-// Create will attempt to create a server in Hollow and return the new server's UUID
+// Create will attempt to create a server in fleetdb and return the new server's UUID
 func (c *Client) Create(ctx context.Context, srv Server) (*uuid.UUID, *ServerResponse, error) {
 	resp, err := c.post(ctx, serversEndpoint, srv)
 	if err != nil {
@@ -78,7 +78,7 @@ func (c *Client) Create(ctx context.Context, srv Server) (*uuid.UUID, *ServerRes
 	return &u, resp, nil
 }
 
-// Delete will attempt to delete a server in Hollow and return an error on failure
+// Delete will attempt to delete a server in fleetdb and return an error on failure
 func (c *Client) Delete(ctx context.Context, srv Server) (*ServerResponse, error) {
 	return c.delete(ctx, fmt.Sprintf("%s/%s", serversEndpoint, srv.UUID))
 }
@@ -234,7 +234,7 @@ func (c *Client) ListVersionedAttributes(ctx context.Context, srvUUID uuid.UUID)
 	return *val, &r, nil
 }
 
-// CreateServerComponentFirmware will attempt to create a firmware in Hollow and return the firmware UUID
+// CreateServerComponentFirmware will attempt to create a firmware in fleetdb and return the firmware UUID
 func (c *Client) CreateServerComponentFirmware(ctx context.Context, firmware ComponentFirmwareVersion) (*uuid.UUID, *ServerResponse, error) {
 	resp, err := c.post(ctx, serverComponentFirmwaresEndpoint, firmware)
 	if err != nil {
@@ -285,7 +285,7 @@ func (c *Client) UpdateServerComponentFirmware(ctx context.Context, fwUUID uuid.
 	return c.put(ctx, path, firmware)
 }
 
-// CreateServerComponentFirmwareSet will attempt to create a firmware set in Hollow and return the firmware UUID
+// CreateServerComponentFirmwareSet will attempt to create a firmware set in fleetdb and return the firmware UUID
 func (c *Client) CreateServerComponentFirmwareSet(ctx context.Context, set ComponentFirmwareSetRequest) (*uuid.UUID, *ServerResponse, error) {
 	resp, err := c.post(ctx, serverComponentFirmwareSetsEndpoint, set)
 	if err != nil {

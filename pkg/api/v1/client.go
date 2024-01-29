@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 var apiVersion = "v1"
 
-// Client has the ability to talk to a hollow server service api server running at the given URI
+// Client has the ability to talk to a fleetdb api server running at the given URI
 type Client struct {
 	url        string
 	authToken  string
@@ -21,7 +21,7 @@ type Doer interface {
 	Do(*http.Request) (*http.Response, error)
 }
 
-// NewClientWithToken will initialize a new hollow client with the given auth token and URL
+// NewClientWithToken will initialize a new fleetdb client with the given auth token and URL
 func NewClientWithToken(authToken, url string, doerClient Doer) (*Client, error) {
 	if authToken == "" {
 		return nil, newClientError("failed to initialize: no auth token provided")
@@ -53,10 +53,10 @@ func NewClientWithToken(authToken, url string, doerClient Doer) (*Client, error)
 //		EndpointParams: url.Values{"audience": []string{"HOLLOW_AUDIENCE_VALUE"}},
 //	}
 //
-//	c, _ := serverservice.NewClient("HOLLOW_URI", oauthConfig.Client(ctx))
+//	c, _ := fleetdb.NewClient("HOLLOW_URI", oauthConfig.Client(ctx))
 func NewClient(url string, doerClient Doer) (*Client, error) {
 	if url == "" {
-		return nil, newClientError("failed to initialize: no hollow api url provided")
+		return nil, newClientError("failed to initialize: no fleetdb api url provided")
 	}
 
 	url = strings.TrimSuffix(url, "/")
@@ -103,7 +103,7 @@ func (c *Client) NextPage(ctx context.Context, resp ServerResponse, recs interfa
 	return &r, err
 }
 
-// post provides a reusable method for a standard POST to a hollow server
+// post provides a reusable method for a standard POST to a fleetdb server
 func (c *Client) post(ctx context.Context, path string, body interface{}) (*ServerResponse, error) {
 	request, err := newPostRequest(ctx, c.url, path, body)
 	if err != nil {
@@ -119,7 +119,7 @@ func (c *Client) post(ctx context.Context, path string, body interface{}) (*Serv
 	return &r, nil
 }
 
-// put provides a reusable method for a standard PUT to a hollow server
+// put provides a reusable method for a standard PUT to a fleetdb server
 func (c *Client) put(ctx context.Context, path string, body interface{}) (*ServerResponse, error) {
 	request, err := newPutRequest(ctx, c.url, path, body)
 	if err != nil {
@@ -139,7 +139,7 @@ type queryParams interface {
 	setQuery(url.Values)
 }
 
-// list provides a reusable method for a standard list to a hollow server
+// list provides a reusable method for a standard list to a fleetdb server
 func (c *Client) list(ctx context.Context, path string, params queryParams, resp interface{}) error {
 	request, err := newGetRequest(ctx, c.url, path)
 	if err != nil {
@@ -165,7 +165,7 @@ func (c *Client) get(ctx context.Context, path string, resp interface{}) error {
 	return c.do(request, &resp)
 }
 
-// post provides a reusable method for a standard post to a hollow server
+// post provides a reusable method for a standard post to a fleetdb server
 func (c *Client) delete(ctx context.Context, path string) (*ServerResponse, error) {
 	request, err := newDeleteRequest(ctx, c.url, path)
 	if err != nil {

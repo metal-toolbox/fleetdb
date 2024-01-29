@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"context"
@@ -8,7 +8,7 @@ const (
 	serverComponentTypeEndpoint = "server-component-types"
 )
 
-// CreateServerComponentType will attempt to create a server component type in Hollow
+// CreateServerComponentType will attempt to create a server component type in FleetDB
 func (c *Client) CreateServerComponentType(ctx context.Context, t ServerComponentType) (*ServerResponse, error) {
 	return c.post(ctx, serverComponentTypeEndpoint, t)
 }

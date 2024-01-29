@@ -1,5 +1,5 @@
 //nolint:wsl,revive
-package serverservice
+package fleetdb
 
 import (
 	"encoding/json"

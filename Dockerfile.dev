@@ -18,7 +18,7 @@ RUN go mod tidy
 RUN export LDFLAG_LOCATION="go.infratographer.com/x/versionx" && \
     CGO_ENABLED=0 GOOS=linux go build -mod=readonly -v -o fleetdb \
 	-ldflags \
-            "-X ${LDFLAG_LOCATION}.appName=serverservice \
+            "-X ${LDFLAG_LOCATION}.appName=fleetdb \
              -X ${LDFLAG_LOCATION}.commit=$(git rev-parse --short HEAD) \
              -X ${LDFLAG_LOCATION}.version=$(git describe --tags 2>/dev/null) \
              -X ${LDFLAG_LOCATION}.date=$(date -u '+%H:%M:%S-%Y-%m-%d')"

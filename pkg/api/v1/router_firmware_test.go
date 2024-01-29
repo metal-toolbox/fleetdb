@@ -1,4 +1,4 @@
-package serverservice_test
+package fleetdb_test
 
 import (
 	"context"
@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
-	serverservice "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetdb "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 func TestIntegrationFirmwareList(t *testing.T) {
@@ -20,7 +20,7 @@ func TestIntegrationFirmwareList(t *testing.T) {
 	scopedRealClientTests(t, scopes, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		params := serverservice.ComponentFirmwareVersionListParams{
+		params := fleetdb.ComponentFirmwareVersionListParams{
 			Vendor:  "",
 			Model:   nil,
 			Version: "",
@@ -42,14 +42,14 @@ func TestIntegrationFirmwareList(t *testing.T) {
 
 	var testCases = []struct {
 		testName      string
-		params        *serverservice.ComponentFirmwareVersionListParams
+		params        *fleetdb.ComponentFirmwareVersionListParams
 		expectedUUIDs []string
 		expectError   bool
 		errorMsg      string
 	}{
 		{
 			"search by vendor",
-			&serverservice.ComponentFirmwareVersionListParams{
+			&fleetdb.ComponentFirmwareVersionListParams{
 				Vendor: "Dell",
 			},
 			[]string{
@@ -64,7 +64,7 @@ func TestIntegrationFirmwareList(t *testing.T) {
 		},
 		{
 			"search by model",
-			&serverservice.ComponentFirmwareVersionListParams{
+			&fleetdb.ComponentFirmwareVersionListParams{
 				Model: []string{"X11DPH-T"},
 			},
 			[]string{dbtools.FixtureSuperMicroX11DPHTBMC.ID},
@@ -73,7 +73,7 @@ func TestIntegrationFirmwareList(t *testing.T) {
 		},
 		{
 			"search by version",
-			&serverservice.ComponentFirmwareVersionListParams{
+			&fleetdb.ComponentFirmwareVersionListParams{
 				Version: "2.6.6",
 			},
 			[]string{dbtools.FixtureDellR6515BIOS.ID},
@@ -82,7 +82,7 @@ func TestIntegrationFirmwareList(t *testing.T) {
 		},
 		{
 			"search by filename",
-			&serverservice.ComponentFirmwareVersionListParams{
+			&fleetdb.ComponentFirmwareVersionListParams{
 				Filename: "BIOS_C4FT0_WN64_2.6.6.EXE",
 			},
 			[]string{dbtools.FixtureDellR6515BIOS.ID},
@@ -91,7 +91,7 @@ func TestIntegrationFirmwareList(t *testing.T) {
 		},
 		{
 			"search by checksum",
-			&serverservice.ComponentFirmwareVersionListParams{
+			&fleetdb.ComponentFirmwareVersionListParams{
 				Checksum: "1ddcb3c3d0fc5925ef03a3dde768e9e245c579039dd958fc0f3a9c6368b6c5f4",
 			},
 			[]string{dbtools.FixtureDellR6515BIOS.ID},
@@ -100,9 +100,9 @@ func TestIntegrationFirmwareList(t *testing.T) {
 		},
 		{
 			"limit results",
-			&serverservice.ComponentFirmwareVersionListParams{
+			&fleetdb.ComponentFirmwareVersionListParams{
 				Vendor:     "Dell",
-				Pagination: &serverservice.PaginationParams{Limit: 1},
+				Pagination: &fleetdb.PaginationParams{Limit: 1},
 			},
 			[]string{dbtools.FixtureDellR640BIOS.ID},
 			false,
@@ -151,7 +151,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		testFirmware := serverservice.ComponentFirmwareVersion{
+		testFirmware := fleetdb.ComponentFirmwareVersion{
 			UUID:          uuid.New(),
 			Vendor:        "dell",
 			Model:         []string{"r615"},
@@ -177,14 +177,14 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 
 	var testCases = []struct {
 		testName         string
-		firmware         *serverservice.ComponentFirmwareVersion
+		firmware         *fleetdb.ComponentFirmwareVersion
 		expectedError    bool
 		expectedResponse string
 		errorMsg         string
 	}{
 		{
 			"empty required parameters",
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdb.ComponentFirmwareVersion{
 				UUID:          uuid.New(),
 				Vendor:        "dell",
 				Model:         nil,
@@ -201,7 +201,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 		},
 		{
 			"required lowercase parameters",
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdb.ComponentFirmwareVersion{
 				UUID:          uuid.New(),
 				Vendor:        "DELL",
 				Model:         []string{"r615"},
@@ -218,7 +218,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 		},
 		{
 			"filename allowed to be mixed case",
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdb.ComponentFirmwareVersion{
 				UUID:          uuid.New(),
 				Vendor:        "dell",
 				Model:         []string{"r615"},
@@ -235,7 +235,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 		},
 		{
 			"duplicate vendor/component/version/filename not allowed",
-			&serverservice.ComponentFirmwareVersion{
+			&fleetdb.ComponentFirmwareVersion{
 				UUID:          uuid.New(),
 				Vendor:        "dell",
 				Model:         []string{"r615"},
@@ -271,12 +271,12 @@ func TestIntegrationServerComponentFirmwareDelete(t *testing.T) {
 
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
-		_, err := s.Client.DeleteServerComponentFirmware(ctx, serverservice.ComponentFirmwareVersion{UUID: uuid.MustParse(dbtools.FixtureDellR640CPLD.ID)})
+		_, err := s.Client.DeleteServerComponentFirmware(ctx, fleetdb.ComponentFirmwareVersion{UUID: uuid.MustParse(dbtools.FixtureDellR640CPLD.ID)})
 
 		return err
 	})
 
-	_, err := s.Client.DeleteServerComponentFirmware(context.TODO(), serverservice.ComponentFirmwareVersion{UUID: uuid.MustParse(dbtools.FixtureDellR640BMC.ID)})
+	_, err := s.Client.DeleteServerComponentFirmware(context.TODO(), fleetdb.ComponentFirmwareVersion{UUID: uuid.MustParse(dbtools.FixtureDellR640BMC.ID)})
 	assert.Contains(t, err.Error(), "violates foreign key constraint \"fk_firmware_id_ref_component_firmware_version\"")
 }
 
@@ -286,7 +286,7 @@ func TestIntegrationServerComponentFirmwareUpdate(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		fw := serverservice.ComponentFirmwareVersion{
+		fw := fleetdb.ComponentFirmwareVersion{
 			UUID:          uuid.MustParse(dbtools.FixtureDellR640BMC.ID),
 			Vendor:        "dell",
 			Model:         []string{"r615"},

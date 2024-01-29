@@ -18,15 +18,15 @@ import (
 )
 
 var (
-	appName = "serverservice"
+	appName = "fleetdb"
 	cfgFile string
 	logger  *zap.SugaredLogger
 )
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "serverservice",
-	Short: "Server Service for Hollow ecosystem",
+	Use:   "fleetdb",
+	Short: "FleetDB for Fleet ecosystem",
 }
 
 // Execute adds all child commands to the root command and sets flags appropriately.
@@ -37,7 +37,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hollow.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.fleetDBConfig.yaml)")
 
 	// Logging flags
 	loggingx.MustViperFlags(viper.GetViper(), rootCmd.PersistentFlags())
@@ -63,9 +63,9 @@ func initConfig() {
 		home, err := homedir.Dir()
 		cobra.CheckErr(err)
 
-		// Search config in home directory with name ".hollow" (without extension).
+		// Search config in home directory with name ".fleetDBConfig" (without extension).
 		viper.AddConfigPath(home)
-		viper.SetConfigName(".hollow")
+		viper.SetConfigName(".fleetDBConfig")
 	}
 
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))

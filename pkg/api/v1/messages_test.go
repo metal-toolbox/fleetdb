@@ -1,5 +1,5 @@
 //nolint:wsl
-package serverservice
+package fleetdb
 
 import (
 	"testing"

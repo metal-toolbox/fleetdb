@@ -2,7 +2,7 @@ version: "3.9"
 
 services:
   fleetdb:
-    image: ghcr.io/metal-toolbox/fleetdb:v0.16.6
+    image: ghcr.io/metal-toolbox/fleetdb:latest
     depends_on:
       - crdb
       - fleetdb-migrate
@@ -17,7 +17,7 @@ services:
       - hollow
 
   fleetdb-migrate:
-    image: ghcr.io/metal-toolbox/fleetdb:v0.16.6
+    image: ghcr.io/metal-toolbox/fleetdb:latest
     command:
       migrate up
     depends_on:

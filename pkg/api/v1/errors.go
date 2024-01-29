@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"encoding/json"
@@ -29,12 +29,12 @@ type ServerError struct {
 
 // Error returns the ClientError in string format
 func (e *ClientError) Error() string {
-	return fmt.Sprintf("hollow client error: %s", e.Message)
+	return fmt.Sprintf("fleetdb client error: %s", e.Message)
 }
 
 // Error returns the ServerError in string format
 func (e ServerError) Error() string {
-	return fmt.Sprintf("hollow client received a server error - response code: %d, message: %s, details: %s", e.StatusCode, e.Message, e.ErrorMessage)
+	return fmt.Sprintf("fleetdb client received a server error - response code: %d, message: %s, details: %s", e.StatusCode, e.Message, e.ErrorMessage)
 }
 
 func newClientError(msg string) *ClientError {

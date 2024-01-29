@@ -1,4 +1,4 @@
-package serverservice_test
+package fleetdb_test
 
 import (
 	"context"
@@ -8,12 +8,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	hollow "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetDBApi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 func TestServerComponentTypeServiceCreate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
-		hct := hollow.ServerComponentType{Name: "unit-test"}
+		hct := fleetDBApi.ServerComponentType{Name: "unit-test"}
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource created", "slug":"slug-1"}`))
 
 		c := mockClient(string(jsonResponse), respCode)
@@ -28,8 +28,8 @@ func TestServerComponentTypeServiceCreate(t *testing.T) {
 
 func TestServerComponentTypeServiceList(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
-		hct := hollow.ServerComponentTypeSlice{{Slug: "slug-1", Name: "unit-test-1"}, {Slug: "slug-2", Name: "unit-test-2"}}
-		jsonResponse, err := json.Marshal(hollow.ServerResponse{Records: hct})
+		hct := fleetDBApi.ServerComponentTypeSlice{{Slug: "slug-1", Name: "unit-test-1"}, {Slug: "slug-2", Name: "unit-test-2"}}
+		jsonResponse, err := json.Marshal(fleetDBApi.ServerResponse{Records: hct})
 		require.Nil(t, err)
 
 		c := mockClient(string(jsonResponse), respCode)

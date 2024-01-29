@@ -2,9 +2,12 @@ all: lint test
 PHONY: test coverage lint golint clean vendor local-dev-databases docker-up docker-down integration-test unit-test
 GOOS=linux
 DB_STRING=host=localhost port=26257 user=root sslmode=disable
-DEV_DB=${DB_STRING} dbname=serverservice
-TEST_DB=${DB_STRING} dbname=serverservice_test
+DEV_DB=${DB_STRING} dbname=fleetdb
+TEST_DB=${DB_STRING} dbname=fleetdb_test
 DOCKER_IMAGE := "ghcr.io/metal-toolbox/fleetdb"
+REPO := "https://github.com/metal-toolbox/fleet-scheduler.git"
+PROJECT_NAME := fleetdb
+GIT_COMMIT_FULL := $(shell git rev-parse HEAD)
 
 ## run all tests
 test: | unit-test integration-test
@@ -46,47 +49,45 @@ vendor:
 
 ## setup docker compose test env
 docker-up:
-	@docker-compose -f quickstart.yml up -d crdb
+	@docker-compose -f quickstart.yaml up -d crdb
 
 ## stop docker compose test env
 docker-down:
-	@docker-compose -f quickstart.yml down
+	@docker-compose -f quickstart.yaml down
 
 ## clean docker volumes
 docker-clean:
-	@docker-compose -f quickstart.yml down --volumes
+	@docker-compose -f quickstart.yaml down --volumes
 
 ## setup devel database
 dev-database: | vendor
-	@cockroach sql --insecure -e "drop database if exists serverservice"
-	@cockroach sql --insecure -e "create database serverservice"
+	@cockroach sql --insecure -e "drop database if exists fleetdb"
+	@cockroach sql --insecure -e "create database fleetdb"
 	@SERVERSERVICE_CRDB_URI="${DEV_DB}" go run main.go migrate up
 
 ## setup test database
 test-database: | vendor
-	@cockroach sql --insecure -e "drop database if exists serverservice_test"
-	@cockroach sql --insecure -e "create database serverservice_test"
+	@cockroach sql --insecure -e "drop database if exists fleetdb_test"
+	@cockroach sql --insecure -e "create database fleetdb_test"
 	@SERVERSERVICE_CRDB_URI="${TEST_DB}" go run main.go migrate up
-	@cockroach sql --insecure -e "use serverservice_test; ALTER TABLE attributes DROP CONSTRAINT check_server_id_server_component_id; ALTER TABLE versioned_attributes DROP CONSTRAINT check_server_id_server_component_id;"
-
+	@cockroach sql --insecure -e "use fleetdb_test; ALTER TABLE attributes DROP CONSTRAINT check_server_id_server_component_id; ALTER TABLE versioned_attributes DROP CONSTRAINT check_server_id_server_component_id;"
 
 ## Build linux bin
 build-linux:
-	GOOS=linux GOARCH=amd64 go build -o fleetdb
+	CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o ${PROJECT_NAME}
 
-## build docker image and tag as ghcr.io/metal-toolbox/fleetdb:latest
+## build docker image and tag as ghcr.io/metal-toolbox/$(DOCKER_IMAGE):latest
 build-image: build-linux
 	docker build --rm=true -f Dockerfile -t ${DOCKER_IMAGE}:latest  . \
 							 --label org.label-schema.schema-version=1.0 \
 							 --label org.label-schema.vcs-ref=$(GIT_COMMIT_FULL) \
-							 --label org.label-schema.vcs-url=$(REPO)
+							 --label org.label-schema.vcs-url=${REPO}
 
 ## build and push devel docker image to KIND image repo used by the sandbox - https://github.com/metal-toolbox/sandbox
 push-image-devel: build-image
-	docker tag ${DOCKER_IMAGE}:latest localhost:5001/fleetdb:latest
-	docker push localhost:5001/fleetdb:latest
-	kind load docker-image localhost:5001/fleetdb:latest
-
+	docker tag ${DOCKER_IMAGE}:latest localhost:5001/${PROJECT_NAME}:latest
+	docker push localhost:5001/${PROJECT_NAME}:latest
+	kind load docker-image localhost:5001/${PROJECT_NAME}:latest
 
 # https://gist.github.com/prwhite/8168133
 # COLORS
@@ -95,8 +96,8 @@ YELLOW := $(shell tput -Txterm setaf 3)
 WHITE  := $(shell tput -Txterm setaf 7)
 RESET  := $(shell tput -Txterm sgr0)
 
-
 TARGET_MAX_CHAR_NUM=20
+
 ## Show help
 help:
 	@echo ''

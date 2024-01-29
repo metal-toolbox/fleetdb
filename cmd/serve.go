@@ -31,7 +31,7 @@ var (
 // serveCmd represents the serve command
 var serveCmd = &cobra.Command{
 	Use:   "serve",
-	Short: "starts the hollow server",
+	Short: "starts the fleetdb server",
 	Run: func(cmd *cobra.Command, args []string) {
 		serve(cmd.Context())
 	},

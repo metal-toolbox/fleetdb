@@ -1,4 +1,4 @@
-package serverservice
+package fleetdb
 
 import (
 	"github.com/metal-toolbox/fleetdb/internal/models"

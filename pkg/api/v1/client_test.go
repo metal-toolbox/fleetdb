@@ -1,4 +1,4 @@
-package serverservice_test
+package fleetdb_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	serverservice "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetdb "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 var (
@@ -36,7 +36,7 @@ func TestNewClientWithToken(t *testing.T) {
 			"SuperSecret",
 			"",
 			true,
-			"failed to initialize: no hollow api url provided",
+			"failed to initialize: no fleetdb api url provided",
 		},
 		{
 			"happy path",
@@ -48,7 +48,7 @@ func TestNewClientWithToken(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		c, err := serverservice.NewClientWithToken(tt.authToken, tt.url, nil)
+		c, err := fleetdb.NewClientWithToken(tt.authToken, tt.url, nil)
 
 		if tt.expectError {
 			assert.Error(t, err, tt.testName)

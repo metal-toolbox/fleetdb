@@ -5,7 +5,7 @@ DB_STRING=host=localhost port=26257 user=root sslmode=disable
 DEV_DB=${DB_STRING} dbname=fleetdb
 TEST_DB=${DB_STRING} dbname=fleetdb_test
 DOCKER_IMAGE := "ghcr.io/metal-toolbox/fleetdb"
-REPO := "https://github.com/metal-toolbox/fleet-scheduler.git"
+REPO := "https://github.com/metal-toolbox/fleetdb.git"
 PROJECT_NAME := fleetdb
 GIT_COMMIT_FULL := $(shell git rev-parse HEAD)
 

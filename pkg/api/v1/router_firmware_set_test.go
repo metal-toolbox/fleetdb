@@ -13,11 +13,11 @@ import (
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/models"
-	fleetdb "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetDBApi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 // r640FirmwareFixtureUUIDs returns firmware  uuids based on the firmware hardware model attribute
-func r640FirmwareFixtureUUIDs(t *testing.T, firmware []fleetdb.ComponentFirmwareVersion) []string {
+func r640FirmwareFixtureUUIDs(t *testing.T, firmware []fleetDBApi.ComponentFirmwareVersion) []string {
 	t.Helper()
 
 	ids := []string{}
@@ -46,7 +46,7 @@ func TestIntegrationServerComponentFirmwareSetCreate(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		var testFirmwareSet fleetdb.ComponentFirmwareSetRequest
+		var testFirmwareSet fleetDBApi.ComponentFirmwareSetRequest
 
 		if !expectError {
 			// 2. retrieve component firmware fixture data for test
@@ -62,7 +62,7 @@ func TestIntegrationServerComponentFirmwareSetCreate(t *testing.T) {
 			// expect two fixture firmware objects to be returned
 			assert.Equal(t, 2, len(r640FirmwareIDs))
 
-			testFirmwareSet = fleetdb.ComponentFirmwareSetRequest{
+			testFirmwareSet = fleetDBApi.ComponentFirmwareSetRequest{
 				Name:                   "test-firmware-set",
 				ComponentFirmwareUUIDs: r640FirmwareIDs,
 			}
@@ -81,21 +81,21 @@ func TestIntegrationServerComponentFirmwareSetCreate(t *testing.T) {
 
 	var testCases = []struct {
 		testName           string
-		firmwareSetPayload *fleetdb.ComponentFirmwareSetRequest
+		firmwareSetPayload *fleetDBApi.ComponentFirmwareSetRequest
 		expectedError      bool
 		expectedResponse   string
 		errorMsg           string
 	}{
 		{
 			"Name field required",
-			&fleetdb.ComponentFirmwareSetRequest{},
+			&fleetDBApi.ComponentFirmwareSetRequest{},
 			true,
 			"400",
 			"required attribute not set: Name",
 		},
 		{
 			"component firmware UUIDs required",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar",
 			},
 			true,
@@ -104,7 +104,7 @@ func TestIntegrationServerComponentFirmwareSetCreate(t *testing.T) {
 		},
 		{
 			"valid UUIDs for the firmware ID expected",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar",
 				ComponentFirmwareUUIDs: []string{
 					r640FirmwareIDs[0],
@@ -117,7 +117,7 @@ func TestIntegrationServerComponentFirmwareSetCreate(t *testing.T) {
 		},
 		{
 			"duplicate firmware UUIDs are not accepted",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar",
 				ComponentFirmwareUUIDs: []string{
 					r640FirmwareIDs[0],
@@ -130,7 +130,7 @@ func TestIntegrationServerComponentFirmwareSetCreate(t *testing.T) {
 		},
 		{
 			"non-existing firmware UUID are not accepted",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar",
 				ComponentFirmwareUUIDs: []string{
 					"d825bbeb-20fb-452e-9fe4-cdedacb2ca1f",
@@ -142,10 +142,10 @@ func TestIntegrationServerComponentFirmwareSetCreate(t *testing.T) {
 		},
 		{
 			"firmware set added referencing firmware UUIDs",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name:                   "foobar",
 				ComponentFirmwareUUIDs: r640FirmwareIDs,
-				Attributes: []fleetdb.Attributes{
+				Attributes: []fleetDBApi.Attributes{
 					{
 						Namespace: "sh.hollow.firmware_set.metadata",
 						Data:      json.RawMessage(`{"created by": "foobar"}`),
@@ -190,7 +190,7 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 
 		var err error
 
-		_, err = s.Client.UpdateComponentFirmwareSetRequest(ctx, firmwareSetID, fleetdb.ComponentFirmwareSetRequest{})
+		_, err = s.Client.UpdateComponentFirmwareSetRequest(ctx, firmwareSetID, fleetDBApi.ComponentFirmwareSetRequest{})
 		if !expectError {
 			return nil
 		}
@@ -210,8 +210,8 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 
 	var testCases = []struct {
 		testName                    string
-		firmwareSetPayload          *fleetdb.ComponentFirmwareSetRequest
-		expectFirmwareSetAttributes []fleetdb.Attributes
+		firmwareSetPayload          *fleetDBApi.ComponentFirmwareSetRequest
+		expectFirmwareSetAttributes []fleetDBApi.Attributes
 		expectedFirmwareCount       int
 		expectedError               bool
 		expectedResponse            string
@@ -219,7 +219,7 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 	}{
 		{
 			"component firmware set UUID required",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar",
 			},
 			nil,
@@ -230,7 +230,7 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		},
 		{
 			"valid UUIDs for the firmware ID expected",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				ID:   firmwareSetID,
 				Name: "foobar",
 				ComponentFirmwareUUIDs: []string{
@@ -245,7 +245,7 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		},
 		{
 			"duplicate firmware UUIDs are not accepted",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				ID:   firmwareSetID,
 				Name: "foobar",
 				ComponentFirmwareUUIDs: []string{
@@ -261,7 +261,7 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		},
 		{
 			"non-existing firmware UUID are not accepted",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				ID:   firmwareSetID,
 				Name: "foobar",
 				ComponentFirmwareUUIDs: []string{
@@ -276,7 +276,7 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		},
 		{
 			"update an existing firmware set - update name, referenced firmware",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name:                   "foobar-updated",
 				ID:                     firmwareSetID,
 				ComponentFirmwareUUIDs: []string{dbtools.FixtureDellR640CPLD.ID},
@@ -289,17 +289,17 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		},
 		{
 			"update an existing firmware set - update labels",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar-updated",
 				ID:   firmwareSetID,
-				Attributes: []fleetdb.Attributes{
+				Attributes: []fleetDBApi.Attributes{
 					{
 						Namespace: "sh.hollow.firmware_set.labels",
 						Data:      json.RawMessage(`{"created by": "foobar"}`),
 					},
 				},
 			},
-			[]fleetdb.Attributes{
+			[]fleetDBApi.Attributes{
 				{
 					Namespace: "sh.hollow.firmware_set.labels",
 					Data:      json.RawMessage(`{"created by": "foobar"}`),
@@ -312,16 +312,16 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		},
 		{
 			"update a firmware set with no attributes data does not overwrite existing attributes",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar-updated",
 				ID:   firmwareSetID,
-				Attributes: []fleetdb.Attributes{
+				Attributes: []fleetDBApi.Attributes{
 					{
 						Namespace: "sh.hollow.firmware_set.labels",
 					},
 				},
 			},
-			[]fleetdb.Attributes{
+			[]fleetDBApi.Attributes{
 				{
 					Namespace: "sh.hollow.firmware_set.labels",
 					Data:      json.RawMessage(`{"created by": "foobar"}`),
@@ -334,17 +334,17 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		},
 		{
 			"update a firmware set with new attributes updates existing attributes",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar-updated",
 				ID:   firmwareSetID,
-				Attributes: []fleetdb.Attributes{
+				Attributes: []fleetDBApi.Attributes{
 					{
 						Namespace: "sh.hollow.firmware_set.labels",
 						Data:      json.RawMessage(`{"updated by": "foo"}`),
 					},
 				},
 			},
-			[]fleetdb.Attributes{
+			[]fleetDBApi.Attributes{
 				{
 					Namespace: "sh.hollow.firmware_set.labels",
 					Data:      json.RawMessage(`{"updated by": "foo"}`),
@@ -357,11 +357,11 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		},
 		{
 			"update an existing firmware set with empty attributes does not purge existing attributes",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar-updated-again",
 				ID:   firmwareSetID,
 			},
-			[]fleetdb.Attributes{
+			[]fleetDBApi.Attributes{
 				{
 					Namespace: "sh.hollow.firmware_set.labels",
 					Data:      json.RawMessage(`{"updated by": "foo"}`),
@@ -374,17 +374,17 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		},
 		{
 			"update a firmware set attributes to be empty",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				Name: "foobar-updated",
 				ID:   firmwareSetID,
-				Attributes: []fleetdb.Attributes{
+				Attributes: []fleetDBApi.Attributes{
 					{
 						Namespace: "sh.hollow.firmware_set.labels",
 						Data:      json.RawMessage(`{}`),
 					},
 				},
 			},
-			[]fleetdb.Attributes{
+			[]fleetDBApi.Attributes{
 				{
 					Namespace: "sh.hollow.firmware_set.labels",
 					Data:      json.RawMessage(`{}`),
@@ -523,7 +523,7 @@ func TestIntegrationServerComponentFirmwareSetGet(t *testing.T) {
 	}
 }
 
-func assertAttributesContains(t *testing.T, attrs []fleetdb.Attributes, a []byte) bool {
+func assertAttributesContains(t *testing.T, attrs []fleetDBApi.Attributes, a []byte) bool {
 	for _, attr := range attrs {
 		if assertAttributesEqual(t, a, attr.Data) {
 			return true
@@ -567,7 +567,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 
 	testCases := []struct {
 		testName                     string
-		params                       *fleetdb.ComponentFirmwareSetListParams
+		params                       *fleetDBApi.ComponentFirmwareSetListParams
 		expectedFirmwareSetAttribute []*models.AttributesFirmwareSet
 		expectedFirmwareModels       []string
 		expectedTotalRecordCount     int
@@ -578,7 +578,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 
 		{
 			"list firmware set by name - r640",
-			&fleetdb.ComponentFirmwareSetListParams{Name: "r640"},
+			&fleetDBApi.ComponentFirmwareSetListParams{Name: "r640"},
 			[]*models.AttributesFirmwareSet{dbtools.FixtureFirmwareSetR640Attribute},
 			[]string{"R640"},
 			1,
@@ -588,7 +588,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 		},
 		{
 			"list firmware set by name - r6515",
-			&fleetdb.ComponentFirmwareSetListParams{Name: "r6515"},
+			&fleetDBApi.ComponentFirmwareSetListParams{Name: "r6515"},
 			[]*models.AttributesFirmwareSet{dbtools.FixtureFirmwareSetR6515Attribute},
 			[]string{"R6515"},
 			1,
@@ -598,8 +598,8 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 		},
 		{
 			"list with pagination Limit, Offset",
-			&fleetdb.ComponentFirmwareSetListParams{
-				Pagination: &fleetdb.PaginationParams{
+			&fleetDBApi.ComponentFirmwareSetListParams{
+				Pagination: &fleetDBApi.PaginationParams{
 					Limit: 1,
 					Page:  2,
 				},
@@ -613,8 +613,8 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 		},
 		{
 			"list firmware set by attribute params",
-			&fleetdb.ComponentFirmwareSetListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ComponentFirmwareSetListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: "sh.hollow.firmware_set.labels",
 						Keys:      []string{"vendor"},
@@ -638,8 +638,8 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 		},
 		{
 			"list firmware set by attribute params with OR on attribute",
-			&fleetdb.ComponentFirmwareSetListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ComponentFirmwareSetListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: "sh.hollow.firmware_set.labels",
 						Keys:      []string{"model"},
@@ -651,7 +651,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 						Keys:              []string{"model"},
 						Operator:          "eq",
 						Value:             "x11dph-t",
-						AttributeOperator: fleetdb.AttributeLogicalOR,
+						AttributeOperator: fleetDBApi.AttributeLogicalOR,
 					},
 				},
 			},
@@ -667,7 +667,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 		},
 		{
 			"list with incorrect firmware set Name attribute returns no records",
-			&fleetdb.ComponentFirmwareSetListParams{
+			&fleetDBApi.ComponentFirmwareSetListParams{
 				Name: "does-not-exist",
 			},
 			nil,
@@ -706,7 +706,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 	}
 }
 
-func assertContainsFirmwareSetAttributes(t *testing.T, fwSetModelAttrs []*models.AttributesFirmwareSet, fwSets []fleetdb.ComponentFirmwareSet) bool {
+func assertContainsFirmwareSetAttributes(t *testing.T, fwSetModelAttrs []*models.AttributesFirmwareSet, fwSets []fleetDBApi.ComponentFirmwareSet) bool {
 	t.Helper()
 
 	expected := len(fwSetModelAttrs)
@@ -724,7 +724,7 @@ func assertContainsFirmwareSetAttributes(t *testing.T, fwSetModelAttrs []*models
 	return expected == got
 }
 
-func assertFirmwareSetAttributeNSEqual(t *testing.T, fwSetModelAttrs []*models.AttributesFirmwareSet, fwSets []fleetdb.ComponentFirmwareSet) bool {
+func assertFirmwareSetAttributeNSEqual(t *testing.T, fwSetModelAttrs []*models.AttributesFirmwareSet, fwSets []fleetDBApi.ComponentFirmwareSet) bool {
 	for _, fwSetModelAttr := range fwSetModelAttrs {
 		for _, fwSet := range fwSets {
 			for _, attr := range fwSet.Attributes {
@@ -739,7 +739,7 @@ func assertFirmwareSetAttributeNSEqual(t *testing.T, fwSetModelAttrs []*models.A
 	return true
 }
 
-func firmwareSetContainsModel(t *testing.T, models []string, set []fleetdb.ComponentFirmwareSet) bool {
+func firmwareSetContainsModel(t *testing.T, models []string, set []fleetDBApi.ComponentFirmwareSet) bool {
 	t.Helper()
 
 	for _, model := range models {
@@ -836,7 +836,7 @@ func TestIntegrationServerComponentFirmwareSetRemoveFirmware(t *testing.T) {
 
 		var err error
 
-		_, err = s.Client.RemoveServerComponentFirmwareSetFirmware(ctx, firmwareSetID, fleetdb.ComponentFirmwareSetRequest{})
+		_, err = s.Client.RemoveServerComponentFirmwareSetFirmware(ctx, firmwareSetID, fleetDBApi.ComponentFirmwareSetRequest{})
 		if !expectError {
 			return nil
 		}
@@ -861,21 +861,21 @@ func TestIntegrationServerComponentFirmwareSetRemoveFirmware(t *testing.T) {
 
 	var testCases = []struct {
 		testName           string
-		firmwareSetPayload *fleetdb.ComponentFirmwareSetRequest
+		firmwareSetPayload *fleetDBApi.ComponentFirmwareSetRequest
 		expectedError      bool
 		errorMsg           string
 		expectedResponse   string
 	}{
 		{
 			"component firmware set UUID required",
-			&fleetdb.ComponentFirmwareSetRequest{},
+			&fleetDBApi.ComponentFirmwareSetRequest{},
 			true,
 			"",
 			"expected a valid firmware set UUID",
 		},
 		{
 			"payload must include a non-nil firmware set UUID",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				ID:   uuid.Nil,
 				Name: "foobar",
 			},
@@ -885,7 +885,7 @@ func TestIntegrationServerComponentFirmwareSetRemoveFirmware(t *testing.T) {
 		},
 		{
 			"firmware for removal must be part of firmware set",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				ID:                     firmwareSetID,
 				ComponentFirmwareUUIDs: []string{uuid.NewString()},
 			},
@@ -895,7 +895,7 @@ func TestIntegrationServerComponentFirmwareSetRemoveFirmware(t *testing.T) {
 		},
 		{
 			"firmware removed from set",
-			&fleetdb.ComponentFirmwareSetRequest{
+			&fleetDBApi.ComponentFirmwareSetRequest{
 				ID:                     firmwareSetID,
 				ComponentFirmwareUUIDs: []string{r640FirmwareIDs[0]},
 			},

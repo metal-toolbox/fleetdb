@@ -12,7 +12,7 @@ import (
 	"github.com/volatiletech/null/v8"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
-	fleetdb "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetDBApi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 func TestIntegrationServerList(t *testing.T) {
@@ -40,19 +40,19 @@ func TestIntegrationServerList(t *testing.T) {
 	// These are the same test cases used in db/server_test.go
 	var testCases = []struct {
 		testName      string
-		params        *fleetdb.ServerListParams
+		params        *fleetDBApi.ServerListParams
 		expectedUUIDs []string
 		expectError   bool
 		errorMsg      string
 	}{
 		{
 			"search by age less than 7",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceMetadata,
 						Keys:      []string{"age"},
-						Operator:  fleetdb.OperatorLessThan,
+						Operator:  fleetDBApi.OperatorLessThan,
 						Value:     "7",
 					},
 				},
@@ -63,12 +63,12 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by age greater than 11 and facility code",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceMetadata,
 						Keys:      []string{"age"},
-						Operator:  fleetdb.OperatorGreaterThan,
+						Operator:  fleetDBApi.OperatorGreaterThan,
 						Value:     "11",
 					},
 				},
@@ -80,7 +80,7 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by facility",
-			&fleetdb.ServerListParams{
+			&fleetDBApi.ServerListParams{
 				FacilityCode: "Ocean",
 			},
 			[]string{dbtools.FixtureDory.ID, dbtools.FixtureMarlin.ID},
@@ -89,18 +89,18 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by type and location from different attributes",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "blue-tang",
 					},
 					{
 						Namespace: dbtools.FixtureNamespaceMetadata,
 						Keys:      []string{"location"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "East Australian Current",
 					},
 				},
@@ -111,12 +111,12 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by nested tag",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"nested", "tag"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "finding-nemo",
 					},
 				},
@@ -127,12 +127,12 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by nested number greater than 1",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"nested", "number"},
-						Operator:  fleetdb.OperatorGreaterThan,
+						Operator:  fleetDBApi.OperatorGreaterThan,
 						Value:     "1",
 					},
 				},
@@ -150,7 +150,7 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"facility filter that doesn't match",
-			&fleetdb.ServerListParams{
+			&fleetDBApi.ServerListParams{
 				FacilityCode: "Neverland",
 			},
 			[]string{},
@@ -159,20 +159,20 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by type from attributes and name from versioned attributes",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "clown",
 					},
 				},
-				VersionedAttributeListParams: []fleetdb.AttributeListParams{
+				VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "new",
 					},
 				},
@@ -183,20 +183,20 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by type from attributes and name from versioned attributes, using the not current value, so nothing should return",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "clown",
 					},
 				},
-				VersionedAttributeListParams: []fleetdb.AttributeListParams{
+				VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "old",
 					},
 				},
@@ -207,8 +207,8 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by multiple components of the server",
-			&fleetdb.ServerListParams{
-				ComponentListParams: []fleetdb.ServerComponentListParams{
+			&fleetDBApi.ServerListParams{
+				ComponentListParams: []fleetDBApi.ServerComponentListParams{
 					{
 						Model:  "A Lucky Fin",
 						Serial: "Right",
@@ -225,8 +225,8 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"ensure both components have to match when searching by multiple components of the server",
-			&fleetdb.ServerListParams{
-				ComponentListParams: []fleetdb.ServerComponentListParams{
+			&fleetDBApi.ServerListParams{
+				ComponentListParams: []fleetDBApi.ServerComponentListParams{
 					{
 						Name:   "My Lucky Fin",
 						Vendor: "Barracuda",
@@ -245,18 +245,18 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by a single component and versioned attributes of the server",
-			&fleetdb.ServerListParams{
-				ComponentListParams: []fleetdb.ServerComponentListParams{
+			&fleetDBApi.ServerListParams{
+				ComponentListParams: []fleetDBApi.ServerComponentListParams{
 					{
 						Model:  "A Lucky Fin",
 						Serial: "Right",
 					},
 				},
-				VersionedAttributeListParams: []fleetdb.AttributeListParams{
+				VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "new",
 					},
 				},
@@ -267,18 +267,18 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by a single component and versioned attributes of the server",
-			&fleetdb.ServerListParams{
-				ComponentListParams: []fleetdb.ServerComponentListParams{
+			&fleetDBApi.ServerListParams{
+				ComponentListParams: []fleetDBApi.ServerComponentListParams{
 					{
 						Model:  "A Lucky Fin",
 						Serial: "Right",
 					},
 				},
-				VersionedAttributeListParams: []fleetdb.AttributeListParams{
+				VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "new",
 					},
 				},
@@ -289,15 +289,15 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by a single component and it's versioned attributes of the server",
-			&fleetdb.ServerListParams{
-				ComponentListParams: []fleetdb.ServerComponentListParams{
+			&fleetDBApi.ServerListParams{
+				ComponentListParams: []fleetDBApi.ServerComponentListParams{
 					{
 						Model: "Normal Fin",
-						VersionedAttributeListParams: []fleetdb.AttributeListParams{
+						VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 							{
 								Namespace: dbtools.FixtureNamespaceVersioned,
 								Keys:      []string{"something"},
-								Operator:  fleetdb.OperatorEqual,
+								Operator:  fleetDBApi.OperatorEqual,
 								Value:     "cool",
 							},
 						},
@@ -310,25 +310,25 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by a component and server attributes of the server",
-			&fleetdb.ServerListParams{
-				ComponentListParams: []fleetdb.ServerComponentListParams{
+			&fleetDBApi.ServerListParams{
+				ComponentListParams: []fleetDBApi.ServerComponentListParams{
 					{
 						Model: "Normal Fin",
-						VersionedAttributeListParams: []fleetdb.AttributeListParams{
+						VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 							{
 								Namespace: dbtools.FixtureNamespaceVersioned,
 								Keys:      []string{"something"},
-								Operator:  fleetdb.OperatorEqual,
+								Operator:  fleetDBApi.OperatorEqual,
 								Value:     "cool",
 							},
 						},
 					},
 				},
-				AttributeListParams: []fleetdb.AttributeListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "clown",
 					},
 				},
@@ -339,25 +339,25 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by a component and server versioned attributes of the server",
-			&fleetdb.ServerListParams{
-				ComponentListParams: []fleetdb.ServerComponentListParams{
+			&fleetDBApi.ServerListParams{
+				ComponentListParams: []fleetDBApi.ServerComponentListParams{
 					{
 						Model: "A Lucky Fin",
-						VersionedAttributeListParams: []fleetdb.AttributeListParams{
+						VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 							{
 								Namespace: dbtools.FixtureNamespaceVersioned,
 								Keys:      []string{"something"},
-								Operator:  fleetdb.OperatorEqual,
+								Operator:  fleetDBApi.OperatorEqual,
 								Value:     "cool",
 							},
 						},
 					},
 				},
-				VersionedAttributeListParams: []fleetdb.AttributeListParams{
+				VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdb.OperatorEqual,
+						Operator:  fleetDBApi.OperatorEqual,
 						Value:     "old",
 					},
 				},
@@ -368,8 +368,8 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search by a component slug",
-			&fleetdb.ServerListParams{
-				ComponentListParams: []fleetdb.ServerComponentListParams{
+			&fleetDBApi.ServerListParams{
+				ComponentListParams: []fleetDBApi.ServerComponentListParams{
 					{
 						ServerComponentType: dbtools.FixtureFinType.Slug,
 					},
@@ -381,8 +381,8 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search for devices with a versioned attributes in a namespace with key that exists",
-			&fleetdb.ServerListParams{
-				VersionedAttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
@@ -395,8 +395,8 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search for devices with a versioned attributes in a namespace with key that doesn't exists",
-			&fleetdb.ServerListParams{
-				VersionedAttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"doesntExist"},
@@ -409,8 +409,8 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search for devices that have versioned attributes in a namespace - no filters",
-			&fleetdb.ServerListParams{
-				VersionedAttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 					},
@@ -422,8 +422,8 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search for devices that have attributes in a namespace - no filters",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceMetadata,
 					},
@@ -435,26 +435,26 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search for server without IncludeDeleted defined",
-			&fleetdb.ServerListParams{},
+			&fleetDBApi.ServerListParams{},
 			[]string{dbtools.FixtureNemo.ID, dbtools.FixtureDory.ID, dbtools.FixtureMarlin.ID},
 			false,
 			"",
 		},
 		{
 			"search for server with IncludeDeleted defined",
-			&fleetdb.ServerListParams{IncludeDeleted: true},
+			&fleetDBApi.ServerListParams{IncludeDeleted: true},
 			[]string{dbtools.FixtureNemo.ID, dbtools.FixtureDory.ID, dbtools.FixtureMarlin.ID, dbtools.FixtureChuckles.ID},
 			false,
 			"",
 		},
 		{
 			"search for devices by attributes that have a type like %lo%",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdb.OperatorLike,
+						Operator:  fleetDBApi.OperatorLike,
 						Value:     "%lo%",
 					},
 				},
@@ -465,12 +465,12 @@ func TestIntegrationServerList(t *testing.T) {
 		},
 		{
 			"search for devices by attributes that have a type like %lo",
-			&fleetdb.ServerListParams{
-				AttributeListParams: []fleetdb.AttributeListParams{
+			&fleetDBApi.ServerListParams{
+				AttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdb.OperatorLike,
+						Operator:  fleetDBApi.OperatorLike,
 						Value:     "%lo",
 					},
 				},
@@ -506,7 +506,7 @@ func TestIntegrationServerListPagination(t *testing.T) {
 	s := serverTest(t)
 	s.Client.SetToken(validToken(adminScopes))
 
-	p := &fleetdb.ServerListParams{PaginationParams: &fleetdb.PaginationParams{Limit: 2, Page: 1}}
+	p := &fleetDBApi.ServerListParams{PaginationParams: &fleetDBApi.PaginationParams{Limit: 2, Page: 1}}
 	r, resp, err := s.Client.List(context.TODO(), p)
 
 	assert.NoError(t, err)
@@ -581,7 +581,7 @@ func TestIntegrationServerListPreload(t *testing.T) {
 	s.Client.SetToken(validToken(adminScopes))
 
 	// should only return nemo
-	r, _, err := s.Client.List(context.TODO(), &fleetdb.ServerListParams{FacilityCode: "Sydney"})
+	r, _, err := s.Client.List(context.TODO(), &fleetDBApi.ServerListParams{FacilityCode: "Sydney"})
 
 	assert.NoError(t, err)
 	assert.Len(t, r, 1)
@@ -596,7 +596,7 @@ func TestIntegrationServerCreate(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		testServer := fleetdb.Server{
+		testServer := fleetDBApi.Server{
 			UUID:         uuid.New(),
 			Name:         "test-server",
 			FacilityCode: "int",
@@ -616,12 +616,12 @@ func TestIntegrationServerCreate(t *testing.T) {
 
 	var testCases = []struct {
 		testName string
-		srv      *fleetdb.Server
+		srv      *fleetDBApi.Server
 		errorMsg string
 	}{
 		{
 			"fails on a duplicate uuid",
-			&fleetdb.Server{
+			&fleetDBApi.Server{
 				UUID:         uuid.MustParse(dbtools.FixtureNemo.ID),
 				FacilityCode: "int-test",
 			},
@@ -643,7 +643,7 @@ func TestIntegrationServerDelete(t *testing.T) {
 
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
-		_, err := s.Client.Delete(ctx, fleetdb.Server{UUID: uuid.MustParse(dbtools.FixtureNemo.ID)})
+		_, err := s.Client.Delete(ctx, fleetDBApi.Server{UUID: uuid.MustParse(dbtools.FixtureNemo.ID)})
 
 		return err
 	})
@@ -674,11 +674,11 @@ func TestIntegrationServerDelete(t *testing.T) {
 	for _, tt := range testCases {
 		t.Run(tt.testName, func(t *testing.T) {
 			if tt.create {
-				_, _, err := s.Client.Create(context.TODO(), fleetdb.Server{UUID: tt.uuid})
+				_, _, err := s.Client.Create(context.TODO(), fleetDBApi.Server{UUID: tt.uuid})
 				assert.NoError(t, err)
 			}
 
-			_, err := s.Client.Delete(context.TODO(), fleetdb.Server{UUID: tt.uuid})
+			_, err := s.Client.Delete(context.TODO(), fleetDBApi.Server{UUID: tt.uuid})
 			if tt.expectErr {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
@@ -701,7 +701,7 @@ func TestIntegrationServerUpdate(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		resp, err := s.Client.Update(ctx, uuid.MustParse(dbtools.FixtureDory.ID), fleetdb.Server{Name: "The New Dory"})
+		resp, err := s.Client.Update(ctx, uuid.MustParse(dbtools.FixtureDory.ID), fleetDBApi.Server{Name: "The New Dory"})
 		if !expectError {
 			require.NoError(t, err)
 			assert.NotNil(t, resp.Links.Self)
@@ -718,7 +718,7 @@ func TestIntegrationFleetDBCreateVersionedAttributes(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		va := fleetdb.VersionedAttributes{Namespace: "hollow.integegration.test", Data: json.RawMessage([]byte(`{"test":"integration"}`))}
+		va := fleetDBApi.VersionedAttributes{Namespace: "hollow.integegration.test", Data: json.RawMessage([]byte(`{"test":"integration"}`))}
 
 		resp, err := s.Client.CreateVersionedAttributes(ctx, uuid.New(), va)
 		if !expectError {
@@ -736,8 +736,8 @@ func TestIntegrationFleetDBCreateVersionedAttributesIncrementCounter(t *testing.
 	u := uuid.New()
 	ctx := context.TODO()
 
-	va := fleetdb.VersionedAttributes{Namespace: "hollow.integegration.test", Data: json.RawMessage([]byte(`{"test":"integration"}`))}
-	newVA := fleetdb.VersionedAttributes{Namespace: "hollow.integegration.test", Data: json.RawMessage([]byte(`{"test":"integration", "something":"else"}`))}
+	va := fleetDBApi.VersionedAttributes{Namespace: "hollow.integegration.test", Data: json.RawMessage([]byte(`{"test":"integration"}`))}
+	newVA := fleetDBApi.VersionedAttributes{Namespace: "hollow.integegration.test", Data: json.RawMessage([]byte(`{"test":"integration", "something":"else"}`))}
 
 	_, err := s.Client.CreateVersionedAttributes(ctx, u, va)
 	require.NoError(t, err)

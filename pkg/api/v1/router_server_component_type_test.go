@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
-	fleetdb "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetDBApi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 func TestIntegrationCreateServerComponentType(t *testing.T) {
@@ -18,7 +18,7 @@ func TestIntegrationCreateServerComponentType(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		hct := fleetdb.ServerComponentType{Name: "integration-test"}
+		hct := fleetDBApi.ServerComponentType{Name: "integration-test"}
 
 		resp, err := s.Client.CreateServerComponentType(ctx, hct)
 		if !expectError {

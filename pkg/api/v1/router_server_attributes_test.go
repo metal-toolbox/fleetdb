@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
-	fleetdb "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetDBApi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 func TestIntegrationServerCreateAttributes(t *testing.T) {
@@ -20,7 +20,7 @@ func TestIntegrationServerCreateAttributes(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		attrs := fleetdb.Attributes{
+		attrs := fleetDBApi.Attributes{
 			Namespace: "integration.tests",
 			Data:      json.RawMessage([]byte(`{"setting":"enabled"}`)),
 		}

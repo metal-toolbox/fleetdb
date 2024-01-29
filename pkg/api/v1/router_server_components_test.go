@@ -11,17 +11,17 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
-	fleetdb "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetDBApi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 // zero values that change for each test run to enable object comparison
-func zeroUUIDValues(sc *fleetdb.ServerComponent) {
+func zeroUUIDValues(sc *fleetDBApi.ServerComponent) {
 	sc.ServerUUID = uuid.UUID{}
 	sc.UUID = uuid.UUID{}
 	sc.ComponentTypeID = ""
 }
 
-func zeroTimeValues(sc *fleetdb.ServerComponent) {
+func zeroTimeValues(sc *fleetDBApi.ServerComponent) {
 	sc.CreatedAt = time.Time{}
 	sc.UpdatedAt = time.Time{}
 
@@ -31,7 +31,7 @@ func zeroTimeValues(sc *fleetdb.ServerComponent) {
 	}
 }
 
-func componentByNameVendorModelSerial(name, vendor, model, serial string, sc fleetdb.ServerComponentSlice) *fleetdb.ServerComponent {
+func componentByNameVendorModelSerial(name, vendor, model, serial string, sc fleetDBApi.ServerComponentSlice) *fleetDBApi.ServerComponent {
 	for _, c := range sc {
 		if c.Name == name && c.Vendor == vendor && c.Model == model && c.Serial == serial {
 			return &c
@@ -58,15 +58,15 @@ func TestIntegrationServerListComponents(t *testing.T) {
 
 	testCases := []struct {
 		testName string
-		params   *fleetdb.ServerComponentListParams
-		expected fleetdb.ServerComponentSlice
+		params   *fleetDBApi.ServerComponentListParams
+		expected fleetDBApi.ServerComponentSlice
 		errorMsg string
 	}{
 		// TODO(joel): tests for unhappy paths
 		{
 			"by model",
-			&fleetdb.ServerComponentListParams{Model: "Belly"},
-			fleetdb.ServerComponentSlice{
+			&fleetDBApi.ServerComponentListParams{Model: "Belly"},
+			fleetDBApi.ServerComponentSlice{
 				{
 					Model:             "Belly",
 					Serial:            "Up",
@@ -78,9 +78,9 @@ func TestIntegrationServerListComponents(t *testing.T) {
 		},
 		{
 			"by model, versioned attributes",
-			&fleetdb.ServerComponentListParams{
+			&fleetDBApi.ServerComponentListParams{
 				Model: "Normal Fin",
-				VersionedAttributeListParams: []fleetdb.AttributeListParams{
+				VersionedAttributeListParams: []fleetDBApi.AttributeListParams{
 					{
 						Namespace: "hollow.versioned",
 						Keys:      []string{"something"},
@@ -89,14 +89,14 @@ func TestIntegrationServerListComponents(t *testing.T) {
 					},
 				},
 			},
-			fleetdb.ServerComponentSlice{
+			fleetDBApi.ServerComponentSlice{
 				{
 					Model:             "Normal Fin",
 					Serial:            "Left",
 					Name:              "Normal Fin",
 					ComponentTypeName: "Fins",
 					ComponentTypeSlug: "fins",
-					VersionedAttributes: []fleetdb.VersionedAttributes{
+					VersionedAttributes: []fleetDBApi.VersionedAttributes{
 						{
 							Namespace: "hollow.versioned",
 							Data:      json.RawMessage(`{"something":"cool"}`),
@@ -108,13 +108,13 @@ func TestIntegrationServerListComponents(t *testing.T) {
 		},
 		{
 			"pagination Limit",
-			&fleetdb.ServerComponentListParams{
-				Pagination: &fleetdb.PaginationParams{
+			&fleetDBApi.ServerComponentListParams{
+				Pagination: &fleetDBApi.PaginationParams{
 					Limit: 1,
 				},
 				Model: "Belly",
 			},
-			fleetdb.ServerComponentSlice{
+			fleetDBApi.ServerComponentSlice{
 				{
 					Model:             "Belly",
 					Serial:            "Up",
@@ -126,13 +126,13 @@ func TestIntegrationServerListComponents(t *testing.T) {
 		},
 		{
 			"pagination Limit, Offset",
-			&fleetdb.ServerComponentListParams{
-				Pagination: &fleetdb.PaginationParams{
+			&fleetDBApi.ServerComponentListParams{
+				Pagination: &fleetDBApi.PaginationParams{
 					Limit: 1,
 					Page:  2,
 				},
 			},
-			fleetdb.ServerComponentSlice{
+			fleetDBApi.ServerComponentSlice{
 				{
 					Name:              "Normal Fin",
 					Serial:            "Right",
@@ -202,7 +202,7 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 	assert.Len(t, componentTypeSlice, 1)
 
 	// fixture to create a server components
-	csFixtureCreate := fleetdb.ServerComponentSlice{
+	csFixtureCreate := fleetDBApi.ServerComponentSlice{
 		{
 			ServerUUID:        servers[0].UUID,
 			Name:              "My Lucky Fin",
@@ -212,7 +212,7 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 			ComponentTypeID:   componentTypeSlice.ByName("Fins").ID,
 			ComponentTypeName: componentTypeSlice.ByName("Fins").Name,
 			ComponentTypeSlug: componentTypeSlice.ByName("Fins").Slug,
-			VersionedAttributes: []fleetdb.VersionedAttributes{
+			VersionedAttributes: []fleetDBApi.VersionedAttributes{
 				{
 					Namespace: dbtools.FixtureNamespaceVersioned,
 					Data:      json.RawMessage(`{"version":"1.0"}`),
@@ -235,21 +235,21 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 		testName        string
 		srvUUID         uuid.UUID
 		expectedCount   int
-		expectedInSlice fleetdb.ServerComponent
+		expectedInSlice fleetDBApi.ServerComponent
 		errorMsg        string
 	}{
 		{
 			"returns not found on missing server uuid",
 			uuid.New(),
 			0,
-			fleetdb.ServerComponent{},
+			fleetDBApi.ServerComponent{},
 			"response code: 404",
 		},
 		{
 			"component Versioned Attributes is returned as expected",
 			servers[0].UUID,
 			3,
-			fleetdb.ServerComponent{
+			fleetDBApi.ServerComponent{
 				ServerUUID:        servers[0].UUID,
 				Name:              "My Lucky Fin",
 				Vendor:            "barracuda",
@@ -258,7 +258,7 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 				ComponentTypeID:   componentTypeSlice.ByName("Fins").ID,
 				ComponentTypeName: componentTypeSlice.ByName("Fins").Name,
 				ComponentTypeSlug: componentTypeSlice.ByName("Fins").Slug,
-				VersionedAttributes: []fleetdb.VersionedAttributes{
+				VersionedAttributes: []fleetDBApi.VersionedAttributes{
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Data:      json.RawMessage(`{"version":"2.0"}`),
@@ -306,15 +306,15 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 	s := serverTest(t)
 
 	// fixture objects
-	var servers []fleetdb.Server
+	var servers []fleetDBApi.Server
 
-	var componentTypeSlice fleetdb.ServerComponentTypeSlice
+	var componentTypeSlice fleetDBApi.ServerComponentTypeSlice
 
 	// run default client tests
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		var sc fleetdb.ServerComponentSlice
+		var sc fleetDBApi.ServerComponentSlice
 
 		if !expectError {
 			var err error
@@ -329,7 +329,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 				t.Fatal(err)
 			}
 
-			sc = fleetdb.ServerComponentSlice{
+			sc = fleetDBApi.ServerComponentSlice{
 				{
 					ServerUUID:        servers[0].UUID,
 					ComponentTypeID:   componentTypeSlice[0].ID,
@@ -357,7 +357,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 	var testCases = []struct {
 		testName    string
 		serverUUID  uuid.UUID
-		components  fleetdb.ServerComponentSlice
+		components  fleetDBApi.ServerComponentSlice
 		responseMsg string
 		errorMsg    string
 	}{
@@ -371,7 +371,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 		{
 			"create component and list by Name works",
 			servers[0].UUID,
-			fleetdb.ServerComponentSlice{
+			fleetDBApi.ServerComponentSlice{
 				{
 					ServerUUID:        servers[0].UUID,
 					ComponentTypeID:   componentTypeSlice[0].ID,
@@ -388,7 +388,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 		{
 			"create component which violates unique constraint on ServerID, ComponentTypeID, Serial should return error",
 			servers[0].UUID,
-			fleetdb.ServerComponentSlice{
+			fleetDBApi.ServerComponentSlice{
 				{
 					ServerUUID:        servers[0].UUID,
 					ComponentTypeID:   componentTypeSlice[0].ID,
@@ -414,7 +414,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 		{
 			"create component with unknown server UUID returns error",
 			uuid.New(),
-			fleetdb.ServerComponentSlice{
+			fleetDBApi.ServerComponentSlice{
 				{
 					ServerUUID:        uuid.New(),
 					ComponentTypeID:   componentTypeSlice[0].ID,
@@ -431,7 +431,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 		{
 			"create component validates field constraints",
 			servers[0].UUID,
-			fleetdb.ServerComponentSlice{
+			fleetDBApi.ServerComponentSlice{
 				{
 					ServerUUID:      servers[0].UUID,
 					ComponentTypeID: "lala",
@@ -446,7 +446,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 		{
 			"create component with empty slice returns error",
 			servers[0].UUID,
-			fleetdb.ServerComponentSlice{},
+			fleetDBApi.ServerComponentSlice{},
 			"",
 			"error in server component payload",
 		},
@@ -466,7 +466,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 			assert.NotNil(t, res)
 			assert.Contains(t, res.Message, tt.responseMsg)
 
-			params := &fleetdb.ServerComponentListParams{Name: tt.components[0].Name}
+			params := &fleetDBApi.ServerComponentListParams{Name: tt.components[0].Name}
 			got, _, err := s.Client.ListComponents(context.TODO(), params)
 			if err != nil {
 				t.Error(err)
@@ -487,13 +487,13 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 func TestIntegrationServerUpdateComponents(t *testing.T) {
 	s := serverTest(t)
 	// fixture objects
-	var servers []fleetdb.Server
+	var servers []fleetDBApi.Server
 
 	// run default client tests
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		var sc fleetdb.ServerComponentSlice
+		var sc fleetDBApi.ServerComponentSlice
 
 		if !expectError {
 			var err error
@@ -505,7 +505,7 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 			}
 
 			// update serial attribute for update to work
-			sc = fleetdb.ServerComponentSlice{servers[0].Components[0]}
+			sc = fleetDBApi.ServerComponentSlice{servers[0].Components[0]}
 			sc[0].Serial = "lala"
 		}
 
@@ -518,9 +518,9 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 	})
 
 	// fixtures given to test cases below
-	var componentFixture []fleetdb.ServerComponent
+	var componentFixture []fleetDBApi.ServerComponent
 
-	var serverFixture fleetdb.Server
+	var serverFixture fleetDBApi.Server
 
 	// The component fixture targeted in test cases below
 	fixtureComponentName := "My Lucky Fin"
@@ -538,8 +538,8 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 	}
 
 	// helper method to return fixture copy
-	componentFixtureCopy := func() []fleetdb.ServerComponent {
-		var c []fleetdb.ServerComponent
+	componentFixtureCopy := func() []fleetDBApi.ServerComponent {
+		var c []fleetDBApi.ServerComponent
 
 		c = append(c, componentFixture...)
 
@@ -567,7 +567,7 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 	var testCases = []struct {
 		testName    string
 		serverUUID  uuid.UUID
-		components  fleetdb.ServerComponentSlice
+		components  fleetDBApi.ServerComponentSlice
 		change      change
 		responseMsg string
 		errorMsg    string
@@ -671,11 +671,11 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 				}
 			}
 
-			var listParams *fleetdb.ServerComponentListParams
+			var listParams *fleetDBApi.ServerComponentListParams
 
 			// test case updates versioned attributes
 			if len(tt.change.versionedAttributes) > 0 {
-				tt.components[0].VersionedAttributes = []fleetdb.VersionedAttributes{
+				tt.components[0].VersionedAttributes = []fleetDBApi.VersionedAttributes{
 					{
 						Namespace: "hollow.metadata",
 						Data:      tt.change.versionedAttributes,
@@ -685,7 +685,7 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 				model := "testUpdatedVersionedAttributes" + time.Now().String()
 				tt.components[0].Model = model
 
-				listParams = &fleetdb.ServerComponentListParams{
+				listParams = &fleetDBApi.ServerComponentListParams{
 					Name:   fixtureComponentName,
 					Serial: fixtureComponentSerial,
 					Vendor: fixtureComponentVendor,
@@ -695,7 +695,7 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 
 			// test case updates attributes
 			if len(tt.change.attributes) > 0 {
-				tt.components[0].Attributes = []fleetdb.Attributes{
+				tt.components[0].Attributes = []fleetDBApi.Attributes{
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Data:      tt.change.attributes,
@@ -705,7 +705,7 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 				model := "testUpdatedAttributes" + time.Now().String()
 				tt.components[0].Model = model
 
-				listParams = &fleetdb.ServerComponentListParams{
+				listParams = &fleetDBApi.ServerComponentListParams{
 					Name:   fixtureComponentName,
 					Serial: fixtureComponentSerial,
 					Vendor: fixtureComponentVendor,

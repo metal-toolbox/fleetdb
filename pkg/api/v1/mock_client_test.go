@@ -6,7 +6,7 @@ import (
 	"io"
 	"net/http"
 
-	fleetdb "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetDBApi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 // MockHTTPRequestDoer implements the standard http.Client interface.
@@ -35,7 +35,7 @@ func (md *MockHTTPRequestDoer) Do(req *http.Request) (*http.Response, error) {
 }
 
 // mockClient that can be used for testing
-func mockClient(body string, status int) *fleetdb.Client {
+func mockClient(body string, status int) *fleetDBApi.Client {
 	mockDoer := &MockHTTPRequestDoer{
 		Response: &http.Response{
 			StatusCode: status,
@@ -44,7 +44,7 @@ func mockClient(body string, status int) *fleetdb.Client {
 		Error: nil,
 	}
 
-	c, err := fleetdb.NewClientWithToken("mocked", "mocked", mockDoer)
+	c, err := fleetDBApi.NewClientWithToken("mocked", "mocked", mockDoer)
 	if err != nil {
 		return nil
 	}

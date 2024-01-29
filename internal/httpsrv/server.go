@@ -19,7 +19,7 @@ import (
 	"go.uber.org/zap"
 	"gocloud.dev/secrets"
 
-	v1api "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetDBApi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 // Server implements the HTTP Server
@@ -63,7 +63,7 @@ func (s *Server) setup() *gin.Engine {
 
 	p := ginprometheus.NewPrometheus("gin")
 
-	v1Rtr := v1api.Router{
+	v1Rtr := fleetDBApi.Router{
 		DB:            s.DB,
 		AuthMW:        authMW,
 		SecretsKeeper: s.SecretsKeeper,

@@ -9,7 +9,7 @@ import (
 
 	"github.com/stretchr/testify/assert"
 
-	fleetdb "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	fleetDBApi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
 var (
@@ -48,7 +48,7 @@ func TestNewClientWithToken(t *testing.T) {
 	}
 
 	for _, tt := range testCases {
-		c, err := fleetdb.NewClientWithToken(tt.authToken, tt.url, nil)
+		c, err := fleetDBApi.NewClientWithToken(tt.authToken, tt.url, nil)
 
 		if tt.expectError {
 			assert.Error(t, err, tt.testName)

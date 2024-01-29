@@ -7,9 +7,9 @@ services:
       - crdb
       - fleetdb-migrate
     environment:
-      - SERVERSERVICE_OIDC_ENABLED=false
-      - SERVERSERVICE_CRDB_URI=postgresql://root@crdb:26257/defaultdb?sslmode=disable
-      - SERVERSERVICE_DB_ENCRYPTION_DRIVER=base64key://smGbjm71Nxd1Ig5FS0wj9SlbzAIrnolCz9bQQ6uAhl4=
+      - FLEETDB_OIDC_ENABLED=false
+      - FLEETDB_CRDB_URI=postgresql://root@crdb:26257/defaultdb?sslmode=disable
+      - FLEETDB_DB_ENCRYPTION_DRIVER=base64key://smGbjm71Nxd1Ig5FS0wj9SlbzAIrnolCz9bQQ6uAhl4=
     ports:
       - "8000:8000"
     restart: unless-stopped
@@ -23,7 +23,7 @@ services:
     depends_on:
       - crdb
     environment:
-      - SERVERSERVICE_CRDB_URI=postgresql://root@crdb:26257/defaultdb?sslmode=disable
+      - FLEETDB_CRDB_URI=postgresql://root@crdb:26257/defaultdb?sslmode=disable
     restart: on-failure
     networks:
       - hollow

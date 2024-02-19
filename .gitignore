@@ -12,3 +12,6 @@ cosign.key
 .devcontainer/
 cockroach-data/
 coverage.txt
+*.swp
+*.swo
+fleetdb

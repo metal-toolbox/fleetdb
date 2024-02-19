@@ -23,7 +23,7 @@ import (
 	// import gocdk secret drivers
 	_ "gocloud.dev/secrets/localsecrets"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
 // TestDBURI is the URI for the test database
@@ -46,6 +46,8 @@ func testDatastore(t *testing.T) error {
 	if err != nil {
 		return err
 	}
+
+	boil.SetDB(db)
 
 	testDB = db
 
@@ -106,7 +108,7 @@ func cleanDB(t *testing.T) {
 	deleteFixture(ctx, t, models.ServerComponents())
 	deleteFixture(ctx, t, models.ServerComponentTypes())
 	deleteFixture(ctx, t, models.ServerCredentials())
-	if _, err := models.Servers(qm.WithDeleted()).DeleteAll(ctx, testDB, true); err != nil {
+	if _, err := models.Servers(qm.WithDeleted()).DeleteAll(ctx, boil.GetContextDB(), true); err != nil {
 		t.Error(errors.Wrap(err, "table: model.Servers"))
 	}
 	deleteFixture(ctx, t, models.AttributesFirmwareSets())

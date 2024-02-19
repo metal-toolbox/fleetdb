@@ -1,8 +1,9 @@
-package serverservice
+package fleetdbapi
 
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 
 	"github.com/gin-gonic/gin"
@@ -11,7 +12,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 	"github.com/volatiletech/sqlboiler/v4/types"
 
-	"go.hollow.sh/serverservice/internal/models"
+	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
 func (r *Router) serverList(c *gin.Context) {
@@ -116,6 +117,8 @@ func (r *Router) serverCreate(c *gin.Context) {
 func (r *Router) serverDelete(c *gin.Context) {
 	dbSRV, err := r.loadServerFromParams(c)
 	if err != nil {
+		r.Logger.Error(fmt.Sprintf("failed to load server %v, err %v", dbSRV, err))
+
 		if errors.Is(err, ErrUUIDParse) {
 			badRequestResponse(c, "", err)
 			return
@@ -127,7 +130,9 @@ func (r *Router) serverDelete(c *gin.Context) {
 	}
 
 	if _, err = dbSRV.Delete(c.Request.Context(), r.DB, false); err != nil {
+		r.Logger.Error(fmt.Sprintf("failed to delete server %v, err %v", dbSRV.ID, err))
 		dbErrorResponse(c, err)
+
 		return
 	}
 

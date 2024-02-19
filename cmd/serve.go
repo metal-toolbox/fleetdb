@@ -7,6 +7,7 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
+	"github.com/volatiletech/sqlboiler/boil"
 	"go.hollow.sh/toolbox/events"
 	"go.hollow.sh/toolbox/ginjwt"
 	"go.infratographer.com/x/crdbx"
@@ -17,9 +18,9 @@ import (
 	// import gocdk secret drivers
 	_ "gocloud.dev/secrets/localsecrets"
 
-	"go.hollow.sh/serverservice/internal/config"
-	"go.hollow.sh/serverservice/internal/dbtools"
-	"go.hollow.sh/serverservice/internal/httpsrv"
+	"github.com/metal-toolbox/fleetdb/internal/config"
+	"github.com/metal-toolbox/fleetdb/internal/dbtools"
+	"github.com/metal-toolbox/fleetdb/internal/httpsrv"
 )
 
 var (
@@ -46,17 +47,8 @@ func init() {
 
 	// OIDC Flags
 	serveCmd.Flags().Bool("oidc", true, "use oidc auth")
-	viperx.MustBindFlag(viper.GetViper(), "oidc.enabled", serveCmd.Flags().Lookup("oidc"))
-	serveCmd.Flags().String("oidc-aud", "", "expected audience on OIDC JWT")
-	viperx.MustBindFlag(viper.GetViper(), "oidc.audience", serveCmd.Flags().Lookup("oidc-aud"))
-	serveCmd.Flags().String("oidc-issuer", "", "expected issuer of OIDC JWT")
-	viperx.MustBindFlag(viper.GetViper(), "oidc.issuer", serveCmd.Flags().Lookup("oidc-issuer"))
-	serveCmd.Flags().String("oidc-jwksuri", "", "URI for JWKS listing for JWTs")
-	viperx.MustBindFlag(viper.GetViper(), "oidc.jwksuri", serveCmd.Flags().Lookup("oidc-jwksuri"))
-	serveCmd.Flags().String("oidc-roles-claim", "claim", "field containing the permissions of an OIDC JWT")
-	viperx.MustBindFlag(viper.GetViper(), "oidc.claims.roles", serveCmd.Flags().Lookup("oidc-roles-claim"))
-	serveCmd.Flags().String("oidc-username-claim", "", "additional fields to output in logs from the JWT token, ex (email)")
-	viperx.MustBindFlag(viper.GetViper(), "oidc.claims.username", serveCmd.Flags().Lookup("oidc-username-claim"))
+	ginjwt.BindFlagFromViperInst(viper.GetViper(), "oidc.enabled", serveCmd.Flags().Lookup("oidc"))
+
 	// DB Flags
 	serveCmd.Flags().String("db-encryption-driver", "", "encryption driver uri; 32 byte base64 encoded string, (example: base64key://your-encoded-secret-key)")
 	viperx.MustBindFlag(viper.GetViper(), "db.encryption_driver", serveCmd.Flags().Lookup("db-encryption-driver"))
@@ -110,21 +102,23 @@ func serve(ctx context.Context) {
 		"address", viper.GetString("listen"),
 	)
 
+	logger.Infow("oidc enabled", "oidc", viper.GetString("oidc"))
+
+	var authCfgs []ginjwt.AuthConfig
+	if viper.GetViper().GetBool("oidc.enabled") {
+		authCfgs, err = ginjwt.GetAuthConfigsFromFlags(viper.GetViper())
+		if err != nil {
+			logger.Fatal(err)
+		}
+	}
+
 	hs := &httpsrv.Server{
 		Logger:        logger.Desugar(),
 		Listen:        viper.GetString("listen"),
 		Debug:         config.AppConfig.Logging.Debug,
 		DB:            db,
 		SecretsKeeper: keeper,
-		AuthConfig: ginjwt.AuthConfig{
-			Enabled:       viper.GetBool("oidc.enabled"),
-			Audience:      viper.GetString("oidc.audience"),
-			Issuer:        viper.GetString("oidc.issuer"),
-			JWKSURI:       viper.GetString("oidc.jwksuri"),
-			LogFields:     viper.GetStringSlice("oidc.log"),
-			RolesClaim:    viper.GetString("oidc.claims.roles"),
-			UsernameClaim: viper.GetString("oidc.claims.username"),
-		},
+		AuthConfigs:   authCfgs,
 	}
 
 	// init event stream - for now, only when nats.url is specified
@@ -185,6 +179,8 @@ func initDB() *sqlx.DB {
 	if err != nil {
 		logger.Fatalw("failed to initialize database connection", "error", err)
 	}
+
+	boil.SetDB(sqldb)
 
 	db := sqlx.NewDb(sqldb, dbDriverName)
 

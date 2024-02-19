@@ -60,5 +60,5 @@ export FLEETDB_CRDB_URI="host=localhost port=26257 user=root sslmode=disable dbn
 Run test.
 
 ```bash
-go test -timeout 30s -tags testtools -run ^TestIntegrationServerListComponents$ go.hollow.sh/fleetdb/pkg/api/v1 -v
+go test -timeout 30s -tags testtools -run ^TestIntegrationServerListComponents$ github.com/metal-toolbox/fleetdb/pkg/api/v1 -v
 ```

@@ -18,6 +18,7 @@ builds:
       - -X go.infratographer.com/x/versionx.commit={{.Commit}}
       - -X go.infratographer.com/x/versionx.date={{.Date}}
       - -X go.infratographer.com/x/versionx.builtBy=goreleaser
+    binary: fleetdb
 
 archives:
   -
@@ -51,7 +52,7 @@ changelog:
 dockers:
   -
     image_templates:
-      - "ghcr.io/metal-toolbox/hollow-{{.ProjectName}}:{{ .Tag }}"
+      - "ghcr.io/metal-toolbox/{{.ProjectName}}:{{ .Tag }}"
     dockerfile: Dockerfile
     build_flag_templates:
       - "--label=org.opencontainers.image.created={{.Date}}"

@@ -2,8 +2,8 @@ all: lint test
 PHONY: test coverage lint golint clean vendor local-dev-databases docker-up docker-down integration-test unit-test
 GOOS=linux
 DB_STRING=host=localhost port=26257 user=root sslmode=disable
-DEV_DB=${DB_STRING} dbname=serverservice
-TEST_DB=${DB_STRING} dbname=serverservice_test
+DEV_DB=${DB_STRING} dbname=fleetdb
+TEST_DB=${DB_STRING} dbname=fleetdb_test
 DOCKER_IMAGE := "ghcr.io/metal-toolbox/fleetdb"
 PROJECT_NAME := fleetdb
 REPO := "https://github.com/metal-toolbox/fleetdb.git"
@@ -14,7 +14,7 @@ test: | unit-test integration-test
 ## run integration tests
 integration-test: test-database
 	@echo Running integration tests...
-	@SERVERSERVICE_CRDB_URI="${TEST_DB}" go test -cover -tags testtools,integration -p 1 ./...
+	@FLEETDB_CRDB_URI="${TEST_DB}" go test -cover -tags testtools,integration -p 1 ./...
 
 ## run lint and unit tests
 unit-test: | lint
@@ -24,7 +24,7 @@ unit-test: | lint
 ## check test coverage
 coverage: | test-database
 	@echo Generating coverage report...
-	@SERVERSERVICE_CRDB_URI="${TEST_DB}" go test ./... -race -coverprofile=coverage.out -covermode=atomic -tags testtools -p 1
+	@FLEETDB_CRDB_URI="${TEST_DB}" go test ./... -race -coverprofile=coverage.out -covermode=atomic -tags testtools -p 1
 	@go tool cover -func=coverage.out
 	@go tool cover -html=coverage.out
 
@@ -60,16 +60,16 @@ docker-clean:
 
 ## setup devel database
 dev-database: | vendor
-	@cockroach sql --insecure -e "drop database if exists serverservice"
-	@cockroach sql --insecure -e "create database serverservice"
-	@SERVERSERVICE_CRDB_URI="${DEV_DB}" go run main.go migrate up
+	@cockroach sql --insecure -e "drop database if exists fleetdb"
+	@cockroach sql --insecure -e "create database fleetdb"
+	@FLEETDB_CRDB_URI="${DEV_DB}" go run main.go migrate up
 
 ## setup test database
 test-database: | vendor
-	@cockroach sql --insecure -e "drop database if exists serverservice_test"
-	@cockroach sql --insecure -e "create database serverservice_test"
-	@SERVERSERVICE_CRDB_URI="${TEST_DB}" go run main.go migrate up
-	@cockroach sql --insecure -e "use serverservice_test; ALTER TABLE attributes DROP CONSTRAINT check_server_id_server_component_id; ALTER TABLE versioned_attributes DROP CONSTRAINT check_server_id_server_component_id;"
+	@cockroach sql --insecure -e "drop database if exists fleetdb_test"
+	@cockroach sql --insecure -e "create database fleetdb_test"
+	@FLEETDB_CRDB_URI="${TEST_DB}" go run main.go migrate up
+	@cockroach sql --insecure -e "use fleetdb_test; ALTER TABLE attributes DROP CONSTRAINT check_server_id_server_component_id; ALTER TABLE versioned_attributes DROP CONSTRAINT check_server_id_server_component_id;"
 
 ## Build linux bin
 build-linux:

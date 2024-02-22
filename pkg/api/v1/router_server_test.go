@@ -712,7 +712,7 @@ func TestIntegrationServerUpdate(t *testing.T) {
 	})
 }
 
-func TestIntegrationServerServiceCreateVersionedAttributes(t *testing.T) {
+func TestIntegrationFleetdbCreateVersionedAttributes(t *testing.T) {
 	s := serverTest(t)
 
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
@@ -729,7 +729,7 @@ func TestIntegrationServerServiceCreateVersionedAttributes(t *testing.T) {
 	})
 }
 
-func TestIntegrationServerServiceCreateVersionedAttributesIncrementCounter(t *testing.T) {
+func TestIntegrationFleetdbCreateVersionedAttributesIncrementCounter(t *testing.T) {
 	s := serverTest(t)
 	s.Client.SetToken(validToken(adminScopes))
 
@@ -769,7 +769,7 @@ func TestIntegrationServerServiceCreateVersionedAttributesIncrementCounter(t *te
 	assert.Equal(t, 1, r[1].Tally)
 }
 
-func TestIntegrationServerServiceListVersionedAttributes(t *testing.T) {
+func TestIntegrationFleetdbListVersionedAttributes(t *testing.T) {
 	s := serverTest(t)
 
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {

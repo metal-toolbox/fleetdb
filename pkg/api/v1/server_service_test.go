@@ -12,7 +12,7 @@ import (
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
-func TestServerServiceCreate(t *testing.T) {
+func TestFleetdbCreate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		srv := fleetdbapi.Server{UUID: uuid.New(), FacilityCode: "Test1"}
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource created", "slug":"00000000-0000-0000-0000-000000001234"}`))
@@ -27,7 +27,7 @@ func TestServerServiceCreate(t *testing.T) {
 	})
 }
 
-func TestServerServiceDelete(t *testing.T) {
+func TestFleetdbDelete(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource deleted"}`))
 		c := mockClient(string(jsonResponse), respCode)
@@ -36,7 +36,7 @@ func TestServerServiceDelete(t *testing.T) {
 		return err
 	})
 }
-func TestServerServiceGet(t *testing.T) {
+func TestFleetdbGet(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		srv := fleetdbapi.Server{UUID: uuid.New(), FacilityCode: "Test1"}
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Record: srv})
@@ -53,7 +53,7 @@ func TestServerServiceGet(t *testing.T) {
 	})
 }
 
-func TestServerServiceList(t *testing.T) {
+func TestFleetdbList(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		srv := []fleetdbapi.Server{{UUID: uuid.New(), FacilityCode: "Test1"}}
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Records: srv})
@@ -69,7 +69,7 @@ func TestServerServiceList(t *testing.T) {
 	})
 }
 
-func TestServerServiceUpdate(t *testing.T) {
+func TestFleetdbUpdate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource updated"})
 		require.Nil(t, err)
@@ -81,7 +81,7 @@ func TestServerServiceUpdate(t *testing.T) {
 	})
 }
 
-func TestServerServiceCreateAttributes(t *testing.T) {
+func TestFleetdbCreateAttributes(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		attr := fleetdbapi.Attributes{Namespace: "unit-test", Data: json.RawMessage([]byte(`{"test":"unit"}`))}
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource created"}`))
@@ -92,7 +92,7 @@ func TestServerServiceCreateAttributes(t *testing.T) {
 		return err
 	})
 }
-func TestServerServiceGetAttributes(t *testing.T) {
+func TestFleetdbGetAttributes(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		attr := &fleetdbapi.Attributes{Namespace: "unit-test", Data: json.RawMessage([]byte(`{"test":"unit"}`))}
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Record: attr})
@@ -108,7 +108,7 @@ func TestServerServiceGetAttributes(t *testing.T) {
 	})
 }
 
-func TestServerServiceDeleteAttributes(t *testing.T) {
+func TestFleetdbDeleteAttributes(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource deleted"})
 		require.Nil(t, err)
@@ -120,7 +120,7 @@ func TestServerServiceDeleteAttributes(t *testing.T) {
 	})
 }
 
-func TestServerServiceListAttributes(t *testing.T) {
+func TestFleetdbListAttributes(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		attrs := []fleetdbapi.Attributes{{Namespace: "unit-test", Data: json.RawMessage([]byte(`{"test":"unit"}`))}}
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Records: attrs})
@@ -136,7 +136,7 @@ func TestServerServiceListAttributes(t *testing.T) {
 	})
 }
 
-func TestServerServiceUpdateAttributes(t *testing.T) {
+func TestFleetdbUpdateAttributes(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource updated"})
 		require.Nil(t, err)
@@ -148,7 +148,7 @@ func TestServerServiceUpdateAttributes(t *testing.T) {
 	})
 }
 
-func TestServerServiceComponentsGet(t *testing.T) {
+func TestFleetdbComponentsGet(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		sc := []fleetdbapi.ServerComponent{{Name: "unit-test", Serial: "1234"}}
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Records: sc})
@@ -164,7 +164,7 @@ func TestServerServiceComponentsGet(t *testing.T) {
 	})
 }
 
-func TestServerServiceComponentsList(t *testing.T) {
+func TestFleetdbComponentsList(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		sc := []fleetdbapi.ServerComponent{{Name: "unit-test", Serial: "1234"}}
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Records: sc})
@@ -180,7 +180,7 @@ func TestServerServiceComponentsList(t *testing.T) {
 	})
 }
 
-func TestServerServiceComponentsCreate(t *testing.T) {
+func TestFleetdbComponentsCreate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource created"})
 		require.Nil(t, err)
@@ -195,7 +195,7 @@ func TestServerServiceComponentsCreate(t *testing.T) {
 	})
 }
 
-func TestServerServiceComponentsUpdate(t *testing.T) {
+func TestFleetdbComponentsUpdate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource updated"})
 		require.Nil(t, err)
@@ -210,7 +210,7 @@ func TestServerServiceComponentsUpdate(t *testing.T) {
 	})
 }
 
-func TestServerServiceVersionedAttributeCreate(t *testing.T) {
+func TestFleetdbVersionedAttributeCreate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		va := fleetdbapi.VersionedAttributes{Namespace: "unit-test", Data: json.RawMessage([]byte(`{"test":"unit"}`))}
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource created", "slug":"the-namespace"}`))
@@ -225,7 +225,7 @@ func TestServerServiceVersionedAttributeCreate(t *testing.T) {
 	})
 }
 
-func TestServerServiceGetVersionedAttributess(t *testing.T) {
+func TestFleetdbGetVersionedAttributess(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		va := []fleetdbapi.VersionedAttributes{{Namespace: "test", Data: json.RawMessage([]byte(`{}`))}}
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Records: va})
@@ -241,7 +241,7 @@ func TestServerServiceGetVersionedAttributess(t *testing.T) {
 	})
 }
 
-func TestServerServiceListVersionedAttributess(t *testing.T) {
+func TestFleetdbListVersionedAttributess(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		va := []fleetdbapi.VersionedAttributes{{Namespace: "test", Data: json.RawMessage([]byte(`{}`))}}
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Records: va})
@@ -257,7 +257,7 @@ func TestServerServiceListVersionedAttributess(t *testing.T) {
 	})
 }
 
-func TestServerServiceCreateServerComponentFirmware(t *testing.T) {
+func TestFleetdbCreateServerComponentFirmware(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		firmware := fleetdbapi.ComponentFirmwareVersion{
 			UUID:    uuid.New(),
@@ -277,7 +277,7 @@ func TestServerServiceCreateServerComponentFirmware(t *testing.T) {
 	})
 }
 
-func TestServerServiceServerComponentFirmwareDelete(t *testing.T) {
+func TestFleetdbServerComponentFirmwareDelete(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource deleted"}`))
 		c := mockClient(string(jsonResponse), respCode)
@@ -286,7 +286,7 @@ func TestServerServiceServerComponentFirmwareDelete(t *testing.T) {
 		return err
 	})
 }
-func TestServerServiceServerComponentFirmwareGet(t *testing.T) {
+func TestFleetdbServerComponentFirmwareGet(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		firmware := fleetdbapi.ComponentFirmwareVersion{
 			UUID:    uuid.New(),
@@ -310,7 +310,7 @@ func TestServerServiceServerComponentFirmwareGet(t *testing.T) {
 	})
 }
 
-func TestServerServiceServerComponentFirmwareList(t *testing.T) {
+func TestFleetdbServerComponentFirmwareList(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		firmware := []fleetdbapi.ComponentFirmwareVersion{{
 			UUID:    uuid.New(),
@@ -331,7 +331,7 @@ func TestServerServiceServerComponentFirmwareList(t *testing.T) {
 	})
 }
 
-func TestServerServiceServerComponentFirmwareUpdate(t *testing.T) {
+func TestFleetdbServerComponentFirmwareUpdate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource updated"})
 		require.Nil(t, err)

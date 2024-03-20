@@ -17,6 +17,7 @@ import (
 	"go.opentelemetry.io/contrib/instrumentation/github.com/gin-gonic/gin/otelgin"
 	"go.opentelemetry.io/otel"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 	"gocloud.dev/secrets"
 
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
@@ -78,13 +79,17 @@ func (s *Server) setup() *gin.Engine {
 
 	p.Use(r)
 
-	r.Use(ginzap.Logger(s.Logger.With(zap.String("component", "httpsrv")), ginzap.WithTimeFormat(time.RFC3339),
-		ginzap.WithUTC(true),
-		ginzap.WithCustomFields(
-			func(c *gin.Context) zap.Field { return zap.String("jwt_subject", ginjwt.GetSubject(c)) },
-			func(c *gin.Context) zap.Field { return zap.String("jwt_user", ginjwt.GetUser(c)) },
-		),
-	))
+	r.Use(ginzap.GinzapWithConfig(s.Logger.With(zap.String("component", "httpsrv")), &ginzap.Config{
+		TimeFormat: time.RFC3339,
+		UTC:        true,
+		Context: ginzap.Fn(func(c *gin.Context) []zapcore.Field {
+			return []zapcore.Field{
+				zap.String("jwt_subject", ginjwt.GetSubject(c)),
+				zap.String("jwt_user", ginjwt.GetUser(c)),
+			}
+		}),
+	}))
+
 	r.Use(ginzap.RecoveryWithZap(s.Logger.With(zap.String("component", "httpsrv")), true))
 
 	tp := otel.GetTracerProvider()

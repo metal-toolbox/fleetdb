@@ -11,9 +11,9 @@ import (
 )
 
 var (
-	// maxPaginationSize represents the maximum number of records that can be returned per page
+	// MaxPaginationSize represents the maximum number of records that can be returned per page
 	MaxPaginationSize = 1000
-	// defaultPaginationSize represents the default number of records that are returned per page
+	// DefaultPaginationSize represents the default number of records that are returned per page
 	DefaultPaginationSize = 100
 )
 

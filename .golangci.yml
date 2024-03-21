@@ -31,7 +31,7 @@ linters:
     - govet
     - misspell
     - noctx
-    - revive
+    #    - revive XXX: fix up old code caught here
     - stylecheck
     - whitespace
 

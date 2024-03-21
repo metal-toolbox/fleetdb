@@ -1,6 +1,6 @@
 module github.com/metal-toolbox/fleetdb
 
-go 1.19
+go 1.22
 
 require (
 	github.com/XSAM/otelsql v0.23.0 // indirect
@@ -34,6 +34,7 @@ require (
 )
 
 require (
+	github.com/bmc-toolbox/common v0.0.0-20231204194243-7bcbccab7116
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	go.hollow.sh/toolbox v0.6.3
 	go.infratographer.com/x v0.3.7

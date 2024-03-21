@@ -140,6 +140,19 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 			srvBomByBmcMacAddress.GET("/:bmc_mac_address", amw.AuthRequired(readScopes("bmc-mac-address")), r.getBomFromBmcMacAddress)
 		}
 	}
+
+	// inventory endpoints
+	srvInventory := rg.Group("/inventory")
+	{
+		srvInventory.GET("/inband/:uuid", amw.AuthRequired(readScopes("server", "inventory")), r.getInbandInventory)
+		srvInventory.GET("/outofband/:uuid", amw.AuthRequired(readScopes("server", "inventory")), r.getOutofbandInventory)
+
+		srvInventory.POST("/inband/:uuid", amw.AuthRequired(createScopes("server", "inventory")), r.setInbandInventory)
+		srvInventory.POST("/outofband/:uuid", amw.AuthRequired(createScopes("server", "inventory")), r.setOutofbandInventory)
+
+		srvInventory.PUT("/inband/:uuid", amw.AuthRequired(updateScopes("server", "inventory")), r.setInbandInventory)
+		srvInventory.PUT("/outofband/:uuid", amw.AuthRequired(updateScopes("server", "inventory")), r.setOutofbandInventory)
+	}
 }
 
 func createScopes(items ...string) []string {

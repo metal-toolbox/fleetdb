@@ -12,9 +12,9 @@ import (
 
 var (
 	// maxPaginationSize represents the maximum number of records that can be returned per page
-	maxPaginationSize = 1000
+	MaxPaginationSize = 1000
 	// defaultPaginationSize represents the default number of records that are returned per page
-	defaultPaginationSize = 100
+	DefaultPaginationSize = 100
 )
 
 // PaginationParams allow you to paginate the results
@@ -34,7 +34,7 @@ type paginationData struct {
 
 func parsePagination(c *gin.Context) PaginationParams {
 	// Initializing default
-	limit := defaultPaginationSize
+	limit := DefaultPaginationSize
 	page := 1
 	query := c.Request.URL.Query()
 
@@ -157,10 +157,10 @@ func (p *PaginationParams) limitUsed() int {
 	limit := p.Limit
 
 	switch {
-	case limit > maxPaginationSize:
-		limit = maxPaginationSize
+	case limit > MaxPaginationSize:
+		limit = MaxPaginationSize
 	case limit <= 0:
-		limit = defaultPaginationSize
+		limit = DefaultPaginationSize
 	}
 
 	return limit

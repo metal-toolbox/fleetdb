@@ -2,31 +2,12 @@
 package fleetdbapi
 
 import (
-	"encoding/json"
 	"net/http"
 
-	"github.com/bmc-toolbox/common"
+	"github.com/metal-toolbox/fleetdb/internal/inventory"
+
 	"github.com/gin-gonic/gin"
 )
-
-// A reminder for maintenance: this type needs to be able to contain all the
-// relevant fields from Component-Inventory or Alloy.
-type serverInventory struct {
-	Inv        *common.Device    `json:"inventory"`
-	BiosConfig map[string]string `json:"bios_config,omitempty"`
-}
-
-func (si *serverInventory) mustJSON() []byte {
-	byt, err := json.Marshal(si)
-	if err != nil {
-		panic("bad inventory")
-	}
-	return byt
-}
-
-func (si *serverInventory) fromJSON(b []byte) error {
-	return json.Unmarshal(b, si)
-}
 
 func unimplemented(c *gin.Context) {
 	m := map[string]string{
@@ -35,18 +16,51 @@ func unimplemented(c *gin.Context) {
 	c.JSON(http.StatusInternalServerError, m)
 }
 
-func (r *Router) getInbandInventory(c *gin.Context) {
+func (r *Router) getInventory(c *gin.Context) {
 	unimplemented(c)
 }
 
-func (r *Router) getOutofbandInventory(c *gin.Context) {
-	unimplemented(c)
+func (r *Router) setInventory(c *gin.Context) {
+	srvId, err := r.parseUUID(c)
+	if err != nil {
+		badRequestResponse(c, "invalid server id", err)
+		return
+	}
+
+	var doInband bool
+	switch c.Param("mode") {
+	case "inband":
+		doInband = true
+	case "outofband":
+	default:
+		badRequestResponse(c, "invalid inventory mode", nil)
+	}
+
+	var view inventory.DeviceView
+	if err := c.ShouldBindJSON(&view); err != nil {
+		badRequestResponse(c, "invalid inventory payload", err)
+		return
+	}
+
+	if err := view.UpsertInventory(c.Request.Context(), r.DB, srvId, doInband); err != nil {
+		dbErrorResponse(c, err)
+	}
 }
 
-func (r *Router) setInbandInventory(c *gin.Context) {
-	unimplemented(c)
+/*(	if err != nil {
+		tx.Rollback() //nolint errcheck
+		dbErrorResponse(c, err)
+
+		return
+	}
+	// compose the attributes from the inventory
+	// - server vendor attributes
+	// - server metadata attributes
+
+	// compose the components
+
 }
 
 func (r *Router) setOutofbandInventory(c *gin.Context) {
 	unimplemented(c)
-}
+}*/

@@ -38,6 +38,13 @@ var (
 	// internal to the data storage layer, hence the names
 	alloyVendorNamespace   = "sh.hollow.alloy.server_vendor_attributes"
 	alloyMetadataNamespace = "sh.hollow.alloy.server_metadata_attributes"
+	alloyUefiVarsNamespace = "sh.hollow.alloy.server_uefi_variables" // this is a versioned attribute, we expect it to change
+
+	// metadata keys
+	modelKey    = "model"
+	vendorKey   = "vendor"
+	serialKey   = "serial"
+	uefiVarsKey = "uefi-variables"
 )
 
 // A reminder for maintenance: this type needs to be able to contain all the
@@ -49,21 +56,21 @@ type DeviceView struct {
 
 func (dv *DeviceView) vendorAttributes() json.RawMessage {
 	m := map[string]string{
-		"model":  "unknown",
-		"serial": "unknown",
-		"vendor": "unknown",
+		modelKey:  "unknown",
+		serialKey: "unknown",
+		vendorKey: "unknown",
 	}
 
 	if dv.Inv.Model != "" {
-		m["model"] = dv.Inv.Model
+		m[modelKey] = dv.Inv.Model
 	}
 
 	if dv.Inv.Serial != "" {
-		m["serial"] = dv.Inv.Serial
+		m[serialKey] = dv.Inv.Serial
 	}
 
 	if dv.Inv.Vendor != "" {
-		m["vendor"] = dv.Inv.Vendor
+		m[vendorKey] = dv.Inv.Vendor
 	}
 
 	byt, _ := json.Marshal(m)
@@ -76,7 +83,7 @@ func (dv *DeviceView) metadataAttributes() json.RawMessage {
 
 	// filter UEFI variables -- they go in a versioned-attribute
 	for k, v := range dv.Inv.Metadata {
-		if k != "uefi-variables" {
+		if k != uefiVarsKey {
 			m[k] = v
 		}
 	}
@@ -87,6 +94,23 @@ func (dv *DeviceView) metadataAttributes() json.RawMessage {
 
 	byt, _ := json.Marshal(m)
 	return byt
+}
+
+func (dv *DeviceView) uefiVariables() (json.RawMessage, error) {
+	var varString string
+
+	varString, ok := dv.Inv.Metadata[uefiVarsKey]
+	if !ok {
+		return nil, nil
+	}
+
+	// sanity check the data coming in from the caller
+	m := map[string]any{}
+	if err := json.Unmarshal([]byte(varString), &m); err != nil {
+		return nil, errors.Wrap(err, "unmarshaling uefi-variables")
+	}
+
+	return []byte(varString), nil
 }
 
 func (dv *DeviceView) updateAnyAttribute(ctx context.Context, exec boil.ContextExecutor,
@@ -107,13 +131,13 @@ func (dv *DeviceView) updateAnyAttribute(ctx context.Context, exec boil.ContextE
 		return updErr
 	case sql.ErrNoRows:
 		// do insert
-		vendorAttr := models.Attribute{
+		attr := models.Attribute{
 			ServerID:  null.StringFrom(srv.String()),
 			Namespace: namespace,
 			Data:      types.JSON(data),
 			CreatedAt: null.TimeFrom(now),
 		}
-		return vendorAttr.Insert(ctx, exec, boil.Infer())
+		return attr.Insert(ctx, exec, boil.Infer())
 	default:
 		return err
 	}
@@ -131,26 +155,68 @@ func (dv *DeviceView) updateMetadataAttributes(ctx context.Context, exec boil.Co
 	return err
 }
 
+// write a versioned-attribute containing the UEFI variables from this server
+func (dv *DeviceView) updateUefiVariables(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID) error {
+	mods := []qm.QueryMod{
+		qm.Where("server_id=?", srv),
+		qm.And(fmt.Sprintf("namespace='%s'", alloyUefiVarsNamespace)),
+	}
+	now := time.Now()
+
+	varData, err := dv.uefiVariables()
+	if err != nil {
+		return err
+	}
+
+	existing, err := models.VersionedAttributes(mods...).One(ctx, exec)
+	switch err {
+	case nil:
+		// do update
+		existing.Data = types.JSON(varData)
+		existing.Tally = existing.Tally + 1
+		existing.UpdatedAt = null.TimeFrom(now)
+		_, updErr := existing.Update(ctx, exec, boil.Infer())
+		return updErr
+	case sql.ErrNoRows:
+		// do insert
+		va := models.VersionedAttribute{
+			ServerID:  null.StringFrom(srv.String()),
+			Namespace: alloyUefiVarsNamespace,
+			CreatedAt: null.TimeFrom(now),
+			Data:      types.JSON(varData),
+		}
+		return va.Insert(ctx, exec, boil.Infer())
+	default:
+		return err
+	}
+}
+
 func (dv *DeviceView) UpsertInventory(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID, inband bool) error {
-	// yes, this is a dopey repetitive style that should be easy for folks to extend or modify
+	// yes, this is a dopey, repetitive style that should be easy for folks to extend or modify
 	if err := dv.updateVendorAttributes(ctx, exec, srv); err != nil {
 		return errors.Wrap(err, "vendor attributes update")
 	}
 	if err := dv.updateMetadataAttributes(ctx, exec, srv); err != nil {
 		return errors.Wrap(err, "metadata attribute update")
 	}
+	if err := dv.updateUefiVariables(ctx, exec, srv); err != nil {
+		return errors.Wrap(err, "uefi variables update")
+	}
 	return nil
 }
 
 func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID) error {
-	// populate the vendor attributes
 	attrs, err := models.Attributes(qm.Where("server_id=?", srv)).All(ctx, exec)
 	if err != nil {
 		return err
 	}
 
 	if dv.Inv == nil {
-		dv.Inv = &common.Device{}
+		dv.Inv = &common.Device{
+			Common: common.Common{
+				Metadata: map[string]string{},
+			},
+		}
 	}
 
 	for _, a := range attrs {
@@ -160,17 +226,27 @@ func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecut
 			if err := a.Data.Unmarshal(&m); err != nil {
 				return errors.Wrap(err, "unmarshaling vendor attributes")
 			}
-			dv.Inv.Vendor = m["vendor"]
-			dv.Inv.Model = m["model"]
-			dv.Inv.Serial = m["serial"]
+			dv.Inv.Vendor = m[vendorKey]
+			dv.Inv.Model = m[modelKey]
+			dv.Inv.Serial = m[serialKey]
 		case alloyMetadataNamespace:
-			m := map[string]string{}
-			if err := a.Data.Unmarshal(&m); err != nil {
+			if err := a.Data.Unmarshal(&dv.Inv.Metadata); err != nil {
 				return errors.Wrap(err, "unmarshaling metadata attributes")
 			}
-			dv.Inv.Metadata = m
 		default:
 		}
 	}
+
+	uefiVarsAttr, err := models.VersionedAttributes(
+		qm.Where("server_id=?", srv),
+		qm.And(fmt.Sprintf("namespace='%s'", alloyUefiVarsNamespace)),
+		qm.OrderBy("tally DESC"),
+	).One(ctx, exec)
+
+	if err != nil {
+		return err
+	}
+
+	dv.Inv.Metadata[uefiVarsKey] = uefiVarsAttr.Data.String()
 	return nil
 }

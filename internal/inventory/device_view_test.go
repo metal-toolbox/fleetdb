@@ -4,6 +4,7 @@ package inventory
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/bmc-toolbox/common"
@@ -28,7 +29,7 @@ func Test_DeviceViewUpdate(t *testing.T) {
 					Model:  "BestModel 420",
 					Serial: "0xdeadbeef",
 					Metadata: map[string]string{
-						"uefi-variables": "shouldn't be here",
+						"uefi-variables": `{ "msg":"hi there" }`,
 						"metakey":        "value",
 					},
 				},
@@ -50,6 +51,7 @@ func Test_DeviceViewUpdate(t *testing.T) {
 
 		// do it again to test the update
 		dv.Inv.Common.Serial = "roastbeef"
+		dv.Inv.Metadata["uefi-variables"] = `{ "msg": "hi again" }`
 		err = dv.UpsertInventory(context.TODO(), db, srvID, false)
 		require.NoError(t, err)
 
@@ -58,6 +60,13 @@ func Test_DeviceViewUpdate(t *testing.T) {
 		err = read.FromDatastore(context.TODO(), db, srvID)
 		require.NoError(t, err)
 		require.Equal(t, "roastbeef", read.Inv.Serial)
-		require.Equal(t, 1, len(read.Inv.Metadata))
+		require.Equal(t, 2, len(read.Inv.Metadata))
+
+		varStr, ok := read.Inv.Metadata["uefi-variables"]
+		require.True(t, ok)
+
+		uefiVar := map[string]any{}
+		require.NoError(t, json.Unmarshal([]byte(varStr), &uefiVar))
+		require.Equal(t, "hi again", uefiVar["msg"])
 	})
 }

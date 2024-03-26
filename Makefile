@@ -24,7 +24,7 @@ unit-test: | lint
 ## check test coverage
 coverage: | test-database
 	@echo Generating coverage report...
-	@FLEETDB_CRDB_URI="${TEST_DB}" go test ./... -race -coverprofile=coverage.out -covermode=atomic -tags testtools -p 1
+	@FLEETDB_CRDB_URI="${TEST_DB}" go test ./... -race -coverprofile=coverage.out -covermode=atomic -tags testtools,integration -p 1
 	@go tool cover -func=coverage.out
 	@go tool cover -html=coverage.out
 

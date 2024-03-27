@@ -2,6 +2,7 @@
 package config
 
 import (
+	"go.hollow.sh/toolbox/ginjwt"
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/loggingx"
 	"go.infratographer.com/x/otelx"
@@ -12,4 +13,6 @@ var AppConfig struct {
 	CRDB    crdbx.Config
 	Logging loggingx.Config
 	Tracing otelx.Config
+	// APIServerJWTAuth sets the JWT verification configuration for the conditionorc API service.
+	APIServerJWTAuth []ginjwt.AuthConfig `mapstructure:"ginjwt_auth"`
 }

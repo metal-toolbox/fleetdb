@@ -102,14 +102,14 @@ func serve(ctx context.Context) {
 		"address", viper.GetString("listen"),
 	)
 
-	logger.Infow("oidc enabled", "oidc", viper.GetString("oidc"))
-
-	var authCfgs []ginjwt.AuthConfig
 	if viper.GetViper().GetBool("oidc.enabled") {
-		authCfgs, err = ginjwt.GetAuthConfigsFromFlags(viper.GetViper())
-		if err != nil {
-			logger.Fatal(err)
+		logger.Infow("OIDC enabled")
+
+		if len(config.AppConfig.APIServerJWTAuth) == 0 {
+			logger.Fatal("OIDC enabled without configuration")
 		}
+	} else {
+		logger.Infow("OIDC disabled")
 	}
 
 	hs := &httpsrv.Server{
@@ -118,7 +118,7 @@ func serve(ctx context.Context) {
 		Debug:         config.AppConfig.Logging.Debug,
 		DB:            db,
 		SecretsKeeper: keeper,
-		AuthConfigs:   authCfgs,
+		AuthConfigs:   config.AppConfig.APIServerJWTAuth,
 	}
 
 	// init event stream - for now, only when nats.url is specified

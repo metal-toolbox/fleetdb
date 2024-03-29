@@ -74,15 +74,18 @@ func initConfig() {
 
 	// If a config file is found, read it in.
 	err := viper.ReadInConfig()
+	if err != nil {
+		fmt.Printf("Error: using config file, failed to read in!: %s\n", viper.ConfigFileUsed())
+		os.Exit(1)
+	} else {
+		fmt.Printf("using config file: %s\n", viper.ConfigFileUsed())
+	}
 
 	setupAppConfig()
 
 	// setupLogging()
 	logger = loggingx.InitLogger(appName, config.AppConfig.Logging)
 
-	if err == nil {
-		logger.Infow("using config file", "file", viper.ConfigFileUsed())
-	}
 }
 
 // setupAppConfig loads our config.AppConfig struct with the values bound by

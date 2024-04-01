@@ -1,4 +1,4 @@
-FROM gcr.io/distroless/static
+FROM alpine:3.19
 
 # Copy the binary that goreleaser built
 COPY fleetdb /fleetdb

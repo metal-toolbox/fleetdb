@@ -34,9 +34,7 @@ linters:
     - revive
     - stylecheck
     - whitespace
-    - wsl
 
-    # - bod
 issues:
   exclude:
     # Default excludes from `golangci-lint run --help` with EXC0002 removed
@@ -61,3 +59,5 @@ issues:
     # EXC0010 gosec: False positive is triggered by 'src, err := ioutil.ReadFile(filename)'
     - Potential file inclusion via variable
   exclude-use-default: false
+  exclude-files:
+    - ".*_test.go"

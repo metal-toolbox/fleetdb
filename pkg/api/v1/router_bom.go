@@ -1,3 +1,4 @@
+//nolint:revive // XXX: undo this and resolve the issue
 package fleetdbapi
 
 import (

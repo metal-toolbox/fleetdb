@@ -102,12 +102,14 @@ func serve(ctx context.Context) {
 		"address", viper.GetString("listen"),
 	)
 
+	var oidcEnabled bool
 	if viper.GetViper().GetBool("oidc.enabled") {
 		logger.Infow("OIDC enabled")
 
 		if len(config.AppConfig.APIServerJWTAuth) == 0 {
 			logger.Fatal("OIDC enabled without configuration")
 		}
+		oidcEnabled = true
 	} else {
 		logger.Infow("OIDC disabled")
 	}
@@ -117,6 +119,7 @@ func serve(ctx context.Context) {
 		Listen:        viper.GetString("listen"),
 		Debug:         config.AppConfig.Logging.Debug,
 		DB:            db,
+		OIDCEnabled:   oidcEnabled,
 		SecretsKeeper: keeper,
 		AuthConfigs:   config.AppConfig.APIServerJWTAuth,
 	}

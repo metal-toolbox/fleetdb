@@ -29,26 +29,30 @@ type Server struct {
 	Listen        string
 	Debug         bool
 	DB            *sqlx.DB
+	OIDCEnabled   bool
 	AuthConfigs   []ginjwt.AuthConfig
 	SecretsKeeper *secrets.Keeper
 	EventStream   events.Stream
 }
 
 var (
-	readTimeout  = 10 * time.Second
-	writeTimeout = 20 * time.Second
-	corsMaxAge   = 12 * time.Hour
+	readTimeout        = 10 * time.Second
+	writeTimeout       = 20 * time.Second
+	corsMaxAge         = 12 * time.Hour
+	noOpAuthMiddleware = &ginauth.MultiTokenMiddleware{}
 )
 
 func (s *Server) setup() *gin.Engine {
-	var (
-		authMW *ginauth.MultiTokenMiddleware
-		err    error
-	)
+	var err error
+	authMW := noOpAuthMiddleware
 
-	authMW, err = ginjwt.NewMultiTokenMiddlewareFromConfigs(s.AuthConfigs...)
-	if err != nil {
-		s.Logger.Sugar().Fatal("failed to initialize auth middleware: ", "error", err)
+	if s.OIDCEnabled {
+		authMW, err = ginjwt.NewMultiTokenMiddlewareFromConfigs(s.AuthConfigs...)
+		if err != nil {
+			s.Logger.With(
+				zap.Error(err),
+			).Fatal("failed to initialize auth middleware")
+		}
 	}
 
 	// Setup default gin router
@@ -88,6 +92,11 @@ func (s *Server) setup() *gin.Engine {
 				zap.String("jwt_user", ginjwt.GetUser(c)),
 			}
 		}),
+		SkipPaths: []string{
+			"/healthz",
+			"/healthz/liveness",
+			"/healthz/readiness",
+		},
 	}))
 
 	r.Use(ginzap.RecoveryWithZap(s.Logger.With(zap.String("component", "httpsrv")), true))

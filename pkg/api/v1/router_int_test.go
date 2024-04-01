@@ -31,8 +31,9 @@ func serverTest(t *testing.T) *integrationServer {
 	l := zap.NewNop()
 
 	hs := httpsrv.Server{
-		Logger: l,
-		DB:     db,
+		Logger:      l,
+		DB:          db,
+		OIDCEnabled: true,
 		AuthConfigs: []ginjwt.AuthConfig{
 			{
 				Enabled:    true,

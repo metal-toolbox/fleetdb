@@ -5,13 +5,13 @@ import (
 	"os"
 	"strings"
 
-	homedir "github.com/mitchellh/go-homedir"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"go.infratographer.com/x/goosex"
 	"go.infratographer.com/x/loggingx"
 	"go.infratographer.com/x/versionx"
 	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/metal-toolbox/fleetdb/db"
 	"github.com/metal-toolbox/fleetdb/internal/config"
@@ -37,7 +37,7 @@ func Execute() {
 
 func init() {
 	cobra.OnInitialize(initConfig)
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.hollow.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file")
 
 	// Logging flags
 	loggingx.MustViperFlags(viper.GetViper(), rootCmd.PersistentFlags())
@@ -55,34 +55,41 @@ func init() {
 
 // initConfig reads in config file and ENV variables if set.
 func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		cobra.CheckErr(err)
-
-		// Search config in home directory with name ".hollow" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".hollow")
-	}
-
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.SetEnvPrefix("fleetdb")
 	viper.AutomaticEnv() // read in environment variables that match
 
-	// If a config file is found, read it in.
-	err := viper.ReadInConfig()
+	logger = initLogger()
 
-	setupAppConfig()
-
-	// setupLogging()
-	logger = loggingx.InitLogger(appName, config.AppConfig.Logging)
-
-	if err == nil {
+	if cfgFile != "" {
+		viper.SetConfigFile(cfgFile)
+		if err := viper.ReadInConfig(); err != nil {
+			logger.With(
+				zap.Error(err),
+				zap.String("file", viper.ConfigFileUsed()),
+			).Fatal("failed reading configuration")
+		}
 		logger.Infow("using config file", "file", viper.ConfigFileUsed())
 	}
+
+	setupAppConfig()
+}
+
+func initLogger() *zap.SugaredLogger {
+	logCfg := zap.NewProductionConfig()
+
+	if viper.GetViper().GetBool("logging.pretty") {
+		logCfg.Development = true
+	}
+
+	logCfg.EncoderConfig.EncodeTime = zapcore.ISO8601TimeEncoder
+
+	if viper.GetViper().GetBool("logging.debug") {
+		logCfg.Level = zap.NewAtomicLevelAt(zap.DebugLevel)
+	}
+
+	log := zap.Must(logCfg.Build())
+	return log.Sugar()
 }
 
 // setupAppConfig loads our config.AppConfig struct with the values bound by

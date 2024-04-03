@@ -13,6 +13,7 @@ import (
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/otelx"
 	"go.infratographer.com/x/viperx"
+	"go.uber.org/zap"
 	"gocloud.dev/secrets"
 
 	// import gocdk secret drivers
@@ -91,6 +92,12 @@ func serve(ctx context.Context) {
 	db := initDB()
 
 	dbtools.RegisterHooks()
+
+	if err := dbtools.SetupComponentTypes(ctx, db); err != nil {
+		logger.With(
+			zap.Error(err),
+		).Fatal("set up component types")
+	}
 
 	keeper, err := secrets.OpenKeeper(ctx, viper.GetString("db.encryption_driver"))
 	if err != nil {

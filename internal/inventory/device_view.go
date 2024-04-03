@@ -32,8 +32,6 @@ import (
 */
 
 var (
-	versionedAttributesByServerID = "(namespace, created_at) IN (select namespace, max(created_at) from versioned_attributes where server_id=? group by namespace)"
-
 	// historically these values were determined/set by alloy, even though they are
 	// internal to the data storage layer, hence the names
 	alloyVendorNamespace   = "sh.hollow.alloy.server_vendor_attributes"

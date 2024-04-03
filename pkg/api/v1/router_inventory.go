@@ -21,7 +21,7 @@ func (r *Router) getInventory(c *gin.Context) {
 }
 
 func (r *Router) setInventory(c *gin.Context) {
-	srvId, err := r.parseUUID(c)
+	srvID, err := r.parseUUID(c)
 	if err != nil {
 		badRequestResponse(c, "invalid server id", err)
 		return
@@ -42,7 +42,7 @@ func (r *Router) setInventory(c *gin.Context) {
 		return
 	}
 
-	if err := view.UpsertInventory(c.Request.Context(), r.DB, srvId, doInband); err != nil {
+	if err := view.UpsertInventory(c.Request.Context(), r.DB, srvID, doInband); err != nil {
 		dbErrorResponse(c, err)
 	}
 }

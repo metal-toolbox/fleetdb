@@ -111,30 +111,40 @@ func (dv *DeviceView) uefiVariables() (json.RawMessage, error) {
 	return []byte(varString), nil
 }
 
+// the "either server or server-component" facet of attributes makes this function a
+// little complicated
 func (dv *DeviceView) updateAnyAttribute(ctx context.Context, exec boil.ContextExecutor,
-	srv uuid.UUID, namespace string, data json.RawMessage) error {
-	mods := []qm.QueryMod{
-		qm.Where("server_id=?", srv),
-		qm.And(fmt.Sprintf("namespace='%s'", namespace)),
+	isServerAttr bool, id uuid.UUID, namespace string, data json.RawMessage) error {
+	var mods []qm.QueryMod
+
+	idStr := null.StringFrom(id.String())
+	attrData := types.JSON(data)
+	currentTime := null.TimeFrom(time.Now())
+
+	// create an attribute in the event we need to make an insert
+	attr := models.Attribute{
+		Namespace: namespace,
+		Data:      attrData,
+		CreatedAt: currentTime,
 	}
-	now := time.Now()
+
+	if isServerAttr {
+		attr.ServerID = idStr
+		mods = append(mods, models.AttributeWhere.ServerID.EQ(idStr))
+	} else {
+		attr.ServerComponentID = idStr
+		mods = append(mods, models.AttributeWhere.ServerComponentID.EQ(idStr))
+	}
+	mods = append(mods, models.AttributeWhere.Namespace.EQ(namespace))
 
 	existing, err := models.Attributes(mods...).One(ctx, exec)
 	switch err {
 	case nil:
-		// do update
-		existing.Data = types.JSON(data)
-		existing.UpdatedAt = null.TimeFrom(now)
+		existing.Data = attrData
+		existing.UpdatedAt = currentTime
 		_, updErr := existing.Update(ctx, exec, boil.Infer())
 		return updErr
 	case sql.ErrNoRows:
-		// do insert
-		attr := models.Attribute{
-			ServerID:  null.StringFrom(srv.String()),
-			Namespace: namespace,
-			Data:      types.JSON(data),
-			CreatedAt: null.TimeFrom(now),
-		}
 		return attr.Insert(ctx, exec, boil.Infer())
 	default:
 		return err
@@ -142,13 +152,13 @@ func (dv *DeviceView) updateAnyAttribute(ctx context.Context, exec boil.ContextE
 }
 
 func (dv *DeviceView) updateVendorAttributes(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID) error {
-	return dv.updateAnyAttribute(ctx, exec, srv, alloyVendorNamespace, dv.vendorAttributes())
+	return dv.updateAnyAttribute(ctx, exec, true, srv, alloyVendorNamespace, dv.vendorAttributes())
 }
 
 func (dv *DeviceView) updateMetadataAttributes(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID) error {
 	var err error
 	if md := dv.metadataAttributes(); md != nil {
-		err = dv.updateAnyAttribute(ctx, exec, srv, alloyMetadataNamespace, md)
+		err = dv.updateAnyAttribute(ctx, exec, true, srv, alloyMetadataNamespace, md)
 	}
 	return err
 }

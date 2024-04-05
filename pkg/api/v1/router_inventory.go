@@ -4,9 +4,10 @@ package fleetdbapi
 import (
 	"net/http"
 
-	"github.com/metal-toolbox/fleetdb/internal/inventory"
-
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
+
+	"github.com/metal-toolbox/fleetdb/internal/inventory"
 )
 
 func unimplemented(c *gin.Context) {
@@ -36,13 +37,36 @@ func (r *Router) setInventory(c *gin.Context) {
 		badRequestResponse(c, "invalid inventory mode", nil)
 	}
 
-	var view inventory.DeviceView
+	view := inventory.DeviceView{}
 	if err := c.ShouldBindJSON(&view); err != nil {
 		badRequestResponse(c, "invalid inventory payload", err)
 		return
 	}
 
-	if err := view.UpsertInventory(c.Request.Context(), r.DB, srvID, doInband); err != nil {
+	view.DeviceID = srvID
+	view.Inband = doInband
+
+	txn := r.DB.MustBegin()
+
+	// XXX what about BIOS config?
+	if err := view.UpsertInventory(c.Request.Context(), txn); err != nil {
+		if err := txn.Rollback(); err != nil {
+			r.Logger.With(
+				zap.Error(err),
+				zap.String("device_id", srvID.String()),
+				zap.Bool("inband", doInband),
+			).Warn("rollback error")
+			// increment error metrics
+		}
+		dbErrorResponse(c, err)
+	}
+	if err := txn.Commit(); err != nil {
+		r.Logger.With(
+			zap.Error(err),
+			zap.String("device_id", srvID.String()),
+			zap.Bool("inband", doInband),
+		).Warn("commit error")
+		// increment error metrics
 		dbErrorResponse(c, err)
 	}
 }

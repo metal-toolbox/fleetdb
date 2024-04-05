@@ -11,7 +11,6 @@ import (
 )
 
 func TestServerComponentTypes(t *testing.T) {
-	t.Parallel()
 	db := DatabaseTest(t)
 	ctx := context.TODO()
 

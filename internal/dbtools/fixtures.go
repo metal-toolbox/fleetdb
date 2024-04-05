@@ -137,6 +137,10 @@ func addFixtures(t *testing.T) error {
 		return err
 	}
 
+	if err := SetupComponentTypes(ctx, testDB); err != nil {
+		return err
+	}
+
 	// excluding Chuckles here since that server is deleted
 	FixtureServers = models.ServerSlice{FixtureNemo, FixtureDory, FixtureMarlin}
 	FixtureDeletedServers = models.ServerSlice{FixtureChuckles}

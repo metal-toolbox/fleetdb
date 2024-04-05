@@ -199,7 +199,7 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 	}
 
 	// expect atleast 1 component type to proceed
-	assert.Len(t, componentTypeSlice, 1)
+	assert.GreaterOrEqual(t, len(componentTypeSlice), 1)
 
 	// fixture to create a server components
 	csFixtureCreate := fleetdbapi.ServerComponentSlice{

@@ -6,7 +6,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	"time"
 
 	"github.com/bmc-toolbox/common"
 	"github.com/google/uuid"
@@ -50,6 +49,8 @@ var (
 type DeviceView struct {
 	Inv        *common.Device    `json:"inventory"`
 	BiosConfig map[string]string `json:"bios_config,omitempty"`
+	Inband     bool              // the method of inventory collection
+	DeviceID   uuid.UUID
 }
 
 func (dv *DeviceView) vendorAttributes() json.RawMessage {
@@ -113,19 +114,17 @@ func (dv *DeviceView) uefiVariables() (json.RawMessage, error) {
 
 // the "either server or server-component" facet of attributes makes this function a
 // little complicated
-func (dv *DeviceView) updateAnyAttribute(ctx context.Context, exec boil.ContextExecutor,
-	isServerAttr bool, id uuid.UUID, namespace string, data json.RawMessage) error {
+func updateAnyAttribute(ctx context.Context, exec boil.ContextExecutor,
+	isServerAttr bool, id, namespace string, data json.RawMessage) error {
 	var mods []qm.QueryMod
 
-	idStr := null.StringFrom(id.String())
+	idStr := null.StringFrom(id)
 	attrData := types.JSON(data)
-	currentTime := null.TimeFrom(time.Now())
 
 	// create an attribute in the event we need to make an insert
 	attr := models.Attribute{
 		Namespace: namespace,
 		Data:      attrData,
-		CreatedAt: currentTime,
 	}
 
 	if isServerAttr {
@@ -140,9 +139,8 @@ func (dv *DeviceView) updateAnyAttribute(ctx context.Context, exec boil.ContextE
 	existing, err := models.Attributes(mods...).One(ctx, exec)
 	switch err {
 	case nil:
-		existing.Data = attrData
-		existing.UpdatedAt = currentTime
-		_, updErr := existing.Update(ctx, exec, boil.Infer())
+		attr.ID = existing.ID
+		_, updErr := attr.Update(ctx, exec, boil.Infer())
 		return updErr
 	case sql.ErrNoRows:
 		return attr.Insert(ctx, exec, boil.Infer())
@@ -151,70 +149,80 @@ func (dv *DeviceView) updateAnyAttribute(ctx context.Context, exec boil.ContextE
 	}
 }
 
-func (dv *DeviceView) updateVendorAttributes(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID) error {
-	return dv.updateAnyAttribute(ctx, exec, true, srv, alloyVendorNamespace, dv.vendorAttributes())
+func (dv *DeviceView) updateVendorAttributes(ctx context.Context, exec boil.ContextExecutor) error {
+	return updateAnyAttribute(ctx, exec, true, dv.DeviceID.String(), alloyVendorNamespace, dv.vendorAttributes())
 }
 
-func (dv *DeviceView) updateMetadataAttributes(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID) error {
+func (dv *DeviceView) updateMetadataAttributes(ctx context.Context, exec boil.ContextExecutor) error {
 	var err error
 	if md := dv.metadataAttributes(); md != nil {
-		err = dv.updateAnyAttribute(ctx, exec, true, srv, alloyMetadataNamespace, md)
+		err = updateAnyAttribute(ctx, exec, true, dv.DeviceID.String(), alloyMetadataNamespace, md)
 	}
 	return err
 }
 
-// write a versioned-attribute containing the UEFI variables from this server
-func (dv *DeviceView) updateUefiVariables(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID) error {
-	mods := []qm.QueryMod{
-		qm.Where("server_id=?", srv),
-		qm.And(fmt.Sprintf("namespace='%s'", alloyUefiVarsNamespace)),
-	}
-	now := time.Now()
+// insert a new versioned attribute record with the provided data. if this is not the first
+// time we've seen a id/namespace tuple, increment the tally
+func updateAnyVersionedAttribute(ctx context.Context, exec boil.ContextExecutor,
+	isServerAttr bool, id, namespace string, data json.RawMessage) error {
+	var mods []qm.QueryMod
 
-	varData, err := dv.uefiVariables()
-	if err != nil {
-		return err
+	idStr := null.StringFrom(id)
+	attrData := types.JSON(data)
+
+	// we will always insert a new versioned attribute, just incrementing the tally
+	vattr := models.VersionedAttribute{
+		Namespace: namespace,
+		Data:      attrData,
 	}
 
-	existing, err := models.VersionedAttributes(mods...).One(ctx, exec)
+	if isServerAttr {
+		vattr.ServerID = idStr
+		mods = append(mods, models.VersionedAttributeWhere.ServerID.EQ(idStr))
+	} else {
+		vattr.ServerComponentID = idStr
+		mods = append(mods, models.VersionedAttributeWhere.ServerComponentID.EQ(idStr))
+	}
+	mods = append(mods, models.VersionedAttributeWhere.Namespace.EQ(namespace), qm.OrderBy("tally DESC"))
+
+	lastVA, err := models.VersionedAttributes(mods...).One(ctx, exec)
 	switch err {
 	case nil:
-		// do update
-		existing.Data = types.JSON(varData)
-		existing.Tally = existing.Tally + 1
-		existing.UpdatedAt = null.TimeFrom(now)
-		_, updErr := existing.Update(ctx, exec, boil.Infer())
-		return updErr
+		vattr.Tally = lastVA.Tally + 1
 	case sql.ErrNoRows:
-		// do insert
-		va := models.VersionedAttribute{
-			ServerID:  null.StringFrom(srv.String()),
-			Namespace: alloyUefiVarsNamespace,
-			CreatedAt: null.TimeFrom(now),
-			Data:      types.JSON(varData),
-		}
-		return va.Insert(ctx, exec, boil.Infer())
+		// first time we've seen this vattr
 	default:
 		return err
 	}
+	return vattr.Insert(ctx, exec, boil.Infer())
 }
 
-func (dv *DeviceView) UpsertInventory(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID, inband bool) error {
+// write a versioned-attribute containing the UEFI variables from this server
+func (dv *DeviceView) updateUefiVariables(ctx context.Context, exec boil.ContextExecutor) error {
+	uefiVarData, err := dv.uefiVariables()
+	if err != nil {
+		return err
+	}
+	return updateAnyVersionedAttribute(ctx, exec, true,
+		dv.DeviceID.String(), alloyUefiVarsNamespace, uefiVarData)
+}
+
+func (dv *DeviceView) UpsertInventory(ctx context.Context, exec boil.ContextExecutor) error {
 	// yes, this is a dopey, repetitive style that should be easy for folks to extend or modify
-	if err := dv.updateVendorAttributes(ctx, exec, srv); err != nil {
+	if err := dv.updateVendorAttributes(ctx, exec); err != nil {
 		return errors.Wrap(err, "vendor attributes update")
 	}
-	if err := dv.updateMetadataAttributes(ctx, exec, srv); err != nil {
+	if err := dv.updateMetadataAttributes(ctx, exec); err != nil {
 		return errors.Wrap(err, "metadata attribute update")
 	}
-	if err := dv.updateUefiVariables(ctx, exec, srv); err != nil {
+	if err := dv.updateUefiVariables(ctx, exec); err != nil {
 		return errors.Wrap(err, "uefi variables update")
 	}
 	return nil
 }
 
-func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecutor, srv uuid.UUID) error {
-	attrs, err := models.Attributes(qm.Where("server_id=?", srv)).All(ctx, exec)
+func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecutor) error {
+	attrs, err := models.Attributes(qm.Where("server_id=?", dv.DeviceID)).All(ctx, exec)
 	if err != nil {
 		return err
 	}
@@ -246,7 +254,7 @@ func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecut
 	}
 
 	uefiVarsAttr, err := models.VersionedAttributes(
-		qm.Where("server_id=?", srv),
+		qm.Where("server_id=?", dv.DeviceID),
 		qm.And(fmt.Sprintf("namespace='%s'", alloyUefiVarsNamespace)),
 		qm.OrderBy("tally DESC"),
 	).One(ctx, exec)
@@ -256,5 +264,8 @@ func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecut
 	}
 
 	dv.Inv.Metadata[uefiVarsKey] = uefiVarsAttr.Data.String()
+
+	// XXX: get components and component attributes and populate the dv.Inv
+
 	return nil
 }

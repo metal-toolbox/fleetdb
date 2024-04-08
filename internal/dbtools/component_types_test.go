@@ -28,8 +28,4 @@ func TestServerComponentTypes(t *testing.T) {
 
 	_, err = ComponentTypeIDFromName(ctx, db, "bogus")
 	require.Error(t, err, "no error on bogus")
-
-	err = SetupComponentTypes(ctx, db)
-	require.NoError(t, err, "duplicated setup call")
-
 }

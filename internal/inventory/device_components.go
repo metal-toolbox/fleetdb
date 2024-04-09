@@ -44,6 +44,57 @@ func createOrUpdateComponent(ctx context.Context, exec boil.ContextExecutor, sc 
 	}
 }
 
+// This encapsulates much of the repetitive work of getting a component to the database layer.
+// The caller needs to compose the correct attributes for its given component.
+func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmn *common.Common,
+	deviceID, namespace, slug string, attr *attributes) error {
+	typeID := dbtools.MustComponentTypeID(ctx, exec, slug)
+
+	sc := &models.ServerComponent{
+		Name:                  null.StringFrom(slug),
+		Vendor:                null.NewString(cmn.Vendor, cmn.Vendor != ""),
+		Model:                 null.NewString(cmn.Model, cmn.Model != ""),
+		Serial:                null.NewString(cmn.Serial, cmn.Serial != ""),
+		ServerID:              deviceID,
+		ServerComponentTypeID: typeID,
+	}
+
+	prodName := strings.TrimSpace(cmn.ProductName)
+	if sc.Model.IsZero() && prodName != "" {
+		sc.Model.SetValid(prodName)
+	}
+
+	if sc.Serial.IsZero() {
+		sc.Serial = null.StringFrom("0")
+	}
+
+	if err := createOrUpdateComponent(ctx, exec, sc); err != nil {
+		return errors.Wrap(errComponent, slug+": "+err.Error())
+	}
+
+	// avoid computing this twice
+	attr.ProductName = prodName
+
+	attrData := attr.MustJSON()
+
+	// update the component attribute
+	if err := updateAnyAttribute(ctx, exec, false, sc.ID, namespace, attrData); err != nil {
+		return errors.Wrap(errAttribute, slug+": "+err.Error())
+	}
+
+	// compose the versioned attributes
+	vattr := &versionedAttributes{
+		Firmware: cmn.Firmware,
+		Status:   cmn.Status,
+	}
+
+	if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, namespace, vattr.MustJSON()); err != nil {
+		return errors.Wrap(errVersionedAttr, slug+": "+err.Error())
+	}
+
+	return nil
+}
+
 func (dv *DeviceView) ComposeComponents(ctx context.Context, exec boil.ContextExecutor) error {
 	if err := dv.writeBios(ctx, exec); err != nil {
 		return err
@@ -61,170 +112,63 @@ func (dv *DeviceView) ComposeComponents(ctx context.Context, exec boil.ContextEx
 }
 
 func (dv *DeviceView) writeBios(ctx context.Context, exec boil.ContextExecutor) error {
-	typeID := dbtools.MustComponentTypeID(ctx, exec, common.SlugBIOS)
-
 	bios := dv.Inv.BIOS
-	sc := &models.ServerComponent{
-		Name:                  null.StringFrom(common.SlugBIOS),
-		Vendor:                null.NewString(bios.Vendor, bios.Vendor != ""),
-		Model:                 null.NewString(bios.Model, bios.Model != ""),
-		Serial:                null.NewString(bios.Serial, bios.Serial != ""),
-		ServerID:              dv.DeviceID.String(),
-		ServerComponentTypeID: typeID,
-	}
-
-	prodName := strings.TrimSpace(bios.ProductName)
-	if sc.Model.IsZero() && prodName != "" {
-		sc.Model.SetValid(prodName)
-	}
-	if err := createOrUpdateComponent(ctx, exec, sc); err != nil {
-		return errors.Wrap(errComponent, "bios: "+err.Error())
-	}
 
 	namespace := inbandComponentNamespace
 	if !dv.Inband {
 		namespace = outofbandComponentNamespace
 	}
 
-	attrData := (&attributes{
+	attr := &attributes{
 		Capabilities:  bios.Capabilities,
 		CapacityBytes: bios.CapacityBytes,
 		Description:   bios.Description,
 		Metadata:      bios.Metadata,
 		Oem:           bios.Oem,
-		ProductName:   prodName,
 		SizeBytes:     bios.SizeBytes,
-	}).MustJSON()
-
-	// update the component attribute
-	if err := updateAnyAttribute(ctx, exec, false, sc.ID, namespace, attrData); err != nil {
-		return errors.Wrap(errAttribute, "bios: "+err.Error())
 	}
 
-	// compose the versioned attributes
-	biosVA := &versionedAttributes{
-		Firmware: bios.Firmware,
-		Status:   bios.Status,
-	}
-
-	if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, namespace, biosVA.MustJSON()); err != nil {
-		return errors.Wrap(errVersionedAttr, "bios: "+err.Error())
-	}
-
-	return nil
+	return composeRecords(ctx, exec, &bios.Common, dv.DeviceID.String(), namespace, common.SlugBIOS, attr)
 }
 
 func (dv *DeviceView) writeBMC(ctx context.Context, exec boil.ContextExecutor) error {
-	typeID := dbtools.MustComponentTypeID(ctx, exec, common.SlugBMC)
-
 	bmc := dv.Inv.BMC
-	sc := &models.ServerComponent{
-		Name:                  null.StringFrom(common.SlugBMC),
-		Vendor:                null.NewString(bmc.Vendor, bmc.Vendor != ""),
-		Model:                 null.NewString(bmc.Model, bmc.Model != ""),
-		Serial:                null.NewString(bmc.Serial, bmc.Serial != ""),
-		ServerID:              dv.DeviceID.String(),
-		ServerComponentTypeID: typeID,
-	}
-
-	prodName := strings.TrimSpace(bmc.ProductName)
-	if sc.Model.IsZero() && prodName != "" {
-		sc.Model.SetValid(prodName)
-	}
-	if err := createOrUpdateComponent(ctx, exec, sc); err != nil {
-		return errors.Wrap(errComponent, "bmc: "+err.Error())
-	}
 
 	namespace := inbandComponentNamespace
 	if !dv.Inband {
 		namespace = outofbandComponentNamespace
 	}
 
-	attrData := (&attributes{
+	attr := &attributes{
 		Capabilities: bmc.Capabilities,
 		Description:  bmc.Description,
 		Metadata:     bmc.Metadata,
 		Oem:          bmc.Oem,
-		ProductName:  prodName,
-	}).MustJSON()
-
-	if err := updateAnyAttribute(ctx, exec, false, sc.ID, namespace, attrData); err != nil {
-		return errors.Wrap(errAttribute, "bmc: "+err.Error())
 	}
 
-	// compose the versioned attributes
-	bmcVA := &versionedAttributes{
-		Firmware: bmc.Firmware,
-		Status:   bmc.Status,
-	}
-
-	if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, namespace, bmcVA.MustJSON()); err != nil {
-		return errors.Wrap(errVersionedAttr, "bmc: "+err.Error())
-	}
-
-	return nil
+	return composeRecords(ctx, exec, &bmc.Common, dv.DeviceID.String(), namespace, common.SlugBMC, attr)
 }
 
 func (dv *DeviceView) writeMainboard(ctx context.Context, exec boil.ContextExecutor) error {
-	typeID := dbtools.MustComponentTypeID(ctx, exec, common.SlugMainboard)
-
 	mb := dv.Inv.Mainboard
-	sc := &models.ServerComponent{
-		Name:                  null.StringFrom(common.SlugMainboard),
-		Vendor:                null.NewString(mb.Vendor, mb.Vendor != ""),
-		Model:                 null.NewString(mb.Model, mb.Model != ""),
-		Serial:                null.NewString(mb.Serial, mb.Serial != ""),
-		ServerID:              dv.DeviceID.String(),
-		ServerComponentTypeID: typeID,
-	}
-
-	prodName := strings.TrimSpace(mb.ProductName)
-	if sc.Model.IsZero() && prodName != "" {
-		sc.Model.SetValid(prodName)
-	}
-
-	if sc.Serial.IsZero() {
-		sc.Serial = null.StringFrom("0")
-	}
-
-	if err := createOrUpdateComponent(ctx, exec, sc); err != nil {
-		return errors.Wrap(errComponent, "mb: "+err.Error())
-	}
 
 	namespace := inbandComponentNamespace
 	if !dv.Inband {
 		namespace = outofbandComponentNamespace
 	}
 
-	attrData := (&attributes{
+	attr := &attributes{
 		Capabilities: mb.Capabilities,
 		Description:  mb.Description,
 		Metadata:     mb.Metadata,
 		Oem:          mb.Oem,
 		PhysicalID:   mb.PhysicalID,
-		ProductName:  prodName,
-	}).MustJSON()
-
-	if err := updateAnyAttribute(ctx, exec, false, sc.ID, namespace, attrData); err != nil {
-		return errors.Wrap(errAttribute, "mb: "+err.Error())
 	}
 
-	// compose the versioned attributes
-	mbVA := &versionedAttributes{
-		Firmware: mb.Firmware,
-		Status:   mb.Status,
-	}
-
-	if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, namespace, mbVA.MustJSON()); err != nil {
-		return errors.Wrap(errVersionedAttr, "mb: "+err.Error())
-	}
-
-	return nil
+	return composeRecords(ctx, exec, &mb.Common, dv.DeviceID.String(), namespace, common.SlugMainboard, attr)
 }
 
 func (dv *DeviceView) writeDimms(ctx context.Context, exec boil.ContextExecutor) error {
-	typeID := dbtools.MustComponentTypeID(ctx, exec, common.SlugPhysicalMem)
-
 	for idx, dimm := range dv.Inv.Memory {
 		// skip bogus dimms
 		if dimm.Vendor == "" &&
@@ -234,27 +178,8 @@ func (dv *DeviceView) writeDimms(ctx context.Context, exec boil.ContextExecutor)
 			continue
 		}
 
-		sc := &models.ServerComponent{
-			Name:                  null.StringFrom(common.SlugPhysicalMem),
-			Vendor:                null.NewString(dimm.Vendor, dimm.Vendor != ""),
-			Model:                 null.NewString(dimm.Model, dimm.Model != ""),
-			Serial:                null.NewString(dimm.Serial, dimm.Serial != ""),
-			ServerID:              dv.DeviceID.String(),
-			ServerComponentTypeID: typeID,
-		}
-
-		// set incrementing serial when one isn't found
-		if sc.Serial.IsZero() {
-			sc.Serial.SetValid(fmt.Sprintf("%d", idx))
-		}
-
-		prodName := strings.TrimSpace(dimm.ProductName)
-		if sc.Model.IsZero() && prodName != "" {
-			sc.Model.SetValid(prodName)
-		}
-
-		if err := createOrUpdateComponent(ctx, exec, sc); err != nil {
-			return errors.Wrap(errComponent, "dimm: "+err.Error())
+		if strings.TrimSpace(dimm.Serial) == "" {
+			dimm.Serial = fmt.Sprintf("%d", idx)
 		}
 
 		namespace := inbandComponentNamespace
@@ -262,31 +187,19 @@ func (dv *DeviceView) writeDimms(ctx context.Context, exec boil.ContextExecutor)
 			namespace = outofbandComponentNamespace
 		}
 
-		attrData := (&attributes{
+		attr := &attributes{
 			Capabilities: dimm.Capabilities,
 			ClockSpeedHz: dimm.ClockSpeedHz,
 			Description:  dimm.Description,
 			FormFactor:   dimm.FormFactor,
 			Metadata:     dimm.Metadata, // maybe this should be versioned?
 			PartNumber:   dimm.PartNumber,
-			ProductName:  prodName,
 			SizeBytes:    dimm.SizeBytes,
 			Slot:         strings.TrimPrefix(dimm.Slot, "DIMM.Socket."),
-		}).MustJSON()
-
-		// update the component attribute
-		if err := updateAnyAttribute(ctx, exec, false, sc.ID, namespace, attrData); err != nil {
-			return errors.Wrap(errAttribute, "dimm: "+err.Error())
 		}
 
-		// compose the versioned attributes for this dimm
-		dimmVA := &versionedAttributes{
-			Firmware: dimm.Firmware,
-			Status:   dimm.Status,
-		}
-
-		if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, namespace, dimmVA.MustJSON()); err != nil {
-			return errors.Wrap(errVersionedAttr, "dimm: "+err.Error())
+		if err := composeRecords(ctx, exec, &dimm.Common, dv.DeviceID.String(), namespace, common.SlugPhysicalMem, attr); err != nil {
+			return err
 		}
 	}
 	return nil

@@ -16,13 +16,24 @@ import (
 )
 
 var (
-	inbandComponentNamespace    = "sh.hollow.alloy.inband.metadata"
-	outofbandComponentNamespace = "sh.hollow.alloy.outofband.metadata"
-
 	errComponent     = errors.New("component error")
 	errAttribute     = errors.New("attribute error")
 	errVersionedAttr = errors.New("versioned attribute error")
 )
+
+// conventions for data namespacing:
+//  1. namespaces begin with a common prefix denoting whether this data
+//     was collected in-band or not
+//  2. attributes get namespaced by including their component slug
+//  3. versioned attributes will add a suffix (like '.firmware' or '.status')
+//     to the namespace so it's clear what the payload of those records refers to.
+func getAttributeNamespace(inband bool, slug string) string {
+	mode := "outofband"
+	if inband {
+		mode = "inband"
+	}
+	return strings.Join([]string{slug, mode}, ".")
+}
 
 func createOrUpdateComponent(ctx context.Context, exec boil.ContextExecutor, sc *models.ServerComponent) error {
 	existing, err := models.ServerComponents(
@@ -47,8 +58,10 @@ func createOrUpdateComponent(ctx context.Context, exec boil.ContextExecutor, sc 
 // This encapsulates much of the repetitive work of getting a component to the database layer.
 // The caller needs to compose the correct attributes for its given component.
 func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmn *common.Common,
-	deviceID, namespace, slug string, attr *attributes) error {
+	inband bool, deviceID, slug string, attr *attributes) error {
 	typeID := dbtools.MustComponentTypeID(ctx, exec, slug)
+
+	namespace := getAttributeNamespace(inband, slug)
 
 	sc := &models.ServerComponent{
 		Name:                  null.StringFrom(slug),
@@ -59,7 +72,7 @@ func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmn *common.
 		ServerComponentTypeID: typeID,
 	}
 
-	prodName := strings.TrimSpace(cmn.ProductName)
+	prodName := strings.ToLower(strings.TrimSpace(cmn.ProductName))
 	if sc.Model.IsZero() && prodName != "" {
 		sc.Model.SetValid(prodName)
 	}
@@ -82,14 +95,24 @@ func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmn *common.
 		return errors.Wrap(errAttribute, slug+": "+err.Error())
 	}
 
-	// compose the versioned attributes
-	vattr := &versionedAttributes{
-		Firmware: cmn.Firmware,
-		Status:   cmn.Status,
+	// every component with firmware gets a firmware versioned attribute
+	if cmn.Firmware != nil {
+		payload := mustFirmwareJSON(cmn.Firmware)
+		fwns := namespace + ".firmware"
+
+		if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, fwns, payload); err != nil {
+			return errors.Wrap(errVersionedAttr, slug+"-firmware: "+err.Error())
+		}
 	}
 
-	if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, namespace, vattr.MustJSON()); err != nil {
-		return errors.Wrap(errVersionedAttr, slug+": "+err.Error())
+	// every component with status gets a status versioned attribute
+	if cmn.Status != nil {
+		payload := mustStatusJSON(cmn.Status)
+		sns := namespace + ".status"
+
+		if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, sns, payload); err != nil {
+			return errors.Wrap(errVersionedAttr, slug+"-status: "+err.Error())
+		}
 	}
 
 	return nil
@@ -114,11 +137,6 @@ func (dv *DeviceView) ComposeComponents(ctx context.Context, exec boil.ContextEx
 func (dv *DeviceView) writeBios(ctx context.Context, exec boil.ContextExecutor) error {
 	bios := dv.Inv.BIOS
 
-	namespace := inbandComponentNamespace
-	if !dv.Inband {
-		namespace = outofbandComponentNamespace
-	}
-
 	attr := &attributes{
 		Capabilities:  bios.Capabilities,
 		CapacityBytes: bios.CapacityBytes,
@@ -128,16 +146,11 @@ func (dv *DeviceView) writeBios(ctx context.Context, exec boil.ContextExecutor) 
 		SizeBytes:     bios.SizeBytes,
 	}
 
-	return composeRecords(ctx, exec, &bios.Common, dv.DeviceID.String(), namespace, common.SlugBIOS, attr)
+	return composeRecords(ctx, exec, &bios.Common, dv.Inband, dv.DeviceID.String(), common.SlugBIOS, attr)
 }
 
 func (dv *DeviceView) writeBMC(ctx context.Context, exec boil.ContextExecutor) error {
 	bmc := dv.Inv.BMC
-
-	namespace := inbandComponentNamespace
-	if !dv.Inband {
-		namespace = outofbandComponentNamespace
-	}
 
 	attr := &attributes{
 		Capabilities: bmc.Capabilities,
@@ -146,16 +159,11 @@ func (dv *DeviceView) writeBMC(ctx context.Context, exec boil.ContextExecutor) e
 		Oem:          bmc.Oem,
 	}
 
-	return composeRecords(ctx, exec, &bmc.Common, dv.DeviceID.String(), namespace, common.SlugBMC, attr)
+	return composeRecords(ctx, exec, &bmc.Common, dv.Inband, dv.DeviceID.String(), common.SlugBMC, attr)
 }
 
 func (dv *DeviceView) writeMainboard(ctx context.Context, exec boil.ContextExecutor) error {
 	mb := dv.Inv.Mainboard
-
-	namespace := inbandComponentNamespace
-	if !dv.Inband {
-		namespace = outofbandComponentNamespace
-	}
 
 	attr := &attributes{
 		Capabilities: mb.Capabilities,
@@ -165,7 +173,7 @@ func (dv *DeviceView) writeMainboard(ctx context.Context, exec boil.ContextExecu
 		PhysicalID:   mb.PhysicalID,
 	}
 
-	return composeRecords(ctx, exec, &mb.Common, dv.DeviceID.String(), namespace, common.SlugMainboard, attr)
+	return composeRecords(ctx, exec, &mb.Common, dv.Inband, dv.DeviceID.String(), common.SlugMainboard, attr)
 }
 
 func (dv *DeviceView) writeDimms(ctx context.Context, exec boil.ContextExecutor) error {
@@ -182,11 +190,6 @@ func (dv *DeviceView) writeDimms(ctx context.Context, exec boil.ContextExecutor)
 			dimm.Serial = fmt.Sprintf("%d", idx)
 		}
 
-		namespace := inbandComponentNamespace
-		if !dv.Inband {
-			namespace = outofbandComponentNamespace
-		}
-
 		attr := &attributes{
 			Capabilities: dimm.Capabilities,
 			ClockSpeedHz: dimm.ClockSpeedHz,
@@ -198,7 +201,7 @@ func (dv *DeviceView) writeDimms(ctx context.Context, exec boil.ContextExecutor)
 			Slot:         strings.TrimPrefix(dimm.Slot, "DIMM.Socket."),
 		}
 
-		if err := composeRecords(ctx, exec, &dimm.Common, dv.DeviceID.String(), namespace, common.SlugPhysicalMem, attr); err != nil {
+		if err := composeRecords(ctx, exec, &dimm.Common, dv.Inband, dv.DeviceID.String(), common.SlugPhysicalMem, attr); err != nil {
 			return err
 		}
 	}

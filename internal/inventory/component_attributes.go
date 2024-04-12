@@ -54,15 +54,46 @@ func (a *attributes) MustJSON() []byte {
 	return byt
 }
 
-type versionedAttributes struct {
-	Firmware *common.Firmware `json:"firmware,omitempty"`
-	Status   *common.Status   `json:"status,omitempty"`
+func (a *attributes) FromJSON(byt []byte) error {
+	return json.Unmarshal(byt, a)
 }
 
-func (va *versionedAttributes) MustJSON() []byte {
-	byt, err := json.Marshal(va)
+func mustFirmwareJSON(fw *common.Firmware) []byte {
+	if fw == nil {
+		panic("missing firmware payload")
+	}
+	byt, err := json.Marshal(fw)
 	if err != nil {
-		panic("bad attributes")
+		panic("bad firmware payload")
 	}
 	return byt
+}
+
+func firmwareFromJSON(byt []byte) (*common.Firmware, error) {
+	fw := &common.Firmware{}
+	err := json.Unmarshal(byt, fw)
+	if err != nil {
+		return nil, err
+	}
+	return fw, nil
+}
+
+func mustStatusJSON(st *common.Status) []byte {
+	if st == nil {
+		panic("missing status payload")
+	}
+	byt, err := json.Marshal(st)
+	if err != nil {
+		panic("bad status payload")
+	}
+	return byt
+}
+
+func statusFromJSON(byt []byte) (*common.Status, error) {
+	st := &common.Status{}
+	err := json.Unmarshal(byt, st)
+	if err != nil {
+		return nil, err
+	}
+	return st, nil
 }

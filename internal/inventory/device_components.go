@@ -13,26 +13,36 @@ import (
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
+	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
 var (
 	errComponent     = errors.New("component error")
 	errAttribute     = errors.New("attribute error")
 	errVersionedAttr = errors.New("versioned attribute error")
+
+	inbandNSTag    = "sh.hollow.alloy.inband"
+	outofbandNSTag = "sh.hollow.alloy.outofband"
 )
 
-// conventions for data namespacing:
-//  1. namespaces begin with a common prefix denoting whether this data
-//     was collected in-band or not
-//  2. attributes get namespaced by including their component slug
-//  3. versioned attributes will add a suffix (like '.firmware' or '.status')
-//     to the namespace so it's clear what the payload of those records refers to.
-func getAttributeNamespace(inband bool, slug string) string {
-	mode := "outofband"
+func getNamespace(inband bool) string {
+	ns := outofbandNSTag
 	if inband {
-		mode = "inband"
+		ns = inbandNSTag
 	}
-	return strings.Join([]string{slug, mode}, ".")
+	return ns
+}
+
+func getAttributeNamespace(inband bool) string {
+	return getNamespace(inband) + ".metadata"
+}
+
+func getFirmwareNamespace(inband bool) string {
+	return getNamespace(inband) + ".firmware"
+}
+
+func getStatusNamespace(inband bool) string {
+	return getNamespace(inband) + ".status"
 }
 
 func createOrUpdateComponent(ctx context.Context, exec boil.ContextExecutor, sc *models.ServerComponent) error {
@@ -60,8 +70,6 @@ func createOrUpdateComponent(ctx context.Context, exec boil.ContextExecutor, sc 
 func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmn *common.Common,
 	inband bool, deviceID, slug string, attr *attributes) error {
 	typeID := dbtools.MustComponentTypeID(ctx, exec, slug)
-
-	namespace := getAttributeNamespace(inband, slug)
 
 	sc := &models.ServerComponent{
 		Name:                  null.StringFrom(slug),
@@ -91,16 +99,15 @@ func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmn *common.
 	attrData := attr.MustJSON()
 
 	// update the component attribute
-	if err := updateAnyAttribute(ctx, exec, false, sc.ID, namespace, attrData); err != nil {
+	if err := updateAnyAttribute(ctx, exec, false, sc.ID, getAttributeNamespace(inband), attrData); err != nil {
 		return errors.Wrap(errAttribute, slug+": "+err.Error())
 	}
 
 	// every component with firmware gets a firmware versioned attribute
 	if cmn.Firmware != nil {
 		payload := mustFirmwareJSON(cmn.Firmware)
-		fwns := namespace + ".firmware"
 
-		if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, fwns, payload); err != nil {
+		if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, getFirmwareNamespace(inband), payload); err != nil {
 			return errors.Wrap(errVersionedAttr, slug+"-firmware: "+err.Error())
 		}
 	}
@@ -108,14 +115,141 @@ func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmn *common.
 	// every component with status gets a status versioned attribute
 	if cmn.Status != nil {
 		payload := mustStatusJSON(cmn.Status)
-		sns := namespace + ".status"
 
-		if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, sns, payload); err != nil {
+		if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, getStatusNamespace(inband), payload); err != nil {
 			return errors.Wrap(errVersionedAttr, slug+"-status: "+err.Error())
 		}
 	}
 
 	return nil
+}
+
+func retrieveComponentAttributes(ctx context.Context, exec boil.ContextExecutor,
+	componentID, namespace string) (*attributes, error) {
+	ar, err := models.Attributes(
+		models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(componentID)),
+		models.AttributeWhere.Namespace.EQ(namespace),
+	).One(ctx, exec)
+
+	if err != nil {
+		return nil, err
+	}
+
+	attr := &attributes{}
+	if err := attr.FromJSON(ar.Data); err != nil {
+		return nil, err
+	}
+	return attr, nil
+}
+
+// we rely on the caller to know what v-attributes to retrieve and how to deserialize that data
+func retrieveVersionedAttribute(ctx context.Context, exec boil.ContextExecutor,
+	parentID, namespace string, isServer bool) ([]byte, error) {
+	var mods []qm.QueryMod
+	if isServer {
+		mods = append(mods, models.VersionedAttributeWhere.ServerID.EQ(null.StringFrom(parentID)))
+	} else {
+		mods = append(mods, models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(parentID)))
+	}
+	mods = append(mods,
+		models.VersionedAttributeWhere.Namespace.EQ(namespace),
+		qm.OrderBy("tally DESC"), // get the most recent record
+	)
+
+	fwr, err := models.VersionedAttributes(mods...).One(ctx, exec)
+	if err != nil {
+		return nil, err
+	}
+	return fwr.Data, nil
+}
+
+func retrieveComponentFirmwareVA(ctx context.Context, exec boil.ContextExecutor,
+	parentID, slug, namespace string) (*common.Firmware, error) {
+	data, err := retrieveVersionedAttribute(ctx, exec, parentID, namespace, false)
+	if err != nil {
+		return nil, err
+	}
+	fw, err := firmwareFromJSON(data)
+	if err != nil {
+		return nil, err
+	}
+	return fw, nil
+}
+
+func retrieveComponentStatusVA(ctx context.Context, exec boil.ContextExecutor, parentID,
+	slug, namespace string) (*common.Status, error) {
+	data, err := retrieveVersionedAttribute(ctx, exec, parentID, namespace, false)
+	if err != nil {
+		return nil, err
+	}
+	st, err := statusFromJSON(data)
+	if err != nil {
+		return nil, err
+	}
+	return st, nil
+}
+
+// this is returned by more-or-less generic database routines and the caller can specialize into a type
+type dbComponent struct {
+	cmn  *common.Common
+	attr *attributes
+}
+
+// As generically as possible, retrieve this component from the database. Status and Firmware
+// are composed into the *Common. We return the attributes so that the caller can reconsitute
+// the specific device type. This is basically the reverse of composeRecords.
+func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
+	inband bool, deviceID, slug string) ([]*dbComponent, error) {
+	records, err := models.ServerComponents(
+		models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
+		models.ServerComponentWhere.ServerID.EQ(deviceID),
+		qm.OrderBy(models.ServerComponentColumns.CreatedAt+" DESC"),
+	).All(ctx, exec)
+
+	if err != nil {
+		return nil, err
+	}
+
+	comps := []*dbComponent{}
+
+	for _, rec := range records {
+		// We should always have attributes, even if it's only "ProductName" (b/c it comes from common)
+		attr, err := retrieveComponentAttributes(ctx, exec, rec.ID, getAttributeNamespace(inband))
+		if err != nil {
+			return nil, err
+		}
+
+		// Either firmware or status might have no stored data. That's fine.
+		fw, err := retrieveComponentFirmwareVA(ctx, exec, rec.ID, slug, getFirmwareNamespace(inband))
+		switch err {
+		case nil, sql.ErrNoRows:
+		default:
+			return nil, err
+		}
+
+		st, err := retrieveComponentStatusVA(ctx, exec, rec.ID, slug, getStatusNamespace(inband))
+		switch err {
+		case nil, sql.ErrNoRows:
+		default:
+			return nil, err
+		}
+		// Despite the schema, serial is required. It is set on storing the component if it was empty coming in.
+		serial := rec.Serial.String
+		comp := &dbComponent{
+			cmn: &common.Common{
+				Vendor:      rec.Vendor.String,
+				Model:       rec.Model.String,
+				Serial:      serial,
+				ProductName: attr.ProductName,
+				Firmware:    fw,
+				Status:      st,
+			},
+			attr: attr,
+		}
+		comps = append(comps, comp)
+	}
+
+	return comps, nil
 }
 
 func (dv *DeviceView) ComposeComponents(ctx context.Context, exec boil.ContextExecutor) error {
@@ -149,6 +283,27 @@ func (dv *DeviceView) writeBios(ctx context.Context, exec boil.ContextExecutor) 
 	return composeRecords(ctx, exec, &bios.Common, dv.Inband, dv.DeviceID.String(), common.SlugBIOS, attr)
 }
 
+func (dv *DeviceView) getBios(ctx context.Context, exec boil.ContextExecutor) error {
+	bios := &common.BIOS{}
+	components, err := componentsFromDatabase(ctx, exec, dv.Inband, dv.DeviceID.String(), common.SlugBIOS)
+	if err != nil {
+		return err
+	}
+	// We should never have more BIOS component, but a defect could result in multiple records. The
+	// components slice should come back in order of most recent records first, so first record wins.
+	for _, comp := range components {
+		bios.Common = *comp.cmn
+		bios.Capabilities = comp.attr.Capabilities
+		bios.CapacityBytes = comp.attr.CapacityBytes
+		bios.Description = comp.attr.Description
+		bios.Oem = comp.attr.Oem
+		bios.SizeBytes = comp.attr.SizeBytes
+		break
+	}
+	dv.Inv.BIOS = bios
+	return nil
+}
+
 func (dv *DeviceView) writeBMC(ctx context.Context, exec boil.ContextExecutor) error {
 	bmc := dv.Inv.BMC
 
@@ -160,6 +315,9 @@ func (dv *DeviceView) writeBMC(ctx context.Context, exec boil.ContextExecutor) e
 	}
 
 	return composeRecords(ctx, exec, &bmc.Common, dv.Inband, dv.DeviceID.String(), common.SlugBMC, attr)
+}
+
+func (dv *DeviceView) getBMC(ctx context.Context, exec boil.ContextExecutor) error {
 }
 
 func (dv *DeviceView) writeMainboard(ctx context.Context, exec boil.ContextExecutor) error {

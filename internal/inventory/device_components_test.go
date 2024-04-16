@@ -4,6 +4,7 @@ package inventory
 
 import (
 	"context"
+	"database/sql"
 	"testing"
 
 	"github.com/bmc-toolbox/common"
@@ -43,10 +44,9 @@ func TestComposeComponentRecords(t *testing.T) {
 		slug := common.SlugBIOS
 
 		var inband bool
-		attributeNS := getAttributeNamespace(inband, slug)
-		require.Equal(t, "BIOS.outofband", attributeNS)
-		fwns := attributeNS + ".firmware"
-		sns := attributeNS + ".status"
+		attributeNS := getAttributeNamespace(inband)
+		fwns := getFirmwareNamespace(inband)
+		sns := getStatusNamespace(inband)
 
 		orig := &common.Common{
 			Oem:         true,
@@ -233,6 +233,13 @@ func TestComposeComponentRecords(t *testing.T) {
 		srData, err = statusFromJSON(sr.Data)
 		require.NoError(t, err)
 		require.Equal(t, update.Status, srData)
+
+		// validate that we can get all the component data we expect
+		comps, err := componentsFromDatabase(context.TODO(), db, inband, srvUUID.String(), slug)
+		require.NoError(t, err)
+		require.Len(t, comps, 1)
+		require.NotNil(t, comps[0].cmn)
+		require.NotNil(t, comps[0].attr)
 	})
 }
 
@@ -287,36 +294,23 @@ func TestComponents(t *testing.T) {
 			},
 		} // inband = false
 
-		attributeNS := getAttributeNamespace(device.Inband, common.SlugBIOS)
+		//attributeNS := getAttributeNamespace(device.Inband)
 
 		tx := db.MustBegin()
 		err := device.writeBios(context.TODO(), tx)
 		require.NoError(t, err)
 		_ = tx.Commit()
 
-		scr, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugBIOS)),
-			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
-		).One(context.TODO(), db)
+		reader := &DeviceView{
+			DeviceID: srvUUID,
+			Inv:      &common.Device{},
+		}
+		err = reader.getBios(context.TODO(), db)
 		require.NoError(t, err)
-
-		ac, err := models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(attributeNS),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), ac, "attribute record")
-
-		ar, err := models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(attributeNS),
-		).One(context.TODO(), db)
-		require.NoError(t, err)
-		// unpack the Data to validate the update
-		attr := &attributes{}
-		require.NoError(t, attr.FromJSON(ar.Data))
-		require.Equal(t, int64(2222), attr.CapacityBytes)
-		require.Equal(t, int64(1111), attr.SizeBytes)
+		require.Equal(t, orig.Firmware, reader.Inv.BIOS.Firmware)
+		require.Equal(t, orig.Status, reader.Inv.BIOS.Status)
+		require.Equal(t, orig.SizeBytes, reader.Inv.BIOS.SizeBytes)
+		require.Equal(t, orig.CapacityBytes, reader.Inv.BIOS.CapacityBytes)
 
 		// update the BIOS
 		device.Inv.BIOS = update
@@ -326,24 +320,23 @@ func TestComponents(t *testing.T) {
 		err = tx2.Commit()
 		require.NoError(t, err)
 
-		ac, err = models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(attributeNS),
-		).Count(context.TODO(), db)
+		err = reader.getBios(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, int64(1), ac)
+		require.Equal(t, update.Firmware, reader.Inv.BIOS.Firmware)
+		require.Equal(t, update.Status, reader.Inv.BIOS.Status)
+		require.Equal(t, update.SizeBytes, reader.Inv.BIOS.SizeBytes)
+		require.Equal(t, update.CapacityBytes, reader.Inv.BIOS.CapacityBytes)
 
-		ar, err = models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(attributeNS),
-		).One(context.TODO(), db)
-		require.NoError(t, err)
-		// unpack the Data to validate the update
-		attr = &attributes{}
-		require.NoError(t, attr.FromJSON(ar.Data))
-		require.Equal(t, int64(4444), attr.CapacityBytes)
-		require.Equal(t, int64(3333), attr.SizeBytes)
+		// failed lookup
+		nogo := &DeviceView{
+			DeviceID: srvUUID,
+			Inv:      &common.Device{},
+			Inband:   true,
+		}
 
+		err = nogo.getBios(context.TODO(), db)
+		require.Error(t, err)
+		require.ErrorIs(t, err, sql.ErrNoRows)
 	})
 	t.Run("writeBMC", func(t *testing.T) {
 		// writeBMC is basically a re-run of composeRecords() so skip testing the update
@@ -374,25 +367,15 @@ func TestComponents(t *testing.T) {
 			},
 		} // inband = false
 
-		attributeNS := getAttributeNamespace(device.Inband, common.SlugBMC)
-
 		tx := db.MustBegin()
 		err := device.writeBMC(context.TODO(), tx)
 		require.NoError(t, err)
 		_ = tx.Commit()
 
-		scr, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugBMC)),
-			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
-		).One(context.TODO(), db)
-		require.NoError(t, err)
-
-		ac, err := models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(attributeNS),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), ac)
+		reader := &DeviceView{
+			DeviceID: srvUUID,
+			Inv:      &common.Device{},
+		}
 	})
 	/*t.Run("writeMainboard", func(t *testing.T) {
 		srvUUID := mustCreateServerRecord(t, db, "write-mainboard")

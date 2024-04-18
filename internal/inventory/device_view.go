@@ -3,18 +3,16 @@ package inventory
 
 import (
 	"context"
-	"database/sql"
 	"encoding/json"
-	"fmt"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/google/uuid"
+	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/models"
+	rivets "github.com/metal-toolbox/rivets/types"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-	"github.com/volatiletech/sqlboiler/v4/types"
 )
 
 /*
@@ -33,68 +31,67 @@ import (
 var (
 	// historically these values were determined/set by alloy, even though they are
 	// internal to the data storage layer, hence the names
-	alloyVendorNamespace   = "sh.hollow.alloy.server_vendor_attributes"
-	alloyMetadataNamespace = "sh.hollow.alloy.server_metadata_attributes"
-	alloyUefiVarsNamespace = "sh.hollow.alloy.server_uefi_variables" // this is a versioned attribute, we expect it to change
+	alloyVendorNamespace = "sh.hollow.alloy.server_vendor_attributes"
+	//alloyMetadataNamespace = "sh.hollow.alloy.server_metadata_attributes"
+	//alloyUefiVarsNamespace = "sh.hollow.alloy.server_uefi_variables" // this is a versioned attribute, we expect it to change
+	serverStatusNamespace = "sh.hollow.alloy.server_status" // versioned
 
 	// metadata keys
-	modelKey    = "model"
-	vendorKey   = "vendor"
-	serialKey   = "serial"
-	uefiVarsKey = "uefi-variables"
+	modelKey  = "model"
+	vendorKey = "vendor"
+	serialKey = "serial"
+	//uefiVarsKey = "uefi-variables"
+
+	errBadServer    = errors.New("data is missing required field")
+	errBadComponent = errors.New("component data")
 )
 
 // A reminder for maintenance: this type needs to be able to contain all the
 // relevant fields from Component-Inventory or Alloy.
 type DeviceView struct {
-	Inv        *common.Device    `json:"inventory"`
+	Inv        *rivets.Server    `json:"inventory"`
 	BiosConfig map[string]string `json:"bios_config,omitempty"`
 	Inband     bool              // the method of inventory collection
 	DeviceID   uuid.UUID
 }
 
-func (dv *DeviceView) vendorAttributes() json.RawMessage {
-	m := map[string]string{
-		modelKey:  "unknown",
-		serialKey: "unknown",
-		vendorKey: "unknown",
+// ServerSanityCheck handles verifying that all the details in the incoming data
+// structure have been set so we maintain database invariants.
+func ServerSanityCheck(srv *rivets.Server) error {
+	srvReq := map[string]string{
+		"model":  srv.Model,
+		"vendor": srv.Vendor,
+		"serial": srv.Serial,
 	}
-
-	if dv.Inv.Model != "" {
-		m[modelKey] = dv.Inv.Model
-	}
-
-	if dv.Inv.Serial != "" {
-		m[serialKey] = dv.Inv.Serial
-	}
-
-	if dv.Inv.Vendor != "" {
-		m[vendorKey] = dv.Inv.Vendor
-	}
-
-	byt, _ := json.Marshal(m)
-
-	return byt
-}
-
-func (dv *DeviceView) metadataAttributes() json.RawMessage {
-	m := map[string]string{}
-
-	// filter UEFI variables -- they go in a versioned-attribute
-	for k, v := range dv.Inv.Metadata {
-		if k != uefiVarsKey {
-			m[k] = v
+	for k, v := range srvReq {
+		if v == "" {
+			return errors.Wrap(errBadServer, k)
 		}
 	}
 
-	if len(m) == 0 {
-		return nil
+	for _, cmp := range srv.Components {
+		if _, err := dbtools.ComponentTypeIDFromName(cmp.Name); err != nil {
+			return errors.Wrap(errBadComponent, err.Error())
+		}
+		if cmp.Serial == "" {
+			return errors.Wrap(errBadComponent, cmp.Name+" missing serial")
+		}
 	}
+	return nil
+}
 
+func (dv *DeviceView) vendorAttributes() json.RawMessage {
+	m := map[string]string{
+		modelKey:  dv.Inv.Model,
+		serialKey: dv.Inv.Serial,
+		vendorKey: dv.Inv.Vendor,
+	}
 	byt, _ := json.Marshal(m)
+
 	return byt
 }
 
+/* XXX: return this when rivet's Server datatype has a facility to store UEFI vars.
 func (dv *DeviceView) uefiVariables() (json.RawMessage, error) {
 	var varString string
 
@@ -110,129 +107,46 @@ func (dv *DeviceView) uefiVariables() (json.RawMessage, error) {
 	}
 
 	return []byte(varString), nil
-}
-
-// the "either server or server-component" facet of attributes makes this function a
-// little complicated
-func updateAnyAttribute(ctx context.Context, exec boil.ContextExecutor,
-	isServerAttr bool, id, namespace string, data json.RawMessage) error {
-	var mods []qm.QueryMod
-
-	idStr := null.StringFrom(id)
-	attrData := types.JSON(data)
-
-	// create an attribute in the event we need to make an insert
-	attr := models.Attribute{
-		Namespace: namespace,
-		Data:      attrData,
-	}
-
-	if isServerAttr {
-		attr.ServerID = idStr
-		mods = append(mods, models.AttributeWhere.ServerID.EQ(idStr))
-	} else {
-		attr.ServerComponentID = idStr
-		mods = append(mods, models.AttributeWhere.ServerComponentID.EQ(idStr))
-	}
-	mods = append(mods, models.AttributeWhere.Namespace.EQ(namespace))
-
-	existing, err := models.Attributes(mods...).One(ctx, exec)
-	switch err {
-	case nil:
-		attr.ID = existing.ID
-		_, updErr := attr.Update(ctx, exec, boil.Infer())
-		return updErr
-	case sql.ErrNoRows:
-		return attr.Insert(ctx, exec, boil.Infer())
-	default:
-		return err
-	}
-}
+}*/
 
 func (dv *DeviceView) updateVendorAttributes(ctx context.Context, exec boil.ContextExecutor) error {
 	return updateAnyAttribute(ctx, exec, true, dv.DeviceID.String(), alloyVendorNamespace, dv.vendorAttributes())
 }
 
-func (dv *DeviceView) updateMetadataAttributes(ctx context.Context, exec boil.ContextExecutor) error {
-	var err error
-	if md := dv.metadataAttributes(); md != nil {
-		err = updateAnyAttribute(ctx, exec, true, dv.DeviceID.String(), alloyMetadataNamespace, md)
-	}
-	return err
-}
-
-// insert a new versioned attribute record with the provided data. if this is not the first
-// time we've seen a id/namespace tuple, increment the tally
-func updateAnyVersionedAttribute(ctx context.Context, exec boil.ContextExecutor,
-	isServerAttr bool, id, namespace string, data json.RawMessage) error {
-	var mods []qm.QueryMod
-
-	idStr := null.StringFrom(id)
-	attrData := types.JSON(data)
-
-	// we will always insert a new versioned attribute, just incrementing the tally
-	vattr := models.VersionedAttribute{
-		Namespace: namespace,
-		Data:      attrData,
-	}
-
-	if isServerAttr {
-		vattr.ServerID = idStr
-		mods = append(mods, models.VersionedAttributeWhere.ServerID.EQ(idStr))
-	} else {
-		vattr.ServerComponentID = idStr
-		mods = append(mods, models.VersionedAttributeWhere.ServerComponentID.EQ(idStr))
-	}
-	mods = append(mods, models.VersionedAttributeWhere.Namespace.EQ(namespace), qm.OrderBy("tally DESC"))
-
-	lastVA, err := models.VersionedAttributes(mods...).One(ctx, exec)
-	switch err {
-	case nil:
-		vattr.Tally = lastVA.Tally + 1
-	case sql.ErrNoRows:
-		// first time we've seen this vattr
-	default:
-		return err
-	}
-	return vattr.Insert(ctx, exec, boil.Infer())
-}
-
-// write a versioned-attribute containing the UEFI variables from this server
-func (dv *DeviceView) updateUefiVariables(ctx context.Context, exec boil.ContextExecutor) error {
-	uefiVarData, err := dv.uefiVariables()
-	if err != nil {
-		return err
-	}
+// write all the versioned-attributes from this server
+func (dv *DeviceView) updateServerVAs(ctx context.Context, exec boil.ContextExecutor) error {
+	statusData, _ := json.Marshal(dv.Inv.Status)
+	// XXX: more VAs here
 	return updateAnyVersionedAttribute(ctx, exec, true,
-		dv.DeviceID.String(), alloyUefiVarsNamespace, uefiVarData)
+		dv.DeviceID.String(), serverStatusNamespace, statusData)
 }
 
 func (dv *DeviceView) UpsertInventory(ctx context.Context, exec boil.ContextExecutor) error {
 	// yes, this is a dopey, repetitive style that should be easy for folks to extend or modify
 	if err := dv.updateVendorAttributes(ctx, exec); err != nil {
-		return errors.Wrap(err, "vendor attributes update")
+		return errors.Wrap(err, "server vendor attributes update")
 	}
-	if err := dv.updateMetadataAttributes(ctx, exec); err != nil {
-		return errors.Wrap(err, "metadata attribute update")
+
+	if err := dv.updateServerVAs(ctx, exec); err != nil {
+		return errors.Wrap(err, "server versioned attribute update")
 	}
-	if err := dv.updateUefiVariables(ctx, exec); err != nil {
-		return errors.Wrap(err, "uefi variables update")
+	for _, cmp := range dv.Inv.Components {
+		if err := composeRecords(ctx, exec, cmp, dv.Inband, dv.DeviceID.String()); err != nil {
+			return err // we already wrapped some contextual data around the error
+		}
 	}
 	return nil
 }
 
 func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecutor) error {
-	attrs, err := models.Attributes(qm.Where("server_id=?", dv.DeviceID)).All(ctx, exec)
+	dv.Inv = &rivets.Server{}
+
+	// we should always have at *least* vendor attributes, so sql.ErrNoRows is a problem here.
+	attrs, err := models.Attributes(
+		models.AttributeWhere.ServerID.EQ(null.StringFrom(dv.DeviceID.String())),
+	).All(ctx, exec)
 	if err != nil {
 		return err
-	}
-
-	if dv.Inv == nil {
-		dv.Inv = &common.Device{
-			Common: common.Common{
-				Metadata: map[string]string{},
-			},
-		}
 	}
 
 	for _, a := range attrs {
@@ -245,17 +159,13 @@ func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecut
 			dv.Inv.Vendor = m[vendorKey]
 			dv.Inv.Model = m[modelKey]
 			dv.Inv.Serial = m[serialKey]
-		case alloyMetadataNamespace:
-			if err := a.Data.Unmarshal(&dv.Inv.Metadata); err != nil {
-				return errors.Wrap(err, "unmarshaling metadata attributes")
-			}
 		default:
 		}
 	}
 
-	uefiVarsAttr, err := models.VersionedAttributes(
-		qm.Where("server_id=?", dv.DeviceID),
-		qm.And(fmt.Sprintf("namespace='%s'", alloyUefiVarsNamespace)),
+	statusVAttr, err := models.VersionedAttributes(
+		models.VersionedAttributeWhere.ServerID.EQ(null.StringFrom(dv.DeviceID.String())),
+		models.VersionedAttributeWhere.Namespace.EQ(serverStatusNamespace),
 		qm.OrderBy("tally DESC"),
 	).One(ctx, exec)
 
@@ -263,9 +173,18 @@ func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecut
 		return err
 	}
 
-	dv.Inv.Metadata[uefiVarsKey] = uefiVarsAttr.Data.String()
+	var status string
+	if err = json.Unmarshal(statusVAttr.Data, &status); err != nil {
+		return errors.Wrap(err, "unmarshaling status attribute")
+	}
+	dv.Inv.Status = status
 
-	// XXX: get components and component attributes and populate the dv.Inv
+	comps, err := componentsFromDatabase(ctx, exec, dv.Inband, dv.DeviceID.String())
+	if err != nil {
+		return err
+	}
+
+	dv.Inv.Components = comps
 
 	return nil
 }

@@ -4,12 +4,11 @@ package inventory
 import (
 	"context"
 	"database/sql"
-	"fmt"
-	"strings"
 
 	"github.com/bmc-toolbox/common"
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/models"
+	rivets "github.com/metal-toolbox/rivets/types"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -17,6 +16,7 @@ import (
 )
 
 var (
+	errComponentType = errors.New("component type error")
 	errComponent     = errors.New("component error")
 	errAttribute     = errors.New("attribute error")
 	errVersionedAttr = errors.New("versioned attribute error")
@@ -66,58 +66,51 @@ func createOrUpdateComponent(ctx context.Context, exec boil.ContextExecutor, sc 
 }
 
 // This encapsulates much of the repetitive work of getting a component to the database layer.
-// The caller needs to compose the correct attributes for its given component.
-func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmn *common.Common,
-	inband bool, deviceID, slug string, attr *attributes) error {
-	typeID := dbtools.MustComponentTypeID(ctx, exec, slug)
+func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmp *rivets.Component,
+	inband bool, deviceID string) error {
+	name := cmp.Name
+	typeID, err := dbtools.ComponentTypeIDFromName(name)
+	if err != nil {
+		return errors.Wrap(errComponentType, name+" not found")
+	}
 
 	sc := &models.ServerComponent{
-		Name:                  null.StringFrom(slug),
-		Vendor:                null.NewString(cmn.Vendor, cmn.Vendor != ""),
-		Model:                 null.NewString(cmn.Model, cmn.Model != ""),
-		Serial:                null.NewString(cmn.Serial, cmn.Serial != ""),
+		Name:                  null.StringFrom(name),
+		Vendor:                null.NewString(cmp.Vendor, cmp.Vendor != ""),
+		Model:                 null.NewString(cmp.Model, cmp.Model != ""),
+		Serial:                null.NewString(cmp.Serial, cmp.Serial != ""),
 		ServerID:              deviceID,
 		ServerComponentTypeID: typeID,
 	}
 
-	prodName := strings.ToLower(strings.TrimSpace(cmn.ProductName))
-	if sc.Model.IsZero() && prodName != "" {
-		sc.Model.SetValid(prodName)
-	}
-
-	if sc.Serial.IsZero() {
-		sc.Serial = null.StringFrom("0")
-	}
-
 	if err := createOrUpdateComponent(ctx, exec, sc); err != nil {
-		return errors.Wrap(errComponent, slug+": "+err.Error())
+		return errors.Wrap(errComponent, name+": "+err.Error())
 	}
 
-	// avoid computing this twice
-	attr.ProductName = prodName
+	if cmp.Attributes != nil {
+		attrData := mustAttributesJSON(cmp.Attributes)
 
-	attrData := attr.MustJSON()
-
-	// update the component attribute
-	if err := updateAnyAttribute(ctx, exec, false, sc.ID, getAttributeNamespace(inband), attrData); err != nil {
-		return errors.Wrap(errAttribute, slug+": "+err.Error())
+		// update the component attribute
+		if err := updateAnyAttribute(ctx, exec, false, sc.ID, getAttributeNamespace(inband), attrData); err != nil {
+			return errors.Wrap(errAttribute, name+": "+err.Error())
+		}
 	}
 
 	// every component with firmware gets a firmware versioned attribute
-	if cmn.Firmware != nil {
-		payload := mustFirmwareJSON(cmn.Firmware)
+	if cmp.Firmware != nil {
+		payload := mustFirmwareJSON(cmp.Firmware)
 
 		if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, getFirmwareNamespace(inband), payload); err != nil {
-			return errors.Wrap(errVersionedAttr, slug+"-firmware: "+err.Error())
+			return errors.Wrap(errVersionedAttr, name+"-firmware: "+err.Error())
 		}
 	}
 
 	// every component with status gets a status versioned attribute
-	if cmn.Status != nil {
-		payload := mustStatusJSON(cmn.Status)
+	if cmp.Status != nil {
+		payload := mustStatusJSON(cmp.Status)
 
 		if err := updateAnyVersionedAttribute(ctx, exec, false, sc.ID, getStatusNamespace(inband), payload); err != nil {
-			return errors.Wrap(errVersionedAttr, slug+"-status: "+err.Error())
+			return errors.Wrap(errVersionedAttr, name+"-status: "+err.Error())
 		}
 	}
 
@@ -125,21 +118,21 @@ func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmn *common.
 }
 
 func retrieveComponentAttributes(ctx context.Context, exec boil.ContextExecutor,
-	componentID, namespace string) (*attributes, error) {
+	componentID, namespace string) (*rivets.ComponentAttributes, error) {
 	ar, err := models.Attributes(
 		models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(componentID)),
 		models.AttributeWhere.Namespace.EQ(namespace),
 	).One(ctx, exec)
 
-	if err != nil {
+	switch err {
+	case sql.ErrNoRows:
+		return nil, nil
+	case nil:
+	default:
 		return nil, err
 	}
 
-	attr := &attributes{}
-	if err := attr.FromJSON(ar.Data); err != nil {
-		return nil, err
-	}
-	return attr, nil
+	return componentAttributesFromJSON(ar.Data)
 }
 
 // we rely on the caller to know what v-attributes to retrieve and how to deserialize that data
@@ -164,11 +157,16 @@ func retrieveVersionedAttribute(ctx context.Context, exec boil.ContextExecutor,
 }
 
 func retrieveComponentFirmwareVA(ctx context.Context, exec boil.ContextExecutor,
-	parentID, slug, namespace string) (*common.Firmware, error) {
+	parentID, namespace string) (*common.Firmware, error) {
 	data, err := retrieveVersionedAttribute(ctx, exec, parentID, namespace, false)
-	if err != nil {
+	switch err {
+	case sql.ErrNoRows:
+		return nil, nil
+	case nil:
+	default:
 		return nil, err
 	}
+
 	fw, err := firmwareFromJSON(data)
 	if err != nil {
 		return nil, err
@@ -177,11 +175,16 @@ func retrieveComponentFirmwareVA(ctx context.Context, exec boil.ContextExecutor,
 }
 
 func retrieveComponentStatusVA(ctx context.Context, exec boil.ContextExecutor, parentID,
-	slug, namespace string) (*common.Status, error) {
+	namespace string) (*common.Status, error) {
 	data, err := retrieveVersionedAttribute(ctx, exec, parentID, namespace, false)
-	if err != nil {
+	switch err {
+	case sql.ErrNoRows:
+		return nil, nil
+	case nil:
+	default:
 		return nil, err
 	}
+
 	st, err := statusFromJSON(data)
 	if err != nil {
 		return nil, err
@@ -189,19 +192,13 @@ func retrieveComponentStatusVA(ctx context.Context, exec boil.ContextExecutor, p
 	return st, nil
 }
 
-// this is returned by more-or-less generic database routines and the caller can specialize into a type
-type dbComponent struct {
-	cmn  *common.Common
-	attr *attributes
-}
-
 // As generically as possible, retrieve this component from the database. Status and Firmware
 // are composed into the *Common. We return the attributes so that the caller can reconsitute
 // the specific device type. This is basically the reverse of composeRecords.
 func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
-	inband bool, deviceID, slug string) ([]*dbComponent, error) {
+	inband bool, deviceID string) ([]*rivets.Component, error) {
 	records, err := models.ServerComponents(
-		models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
+		//models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
 		models.ServerComponentWhere.ServerID.EQ(deviceID),
 		qm.OrderBy(models.ServerComponentColumns.CreatedAt+" DESC"),
 	).All(ctx, exec)
@@ -210,158 +207,39 @@ func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 		return nil, err
 	}
 
-	comps := []*dbComponent{}
+	var comps []*rivets.Component
 
 	for _, rec := range records {
-		// We should always have attributes, even if it's only "ProductName" (b/c it comes from common)
+		// attributes/firmware/status might not be stored because it was missing in the original data.
 		attr, err := retrieveComponentAttributes(ctx, exec, rec.ID, getAttributeNamespace(inband))
 		if err != nil {
-			return nil, err
+			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" attributes"+":"+err.Error())
 		}
 
-		// Either firmware or status might have no stored data. That's fine.
-		fw, err := retrieveComponentFirmwareVA(ctx, exec, rec.ID, slug, getFirmwareNamespace(inband))
+		fw, err := retrieveComponentFirmwareVA(ctx, exec, rec.ID, getFirmwareNamespace(inband))
 		switch err {
 		case nil, sql.ErrNoRows:
 		default:
-			return nil, err
+			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" firmware"+":"+err.Error())
 		}
 
-		st, err := retrieveComponentStatusVA(ctx, exec, rec.ID, slug, getStatusNamespace(inband))
+		st, err := retrieveComponentStatusVA(ctx, exec, rec.ID, getStatusNamespace(inband))
 		switch err {
 		case nil, sql.ErrNoRows:
 		default:
-			return nil, err
+			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" status"+":"+err.Error())
 		}
-		// Despite the schema, serial is required. It is set on storing the component if it was empty coming in.
-		serial := rec.Serial.String
-		comp := &dbComponent{
-			cmn: &common.Common{
-				Vendor:      rec.Vendor.String,
-				Model:       rec.Model.String,
-				Serial:      serial,
-				ProductName: attr.ProductName,
-				Firmware:    fw,
-				Status:      st,
-			},
-			attr: attr,
+		comp := &rivets.Component{
+			Name:       rec.Name.String,
+			Vendor:     rec.Vendor.String,
+			Model:      rec.Model.String,
+			Serial:     rec.Serial.String,
+			Firmware:   fw,
+			Status:     st,
+			Attributes: attr,
 		}
 		comps = append(comps, comp)
 	}
 
 	return comps, nil
-}
-
-func (dv *DeviceView) ComposeComponents(ctx context.Context, exec boil.ContextExecutor) error {
-	if err := dv.writeBios(ctx, exec); err != nil {
-		return err
-	}
-	if err := dv.writeBMC(ctx, exec); err != nil {
-		return err
-	}
-	if err := dv.writeMainboard(ctx, exec); err != nil {
-		return err
-	}
-	if err := dv.writeDimms(ctx, exec); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (dv *DeviceView) writeBios(ctx context.Context, exec boil.ContextExecutor) error {
-	bios := dv.Inv.BIOS
-
-	attr := &attributes{
-		Capabilities:  bios.Capabilities,
-		CapacityBytes: bios.CapacityBytes,
-		Description:   bios.Description,
-		Metadata:      bios.Metadata,
-		Oem:           bios.Oem,
-		SizeBytes:     bios.SizeBytes,
-	}
-
-	return composeRecords(ctx, exec, &bios.Common, dv.Inband, dv.DeviceID.String(), common.SlugBIOS, attr)
-}
-
-func (dv *DeviceView) getBios(ctx context.Context, exec boil.ContextExecutor) error {
-	bios := &common.BIOS{}
-	components, err := componentsFromDatabase(ctx, exec, dv.Inband, dv.DeviceID.String(), common.SlugBIOS)
-	if err != nil {
-		return err
-	}
-	// We should never have more BIOS component, but a defect could result in multiple records. The
-	// components slice should come back in order of most recent records first, so first record wins.
-	for _, comp := range components {
-		bios.Common = *comp.cmn
-		bios.Capabilities = comp.attr.Capabilities
-		bios.CapacityBytes = comp.attr.CapacityBytes
-		bios.Description = comp.attr.Description
-		bios.Oem = comp.attr.Oem
-		bios.SizeBytes = comp.attr.SizeBytes
-		break
-	}
-	dv.Inv.BIOS = bios
-	return nil
-}
-
-func (dv *DeviceView) writeBMC(ctx context.Context, exec boil.ContextExecutor) error {
-	bmc := dv.Inv.BMC
-
-	attr := &attributes{
-		Capabilities: bmc.Capabilities,
-		Description:  bmc.Description,
-		Metadata:     bmc.Metadata,
-		Oem:          bmc.Oem,
-	}
-
-	return composeRecords(ctx, exec, &bmc.Common, dv.Inband, dv.DeviceID.String(), common.SlugBMC, attr)
-}
-
-func (dv *DeviceView) getBMC(ctx context.Context, exec boil.ContextExecutor) error {
-}
-
-func (dv *DeviceView) writeMainboard(ctx context.Context, exec boil.ContextExecutor) error {
-	mb := dv.Inv.Mainboard
-
-	attr := &attributes{
-		Capabilities: mb.Capabilities,
-		Description:  mb.Description,
-		Metadata:     mb.Metadata,
-		Oem:          mb.Oem,
-		PhysicalID:   mb.PhysicalID,
-	}
-
-	return composeRecords(ctx, exec, &mb.Common, dv.Inband, dv.DeviceID.String(), common.SlugMainboard, attr)
-}
-
-func (dv *DeviceView) writeDimms(ctx context.Context, exec boil.ContextExecutor) error {
-	for idx, dimm := range dv.Inv.Memory {
-		// skip bogus dimms
-		if dimm.Vendor == "" &&
-			dimm.ProductName == "" &&
-			dimm.SizeBytes == 0 &&
-			dimm.ClockSpeedHz == 0 {
-			continue
-		}
-
-		if strings.TrimSpace(dimm.Serial) == "" {
-			dimm.Serial = fmt.Sprintf("%d", idx)
-		}
-
-		attr := &attributes{
-			Capabilities: dimm.Capabilities,
-			ClockSpeedHz: dimm.ClockSpeedHz,
-			Description:  dimm.Description,
-			FormFactor:   dimm.FormFactor,
-			Metadata:     dimm.Metadata, // maybe this should be versioned?
-			PartNumber:   dimm.PartNumber,
-			SizeBytes:    dimm.SizeBytes,
-			Slot:         strings.TrimPrefix(dimm.Slot, "DIMM.Socket."),
-		}
-
-		if err := composeRecords(ctx, exec, &dimm.Common, dv.Inband, dv.DeviceID.String(), common.SlugPhysicalMem, attr); err != nil {
-			return err
-		}
-	}
-	return nil
 }

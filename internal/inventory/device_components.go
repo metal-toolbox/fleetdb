@@ -1,4 +1,3 @@
-//nolint:all  // XXX remove this!
 package inventory
 
 import (
@@ -6,13 +5,14 @@ import (
 	"database/sql"
 
 	"github.com/bmc-toolbox/common"
-	"github.com/metal-toolbox/fleetdb/internal/dbtools"
-	"github.com/metal-toolbox/fleetdb/internal/models"
 	rivets "github.com/metal-toolbox/rivets/types"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+
+	"github.com/metal-toolbox/fleetdb/internal/dbtools"
+	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
 var (
@@ -198,7 +198,6 @@ func retrieveComponentStatusVA(ctx context.Context, exec boil.ContextExecutor, p
 func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 	inband bool, deviceID string) ([]*rivets.Component, error) {
 	records, err := models.ServerComponents(
-		//models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
 		models.ServerComponentWhere.ServerID.EQ(deviceID),
 		qm.OrderBy(models.ServerComponentColumns.CreatedAt+" DESC"),
 	).All(ctx, exec)

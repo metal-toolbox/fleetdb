@@ -1,4 +1,3 @@
-//nolint:all  // XXX remove this!
 package inventory
 
 import (

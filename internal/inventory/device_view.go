@@ -1,4 +1,3 @@
-//nolint:all  // XXX remove this!
 package inventory
 
 import (
@@ -6,13 +5,14 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-	"github.com/metal-toolbox/fleetdb/internal/dbtools"
-	"github.com/metal-toolbox/fleetdb/internal/models"
 	rivets "github.com/metal-toolbox/rivets/types"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+
+	"github.com/metal-toolbox/fleetdb/internal/dbtools"
+	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
 /*
@@ -32,20 +32,21 @@ var (
 	// historically these values were determined/set by alloy, even though they are
 	// internal to the data storage layer, hence the names
 	alloyVendorNamespace = "sh.hollow.alloy.server_vendor_attributes"
-	//alloyMetadataNamespace = "sh.hollow.alloy.server_metadata_attributes"
-	//alloyUefiVarsNamespace = "sh.hollow.alloy.server_uefi_variables" // this is a versioned attribute, we expect it to change
+	// XXX: enable this when Server supports UEFI variables
+	// alloyUefiVarsNamespace = "sh.hollow.alloy.server_uefi_variables" // this is a versioned attribute, we expect it to change
 	serverStatusNamespace = "sh.hollow.alloy.server_status" // versioned
 
 	// metadata keys
 	modelKey  = "model"
 	vendorKey = "vendor"
 	serialKey = "serial"
-	//uefiVarsKey = "uefi-variables"
+	// XXX: again, enable after UEFI Variables are a thing. uefiVarsKey = "uefi-variables"
 
 	errBadServer    = errors.New("data is missing required field")
 	errBadComponent = errors.New("component data")
 )
 
+// DeviceView encapsulates everything we need to get and set inventory data for servers
 // A reminder for maintenance: this type needs to be able to contain all the
 // relevant fields from Component-Inventory or Alloy.
 type DeviceView struct {

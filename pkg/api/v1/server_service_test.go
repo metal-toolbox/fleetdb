@@ -5,7 +5,9 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/bmc-toolbox/common"
 	"github.com/google/uuid"
+	"github.com/metal-toolbox/fleetdb/internal/inventory"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
@@ -21,6 +23,36 @@ func TestFleetdbCreate(t *testing.T) {
 		res, _, err := c.Create(ctx, srv)
 		if !expectError {
 			assert.Equal(t, "00000000-0000-0000-0000-000000001234", res.String())
+		}
+
+		return err
+	})
+}
+
+func TestFleetdbSetInventory(t *testing.T) {
+	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+		srv := uuid.New()
+		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Record: srv})
+		require.Nil(t, err)
+		c := mockClient(string(jsonResponse), respCode)
+
+		inv := inventory.DeviceView{
+			Inv: &common.Device{
+				Common: common.Common{
+					Vendor: "CoolVendor",
+					Model:  "BestModel 420",
+					Serial: "0xdeadbeef",
+					Metadata: map[string]string{
+						"uefi-variables": `{ "msg":"hi there" }`,
+						"metakey":        "value",
+					},
+				},
+			},
+			DeviceID: srv,
+		}
+		res, err := c.SetInventory(ctx, srv, "inband", inv)
+		if !expectError {
+			assert.Equal(t, srv.String(), res.Record)
 		}
 
 		return err

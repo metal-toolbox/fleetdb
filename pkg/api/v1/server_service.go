@@ -7,6 +7,8 @@ import (
 	"path"
 
 	"github.com/google/uuid"
+
+	"github.com/metal-toolbox/fleetdb/internal/inventory"
 )
 
 const (
@@ -22,6 +24,7 @@ const (
 	uploadFileEndpoint                  = "batch-upload"
 	bomByMacAOCAddressEndpoint          = "aoc-mac-address"
 	bomByMacBMCAddressEndpoint          = "bmc-mac-address"
+	inventoryEndpoint                   = "inventory"
 )
 
 // ClientInterface provides an interface for the expected calls to interact with a fleetdb api
@@ -61,6 +64,27 @@ type ClientInterface interface {
 	BillOfMaterialsBatchUpload(context.Context, []Bom) (*ServerResponse, error)
 	GetBomInfoByAOCMacAddr(context.Context, string) (*Bom, *ServerResponse, error)
 	GetBomInfoByBMCMacAddr(context.Context, string) (*Bom, *ServerResponse, error)
+	GetInventory(context.Context, uuid.UUID, bool) (*ServerResponse, error)
+	SetInventory(context.Context, uuid.UUID, string, inventory.DeviceView) (*ServerResponse, error)
+}
+
+// GetInventory will get server's inventory info according to server UUID and mod ("inband" or "outofband")
+func (c *Client) GetInventory(ctx context.Context, srvUUID uuid.UUID, mod string) (*ServerResponse, error) {
+	m := &map[string]string{}
+	r := ServerResponse{Record: m}
+
+	path := fmt.Sprintf("%s/%s/%s", inventoryEndpoint, srvUUID, mod)
+	if err := c.get(ctx, path, &r); err != nil {
+		return nil, err
+	}
+
+	return &r, nil
+}
+
+// SetInventory will set server's inventory info according to server UUID, mod ("inband" or "outofband") and DeviceView object.
+func (c *Client) SetInventory(ctx context.Context, srvUUID uuid.UUID, mod string, view inventory.DeviceView) (*ServerResponse, error) {
+	path := fmt.Sprintf("%s/%s/%s", inventoryEndpoint, srvUUID, mod)
+	return c.put(ctx, path, view)
 }
 
 // Create will attempt to create a server in Hollow and return the new server's UUID

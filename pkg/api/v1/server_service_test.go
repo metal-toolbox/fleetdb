@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+	rivets "github.com/metal-toolbox/rivets/types"
 )
 
 func TestFleetdbCreate(t *testing.T) {
@@ -392,6 +393,45 @@ func TestGetBomInfoByBMCMacAddr(t *testing.T) {
 		respBom, _, err := c.GetBomInfoByBMCMacAddr(ctx, "fakeBmcMacAddress1")
 		if !expectError {
 			assert.Equal(t, &bom, respBom)
+		}
+
+		return err
+	})
+}
+
+func TestGetInventory(t *testing.T) {
+	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+		srvID := uuid.New()
+		srv := &rivets.Server{
+			Name: srvID.String(),
+		}
+		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Record: srv})
+		require.NoError(t, err)
+
+		c := mockClient(string(jsonResponse), respCode)
+		respInv, _, err := c.GetServerInventory(ctx, srvID, true)
+		if !expectError {
+			require.Equal(t, srv, respInv)
+		}
+
+		return err
+	})
+}
+
+func TestSetInventory(t *testing.T) {
+	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+		srvID := uuid.New()
+		srv := &rivets.Server{
+			Name: srvID.String(),
+		}
+		exp := &fleetdbapi.ServerResponse{Message: "resource updated"}
+		jsonResponse, err := json.Marshal(exp)
+		require.NoError(t, err)
+
+		c := mockClient(string(jsonResponse), respCode)
+		got, err := c.SetServerInventory(ctx, srvID, srv, true)
+		if !expectError {
+			require.Equal(t, exp, got)
 		}
 
 		return err

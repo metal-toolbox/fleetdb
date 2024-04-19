@@ -7,6 +7,7 @@ import (
 	"path"
 
 	"github.com/google/uuid"
+	rivets "github.com/metal-toolbox/rivets/types"
 )
 
 const (
@@ -22,6 +23,7 @@ const (
 	uploadFileEndpoint                  = "batch-upload"
 	bomByMacAOCAddressEndpoint          = "aoc-mac-address"
 	bomByMacBMCAddressEndpoint          = "bmc-mac-address"
+	inventoryEndpoint                   = "inventory"
 )
 
 // ClientInterface provides an interface for the expected calls to interact with a fleetdb api
@@ -61,6 +63,8 @@ type ClientInterface interface {
 	BillOfMaterialsBatchUpload(context.Context, []Bom) (*ServerResponse, error)
 	GetBomInfoByAOCMacAddr(context.Context, string) (*Bom, *ServerResponse, error)
 	GetBomInfoByBMCMacAddr(context.Context, string) (*Bom, *ServerResponse, error)
+	GetServerInventory(context.Context, uuid.UUID, bool) (*rivets.Server, *ServerResponse, error)
+	SetServerInventory(context.Context, uuid.UUID, *rivets.Server, bool) (*ServerResponse, error)
 }
 
 // Create will attempt to create a server in Hollow and return the new server's UUID
@@ -426,4 +430,34 @@ func (c *Client) GetBomInfoByBMCMacAddr(ctx context.Context, bmcMacAddr string) 
 	}
 
 	return bom, &r, nil
+}
+
+// GetServerInventory returns the last reported server state of the kind specified by the inband parameter
+func (c *Client) GetServerInventory(ctx context.Context, srvID uuid.UUID, inband bool) (*rivets.Server, *ServerResponse, error) {
+	mode := "outofband"
+	if inband {
+		mode = "inband"
+	}
+
+	path := fmt.Sprintf("%s/%s?mode=%s", inventoryEndpoint, srvID.String(), mode)
+	srv := &rivets.Server{}
+	r := &ServerResponse{Record: srv}
+
+	if err := c.get(ctx, path, r); err != nil {
+		return nil, nil, err
+	}
+
+	return srv, r, nil
+}
+
+// SetServerInventory writes the given server structure back to the database
+func (c *Client) SetServerInventory(ctx context.Context, srvID uuid.UUID,
+	srv *rivets.Server, inband bool) (*ServerResponse, error) {
+	mode := "outofband"
+	if inband {
+		mode = "inband"
+	}
+
+	path := fmt.Sprintf("%s/%s?mode=%s", inventoryEndpoint, srvID.String(), mode)
+	return c.put(ctx, path, srv)
 }

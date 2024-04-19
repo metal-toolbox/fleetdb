@@ -2,6 +2,7 @@ package inventory
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
 
 	"github.com/google/uuid"
@@ -44,16 +45,17 @@ var (
 
 	errBadServer    = errors.New("data is missing required field")
 	errBadComponent = errors.New("component data")
+
+	ErrNoInventory = errors.New("no inventory stored")
 )
 
 // DeviceView encapsulates everything we need to get and set inventory data for servers
 // A reminder for maintenance: this type needs to be able to contain all the
 // relevant fields from Component-Inventory or Alloy.
 type DeviceView struct {
-	Inv        *rivets.Server    `json:"inventory"`
-	BiosConfig map[string]string `json:"bios_config,omitempty"`
-	Inband     bool              // the method of inventory collection
-	DeviceID   uuid.UUID
+	Inv      *rivets.Server
+	Inband   bool // the method of inventory collection
+	DeviceID uuid.UUID
 }
 
 // ServerSanityCheck handles verifying that all the details in the incoming data
@@ -140,14 +142,22 @@ func (dv *DeviceView) UpsertInventory(ctx context.Context, exec boil.ContextExec
 }
 
 func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecutor) error {
-	dv.Inv = &rivets.Server{}
+	dv.Inv = &rivets.Server{
+		ID:   dv.DeviceID.String(), // XXX: remove later?
+		Name: dv.DeviceID.String(),
+	}
 
-	// we should always have at *least* vendor attributes, so sql.ErrNoRows is a problem here.
 	attrs, err := models.Attributes(
 		models.AttributeWhere.ServerID.EQ(null.StringFrom(dv.DeviceID.String())),
 	).All(ctx, exec)
-	if err != nil {
-		return err
+	switch err {
+	case nil:
+	default:
+		return errors.Wrap(err, "fetching attributes")
+	}
+
+	if len(attrs) == 0 {
+		return ErrNoInventory
 	}
 
 	for _, a := range attrs {
@@ -170,19 +180,22 @@ func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecut
 		qm.OrderBy("tally DESC"),
 	).One(ctx, exec)
 
-	if err != nil {
-		return err
+	switch err {
+	case nil:
+		var status string
+		if err = json.Unmarshal(statusVAttr.Data, &status); err != nil {
+			return errors.Wrap(err, "unmarshaling status attribute")
+		}
+		dv.Inv.Status = status
+	case sql.ErrNoRows:
+		// just skip it, status is optional
+	default:
+		return errors.Wrap(err, "fetching versioned attibutes")
 	}
-
-	var status string
-	if err = json.Unmarshal(statusVAttr.Data, &status); err != nil {
-		return errors.Wrap(err, "unmarshaling status attribute")
-	}
-	dv.Inv.Status = status
 
 	comps, err := componentsFromDatabase(ctx, exec, dv.Inband, dv.DeviceID.String())
 	if err != nil {
-		return err
+		return errors.Wrap(err, "fetching components")
 	}
 
 	dv.Inv.Components = comps

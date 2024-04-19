@@ -2,23 +2,49 @@
 package fleetdbapi
 
 import (
-	"net/http"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
+	rivets "github.com/metal-toolbox/rivets/types"
 	"go.uber.org/zap"
 
 	"github.com/metal-toolbox/fleetdb/internal/inventory"
 )
 
-func unimplemented(c *gin.Context) {
-	m := map[string]string{
-		"err": "unimplemented",
-	}
-	c.JSON(http.StatusInternalServerError, m)
-}
-
 func (r *Router) getInventory(c *gin.Context) {
-	unimplemented(c)
+	srvID, err := r.parseUUID(c)
+	if err != nil {
+		badRequestResponse(c, "invalid server id", err)
+		return
+	}
+
+	var doInband bool
+	switch c.Query("mode") {
+	case "inband":
+		doInband = true
+	case "outofband":
+	default:
+		badRequestResponse(c, "invalid inventory mode", nil)
+		return
+	}
+
+	dv := inventory.DeviceView{
+		DeviceID: srvID,
+		Inband:   doInband,
+	}
+
+	err = dv.FromDatastore(c.Request.Context(), r.DB)
+	switch err {
+	case nil:
+	case inventory.ErrNoInventory:
+		msg := fmt.Sprintf("no inventory for %s", srvID)
+		notFoundResponse(c, msg)
+		return
+	default:
+		dbErrorResponse(c, err)
+		return
+	}
+	itemResponse(c, dv.Inv)
 }
 
 func (r *Router) setInventory(c *gin.Context) {
@@ -29,26 +55,39 @@ func (r *Router) setInventory(c *gin.Context) {
 	}
 
 	var doInband bool
-	switch c.Param("mode") {
+	param := c.Query("mode")
+
+	switch param {
 	case "inband":
 		doInband = true
 	case "outofband":
+	case "":
+		badRequestResponse(c, "missing inventory specifier", nil)
+		return
 	default:
-		badRequestResponse(c, "invalid inventory mode", nil)
+		badRequestResponse(c, fmt.Sprintf("invalid inventory mode: %s", param), nil)
+		return
 	}
 
-	view := inventory.DeviceView{}
-	if err := c.ShouldBindJSON(&view); err != nil {
+	srv := &rivets.Server{}
+	if err := c.ShouldBindJSON(srv); err != nil {
 		badRequestResponse(c, "invalid inventory payload", err)
 		return
 	}
 
-	view.DeviceID = srvID
-	view.Inband = doInband
+	if err := inventory.ServerSanityCheck(srv); err != nil {
+		badRequestResponse(c, "invalid inventory payload", err)
+		return
+	}
+
+	view := &inventory.DeviceView{
+		DeviceID: srvID,
+		Inband:   doInband,
+		Inv:      srv,
+	}
 
 	txn := r.DB.MustBegin()
 
-	// XXX what about BIOS config?
 	if err := view.UpsertInventory(c.Request.Context(), txn); err != nil {
 		if err := txn.Rollback(); err != nil {
 			r.Logger.With(
@@ -69,22 +108,5 @@ func (r *Router) setInventory(c *gin.Context) {
 		// increment error metrics
 		dbErrorResponse(c, err)
 	}
+	updatedResponse(c, "")
 }
-
-/*(	if err != nil {
-		tx.Rollback() //nolint errcheck
-		dbErrorResponse(c, err)
-
-		return
-	}
-	// compose the attributes from the inventory
-	// - server vendor attributes
-	// - server metadata attributes
-
-	// compose the components
-
-}
-
-func (r *Router) setOutofbandInventory(c *gin.Context) {
-	unimplemented(c)
-}*/

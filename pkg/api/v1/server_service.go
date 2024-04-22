@@ -7,8 +7,7 @@ import (
 	"path"
 
 	"github.com/google/uuid"
-
-	"github.com/metal-toolbox/fleetdb/internal/inventory"
+	rivets "github.com/metal-toolbox/rivets/types"
 )
 
 const (
@@ -64,27 +63,8 @@ type ClientInterface interface {
 	BillOfMaterialsBatchUpload(context.Context, []Bom) (*ServerResponse, error)
 	GetBomInfoByAOCMacAddr(context.Context, string) (*Bom, *ServerResponse, error)
 	GetBomInfoByBMCMacAddr(context.Context, string) (*Bom, *ServerResponse, error)
-	GetInventory(context.Context, uuid.UUID, bool) (*ServerResponse, error)
-	SetInventory(context.Context, uuid.UUID, string, inventory.DeviceView) (*ServerResponse, error)
-}
-
-// GetInventory will get server's inventory info according to server UUID and mod ("inband" or "outofband")
-func (c *Client) GetInventory(ctx context.Context, srvUUID uuid.UUID, mod string) (*ServerResponse, error) {
-	m := &map[string]string{}
-	r := ServerResponse{Record: m}
-
-	path := fmt.Sprintf("%s/%s/%s", inventoryEndpoint, srvUUID, mod)
-	if err := c.get(ctx, path, &r); err != nil {
-		return nil, err
-	}
-
-	return &r, nil
-}
-
-// SetInventory will set server's inventory info according to server UUID, mod ("inband" or "outofband") and DeviceView object.
-func (c *Client) SetInventory(ctx context.Context, srvUUID uuid.UUID, mod string, view inventory.DeviceView) (*ServerResponse, error) {
-	path := fmt.Sprintf("%s/%s/%s", inventoryEndpoint, srvUUID, mod)
-	return c.put(ctx, path, view)
+	GetServerInventory(context.Context, uuid.UUID, bool) (*rivets.Server, *ServerResponse, error)
+	SetServerInventory(context.Context, uuid.UUID, *rivets.Server, bool) (*ServerResponse, error)
 }
 
 // Create will attempt to create a server in Hollow and return the new server's UUID
@@ -450,4 +430,34 @@ func (c *Client) GetBomInfoByBMCMacAddr(ctx context.Context, bmcMacAddr string) 
 	}
 
 	return bom, &r, nil
+}
+
+// GetServerInventory returns the last reported server state of the kind specified by the inband parameter
+func (c *Client) GetServerInventory(ctx context.Context, srvID uuid.UUID, inband bool) (*rivets.Server, *ServerResponse, error) {
+	mode := "outofband"
+	if inband {
+		mode = "inband"
+	}
+
+	path := fmt.Sprintf("%s/%s?mode=%s", inventoryEndpoint, srvID.String(), mode)
+	srv := &rivets.Server{}
+	r := &ServerResponse{Record: srv}
+
+	if err := c.get(ctx, path, r); err != nil {
+		return nil, nil, err
+	}
+
+	return srv, r, nil
+}
+
+// SetServerInventory writes the given server structure back to the database
+func (c *Client) SetServerInventory(ctx context.Context, srvID uuid.UUID,
+	srv *rivets.Server, inband bool) (*ServerResponse, error) {
+	mode := "outofband"
+	if inband {
+		mode = "inband"
+	}
+
+	path := fmt.Sprintf("%s/%s?mode=%s", inventoryEndpoint, srvID.String(), mode)
+	return c.put(ctx, path, srv)
 }

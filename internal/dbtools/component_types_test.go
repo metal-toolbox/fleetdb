@@ -6,7 +6,6 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/stretchr/testify/require"
 )
 
@@ -18,14 +17,10 @@ func TestServerComponentTypes(t *testing.T) {
 	require.NoError(t, err)
 
 	for _, typ := range knownComponentTypes {
-		_, err := ComponentTypeIDFromName(ctx, db, typ)
+		_, err := ComponentTypeIDFromName(typ)
 		require.NoError(t, err, "couldn't find %s", typ)
 	}
 
-	require.NotPanics(t, func() { _ = MustComponentTypeID(ctx, db, common.SlugBackplaneExpander) })
-
-	require.Panics(t, func() { _ = MustComponentTypeID(ctx, db, "bogus") })
-
-	_, err = ComponentTypeIDFromName(ctx, db, "bogus")
+	_, err = ComponentTypeIDFromName("bogus")
 	require.Error(t, err, "no error on bogus")
 }

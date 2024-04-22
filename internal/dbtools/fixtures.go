@@ -5,9 +5,11 @@ package dbtools
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 	"time"
 
+	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -27,6 +29,7 @@ var (
 	// Server Component Types
 	FixtureFinType *models.ServerComponentType
 
+	NemoID                       uuid.UUID
 	FixtureNemo                  *models.Server
 	FixtureNemoMetadata          *models.Attribute
 	FixtureNemoOtherdata         *models.Attribute
@@ -83,6 +86,9 @@ var (
 	FixtureFirmwareUUIDsR640        []string
 	FixtureFirmwareSetR640          *models.ComponentFirmwareSet
 	FixtureFirmwareSetR640Attribute *models.AttributesFirmwareSet
+
+	// Inventory fixtures
+	FixtureInventoryServer *models.Server
 )
 
 func addFixtures(t *testing.T) error {
@@ -138,6 +144,10 @@ func addFixtures(t *testing.T) error {
 	}
 
 	if err := SetupComponentTypes(ctx, testDB); err != nil {
+		return err
+	}
+
+	if err := setupInventoryFixture(ctx, testDB); err != nil {
 		return err
 	}
 
@@ -259,7 +269,11 @@ func setupNemo(ctx context.Context, db *sqlx.DB, t *testing.T) error {
 		return err
 	}
 
-	return FixtureNemo.AddVersionedAttributes(ctx, db, true, FixtureNemoVersionedNew)
+	if err := FixtureNemo.AddVersionedAttributes(ctx, db, true, FixtureNemoVersionedNew); err != nil {
+		return err
+	}
+	NemoID = uuid.MustParse(FixtureNemo.ID)
+	return nil
 }
 
 func setupDory(ctx context.Context, db *sqlx.DB) error {
@@ -602,6 +616,35 @@ func setupFirmwareSetR640(ctx context.Context, db *sqlx.DB) error {
 		if err := m.Insert(ctx, db, boil.Infer()); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func setupInventoryFixture(ctx context.Context, db *sqlx.DB) error {
+	FixtureInventoryServer = &models.Server{
+		Name:         null.StringFrom("inventory"),
+		FacilityCode: null.StringFrom("tf2"),
+	}
+
+	if err := FixtureInventoryServer.Insert(ctx, db, boil.Infer()); err != nil {
+		return err
+	}
+
+	vendorAttrs := map[string]string{
+		"model":  "myModel",
+		"vendor": "Awesome Computer, Inc.",
+		"serial": "1234xyz",
+	}
+	vaData, _ := json.Marshal(vendorAttrs)
+
+	vendorAttrRecord := &models.Attribute{
+		ServerID:  null.StringFrom(FixtureInventoryServer.ID),
+		Namespace: "sh.hollow.alloy.server_vendor_attributes", // alloyVendorNamespace
+		Data:      types.JSON(vaData),
+	}
+	if err := vendorAttrRecord.Insert(ctx, db, boil.Infer()); err != nil {
+		return err
 	}
 
 	return nil

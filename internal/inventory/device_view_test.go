@@ -4,32 +4,68 @@ package inventory
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/bmc-toolbox/common"
 	"github.com/google/uuid"
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/models"
+	rivets "github.com/metal-toolbox/rivets/types"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 
 	"github.com/stretchr/testify/require"
 )
 
+func Test_ServerSanityCheck(t *testing.T) {
+	srv := &rivets.Server{}
+
+	require.Error(t, ServerSanityCheck(srv), "zero value")
+	srv.Model = "some model"
+	require.Error(t, ServerSanityCheck(srv), "model only")
+	srv.Vendor = "some vendor"
+	require.Error(t, ServerSanityCheck(srv), "model+vendor")
+	srv.Serial = "some-serial"
+	// theoretically a server could have no components, from the FleetDB perspective
+	require.NoError(t, ServerSanityCheck(srv))
+	srv.Components = []*rivets.Component{
+		&rivets.Component{},
+	}
+	require.Error(t, ServerSanityCheck(srv), "zero value component")
+	srv.Components = []*rivets.Component{
+		&rivets.Component{Name: common.SlugPhysicalMem},
+	}
+	require.Error(t, ServerSanityCheck(srv), "component name only")
+	srv.Components = []*rivets.Component{
+		&rivets.Component{
+			Name:   common.SlugPhysicalMem,
+			Serial: "some-serial-number",
+		},
+	}
+	require.NoError(t, ServerSanityCheck(srv))
+}
+
 func Test_DeviceViewUpdate(t *testing.T) {
 	t.Run("insert and update device attributes", func(t *testing.T) {
 		db := dbtools.DatabaseTest(t)
 		srvID := uuid.New()
 		dv := DeviceView{
-			Inv: &common.Device{
-				Common: common.Common{
-					Vendor: "CoolVendor",
-					Model:  "BestModel 420",
-					Serial: "0xdeadbeef",
-					Metadata: map[string]string{
-						"uefi-variables": `{ "msg":"hi there" }`,
-						"metakey":        "value",
+			Inv: &rivets.Server{
+				Vendor: "CoolVendor",
+				Model:  "BestModel 420",
+				Serial: "0xdeadbeef",
+				Status: "some status string",
+				Components: []*rivets.Component{
+					&rivets.Component{
+						Name:   common.SlugBIOS,
+						Serial: "some-serial",
+						Firmware: &common.Firmware{
+							Installed: "version",
+						},
+						Status: &common.Status{
+							State:  "great",
+							Health: "very yes",
+						},
 					},
 				},
 			},
@@ -49,20 +85,9 @@ func Test_DeviceViewUpdate(t *testing.T) {
 		require.NoError(t, err)
 
 		// do it again to test the update
-		dv.Inv.Common.Serial = "roastbeef"
-		dv.Inv.Metadata["uefi-variables"] = `{ "msg": "hi again" }`
+		dv.Inv.Status = "different status"
 		err = dv.UpsertInventory(context.TODO(), db)
 		require.NoError(t, err)
-
-		// there should be 2 records for the UEFI variables versioned attribute
-
-		count, err := models.VersionedAttributes(
-			models.VersionedAttributeWhere.ServerID.EQ(null.StringFrom(srvID.String())),
-			models.VersionedAttributeWhere.Namespace.EQ(alloyUefiVarsNamespace),
-		).Count(context.TODO(), db)
-
-		require.NoError(t, err, "counting uefi versioned attributes")
-		require.Equal(t, int64(2), count)
 
 		// validate the contents
 		read := DeviceView{
@@ -70,14 +95,11 @@ func Test_DeviceViewUpdate(t *testing.T) {
 		}
 		err = read.FromDatastore(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, "roastbeef", read.Inv.Serial)
-		require.Equal(t, 2, len(read.Inv.Metadata))
+		require.Equal(t, "different status", read.Inv.Status)
 
-		varStr, ok := read.Inv.Metadata["uefi-variables"]
-		require.True(t, ok)
-
-		uefiVar := map[string]any{}
-		require.NoError(t, json.Unmarshal([]byte(varStr), &uefiVar))
-		require.Equal(t, "hi again", uefiVar["msg"])
+		require.Len(t, read.Inv.Components, 1)
+		bios := read.Inv.Components[0]
+		require.NotNil(t, bios.Firmware)
+		require.NotNil(t, bios.Status)
 	})
 }

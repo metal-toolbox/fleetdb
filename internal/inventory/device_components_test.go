@@ -4,7 +4,6 @@ package inventory
 
 import (
 	"context"
-	"encoding/json"
 	"testing"
 
 	"github.com/bmc-toolbox/common"
@@ -17,6 +16,7 @@ import (
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/models"
+	rivets "github.com/metal-toolbox/rivets/types"
 )
 
 func mustCreateServerRecord(t *testing.T, db *sqlx.DB, name string) uuid.UUID {
@@ -34,468 +34,247 @@ func mustCreateServerRecord(t *testing.T, db *sqlx.DB, name string) uuid.UUID {
 	return srvUUID
 }
 
-func TestComponents(t *testing.T) {
+func TestComposeComponentRecords(t *testing.T) {
 	db := dbtools.DatabaseTest(t)
-	t.Run("writeBios", func(t *testing.T) {
-		srvUUID := mustCreateServerRecord(t, db, "write-bios")
+	t.Run("nil attr/vattr", func(t *testing.T) {
+		srvUUID := mustCreateServerRecord(t, db, "nil-attr-case")
 
-		// XXX: If the serial number changes, we will insert a component record instead of updating it
-		orig := &common.BIOS{
-			Common: common.Common{
-				Oem:         true,
-				Vendor:      "coolguy",
-				Model:       "xxxx",
-				ProductName: "the-product",
-				Serial:      "some-serial",
-				Firmware: &common.Firmware{
-					Installed: "some-version",
-				},
-				Status: &common.Status{
-					State:  "OK",
-					Health: "decent",
-				},
-			},
-			SizeBytes:     int64(1111),
-			CapacityBytes: int64(2222),
+		var inband bool
+		slug := common.SlugBIOS
+
+		orig := &rivets.Component{
+			Name:   slug,
+			Vendor: "the-vendor",
 		}
 
-		update := &common.BIOS{
-			Common: common.Common{
-				Oem:         false,
-				Vendor:      "OpenBios",
-				ProductName: "super-cool",
-				Serial:      "some-serial",
-				Firmware: &common.Firmware{
-					Installed: "installed-version",
-				},
-				Status: &common.Status{
-					State:  "contented",
-					Health: "healthy",
-				},
-			},
-			SizeBytes:     int64(3333),
-			CapacityBytes: int64(4444),
-		}
-
-		device := &DeviceView{
-			DeviceID: srvUUID,
-			Inv: &common.Device{
-				BIOS: orig,
-			},
-		} // inband = false
+		attributeNS := getAttributeNamespace(inband)
+		fwns := getFirmwareNamespace(inband)
+		sns := getStatusNamespace(inband)
 
 		tx := db.MustBegin()
-		err := device.writeBios(context.TODO(), tx)
+		err := composeRecords(context.TODO(), tx, orig, inband, srvUUID.String())
 		require.NoError(t, err)
 		_ = tx.Commit()
 
 		scc, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugBIOS)),
+			models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
 			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
 		).Count(context.TODO(), db)
 		require.NoError(t, err)
 		require.Equal(t, int64(1), scc)
 
 		scr, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugBIOS)),
+			models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
 			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
 		).One(context.TODO(), db)
 		require.NoError(t, err)
+		require.True(t, scr.Model.IsZero())
 
-		ac, err := models.Attributes(
+		rc, err := models.Attributes(
 			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(outofbandComponentNamespace),
+			models.AttributeWhere.Namespace.EQ(attributeNS),
 		).Count(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, int64(1), ac)
+		require.Equal(t, int64(0), rc)
 
-		vac, err := models.VersionedAttributes(
+		rc, err = models.VersionedAttributes(
 			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(outofbandComponentNamespace),
+			models.VersionedAttributeWhere.Namespace.EQ(fwns),
 		).Count(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, int64(1), vac)
+		require.Equal(t, int64(0), rc)
 
-		// update the BIOS
-		device.Inv.BIOS = update
-		tx2 := db.MustBegin()
-		err = device.writeBios(context.TODO(), tx2)
+		rc, err = models.VersionedAttributes(
+			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
+			models.VersionedAttributeWhere.Namespace.EQ(sns),
+		).Count(context.TODO(), db)
 		require.NoError(t, err)
-		err = tx2.Commit()
-		require.NoError(t, err)
+		require.Equal(t, int64(0), rc)
+	})
+	t.Run("common case", func(t *testing.T) {
+		srvUUID := mustCreateServerRecord(t, db, "common-case")
 
-		scc, err = models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugBIOS)),
+		var inband bool
+		attributeNS := getAttributeNamespace(inband)
+		fwns := getFirmwareNamespace(inband)
+		sns := getStatusNamespace(inband)
+
+		slug := common.SlugBIOS
+
+		orig := &rivets.Component{
+			// this can be any real slug, but *must* be a real slug, otherwise
+			// we will panic on the slug -> type-id lookup.
+			Name:   slug,
+			Vendor: "the-vendor",
+			Serial: "some-serial-number",
+			Firmware: &common.Firmware{
+				Installed: "old-version",
+			},
+			Status: &common.Status{
+				State:  "OK",
+				Health: "decent",
+			},
+			Attributes: &rivets.ComponentAttributes{
+				PhysicalID: "my-id",
+			},
+		}
+
+		tx := db.MustBegin()
+		err := composeRecords(context.TODO(), tx, orig, inband, srvUUID.String())
+		require.NoError(t, err)
+		_ = tx.Commit()
+
+		// interrogate the DB for our records
+		scc, err := models.ServerComponents(
+			models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
 			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
 		).Count(context.TODO(), db)
 		require.NoError(t, err)
 		require.Equal(t, int64(1), scc)
 
-		ac, err = models.Attributes(
+		scr, err := models.ServerComponents(
+			models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
+			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
+		).One(context.TODO(), db)
+		require.NoError(t, err)
+		require.True(t, scr.Model.IsZero())
+
+		// validate the record counts of the attributes/versioned-attributes
+		ac, err := models.Attributes(
 			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(outofbandComponentNamespace),
+			models.AttributeWhere.Namespace.EQ(attributeNS),
 		).Count(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, int64(1), ac)
+		require.Equal(t, int64(1), ac, "attribute record")
 
 		ar, err := models.Attributes(
 			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(outofbandComponentNamespace),
+			models.AttributeWhere.Namespace.EQ(attributeNS),
 		).One(context.TODO(), db)
 		require.NoError(t, err)
-		// unpack the Data to validate the update
-		var attr attributes
-		err = json.Unmarshal([]byte(ar.Data), &attr)
+
+		vac, err := models.VersionedAttributes(
+			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
+			models.VersionedAttributeWhere.Namespace.EQ(fwns),
+		).Count(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, int64(4444), attr.CapacityBytes)
-		require.Equal(t, int64(3333), attr.SizeBytes)
+		require.Equal(t, int64(1), vac, "firmware record")
+
+		fwr, err := models.VersionedAttributes(
+			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
+			models.VersionedAttributeWhere.Namespace.EQ(fwns),
+		).One(context.TODO(), db)
+		require.NoError(t, err)
+		fwData, err := firmwareFromJSON(fwr.Data)
+		require.NoError(t, err)
+		require.Equal(t, orig.Firmware, fwData)
 
 		vac, err = models.VersionedAttributes(
 			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(outofbandComponentNamespace),
+			models.VersionedAttributeWhere.Namespace.EQ(sns),
 		).Count(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, int64(2), vac)
+		require.Equal(t, int64(1), vac, "status record")
 
-		vrec, err := models.VersionedAttributes(
+		sr, err := models.VersionedAttributes(
 			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(outofbandComponentNamespace),
-			qm.OrderBy("tally DESC"),
+			models.VersionedAttributeWhere.Namespace.EQ(sns),
 		).One(context.TODO(), db)
 		require.NoError(t, err)
-
-		vattr := versionedAttributes{}
-		err = json.Unmarshal([]byte(vrec.Data), &vattr)
+		srData, err := statusFromJSON(sr.Data)
 		require.NoError(t, err)
-		require.Equal(t, "contented", vattr.Status.State)
-	})
-	t.Run("writeBMC", func(t *testing.T) {
-		srvUUID := mustCreateServerRecord(t, db, "write-bmc")
+		require.Equal(t, orig.Status, srData)
 
-		orig := &common.BMC{
-			Common: common.Common{
-				Oem:         true,
-				Vendor:      "coolguy",
-				Model:       "xxxx",
-				ProductName: "the-product",
-				Serial:      "some-serial",
-				Firmware: &common.Firmware{
-					Installed: "some-version",
-				},
-				Status: &common.Status{
-					State:  "OK",
-					Health: "decent",
-				},
+		// now do the update
+		update := &rivets.Component{
+			Name:   common.SlugBIOS,
+			Vendor: "the-vendor",
+			Serial: "some-serial-number",
+			Firmware: &common.Firmware{
+				Installed: "new-version",
 			},
-			// BMC contains a NIC and ID string as well, but not populated or stored?
-		}
-
-		update := &common.BMC{
-			Common: common.Common{
-				Oem:         false,
-				Vendor:      "coolguy",
-				ProductName: "super-cool",
-				Serial:      "some-serial",
-				Firmware: &common.Firmware{
-					Installed: "installed-version",
-				},
-				Status: &common.Status{
-					State:  "contented",
-					Health: "healthy",
-				},
+			Status: &common.Status{
+				State:  "happy",
+				Health: "content",
 			},
-		}
-
-		device := &DeviceView{
-			DeviceID: srvUUID,
-			Inv: &common.Device{
-				BMC: orig,
-			},
-		} // inband = false
-
-		tx := db.MustBegin()
-		err := device.writeBMC(context.TODO(), tx)
-		require.NoError(t, err)
-		_ = tx.Commit()
-
-		scc, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugBMC)),
-			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), scc)
-
-		scr, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugBMC)),
-			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
-		).One(context.TODO(), db)
-		require.NoError(t, err)
-
-		ac, err := models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(outofbandComponentNamespace),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), ac)
-
-		vac, err := models.VersionedAttributes(
-			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(outofbandComponentNamespace),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), vac)
-
-		// update the BMC
-		device.Inv.BMC = update
-		tx2 := db.MustBegin()
-		err = device.writeBMC(context.TODO(), tx2)
-		require.NoError(t, err)
-		err = tx2.Commit()
-		require.NoError(t, err)
-
-		scc, err = models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugBMC)),
-			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), scc)
-
-		ac, err = models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(outofbandComponentNamespace),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), ac)
-
-		vac, err = models.VersionedAttributes(
-			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(outofbandComponentNamespace),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(2), vac)
-
-		vrec, err := models.VersionedAttributes(
-			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(outofbandComponentNamespace),
-			qm.OrderBy("tally DESC"),
-		).One(context.TODO(), db)
-		require.NoError(t, err)
-
-		vattr := versionedAttributes{}
-		err = json.Unmarshal([]byte(vrec.Data), &vattr)
-		require.NoError(t, err)
-		require.Equal(t, "contented", vattr.Status.State)
-	})
-	t.Run("writeMainboard", func(t *testing.T) {
-		srvUUID := mustCreateServerRecord(t, db, "write-mainboard")
-
-		device := &DeviceView{
-			DeviceID: srvUUID,
-			Inband:   true,
-			Inv: &common.Device{
-				Mainboard: &common.Mainboard{
-					Common: common.Common{
-						Oem:         true,
-						Vendor:      "theVendor",
-						Model:       "theBest",
-						ProductName: "super-board",
-						Description: "a mainboard",
-						Firmware: &common.Firmware{
-							Installed: "old-version",
-						},
-						Status: &common.Status{
-							State:  "OK",
-							Health: "meh",
-						},
-					},
-				},
-			},
-		}
-
-		tx := db.MustBegin()
-		err := device.writeMainboard(context.TODO(), tx)
-		require.NoError(t, err)
-		_ = tx.Commit()
-
-		scc, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugMainboard)),
-			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), scc)
-
-		scr, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugMainboard)),
-			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
-		).One(context.TODO(), db)
-		require.NoError(t, err)
-
-		ac, err := models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(inbandComponentNamespace),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), ac)
-
-		vac, err := models.VersionedAttributes(
-			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(inbandComponentNamespace),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), vac)
-
-		device.Inv.Mainboard.Firmware = &common.Firmware{
-			Installed: "new-version",
-		}
-
-		tx = db.MustBegin()
-		err = device.writeMainboard(context.TODO(), tx)
-		require.NoError(t, err)
-		_ = tx.Commit()
-
-		vrec, err := models.VersionedAttributes(
-			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(inbandComponentNamespace),
-			qm.OrderBy("tally DESC"),
-		).One(context.TODO(), db)
-		require.NoError(t, err)
-
-		vattr := versionedAttributes{}
-		err = json.Unmarshal([]byte(vrec.Data), &vattr)
-		require.NoError(t, err)
-		require.Equal(t, "new-version", vattr.Firmware.Installed)
-	})
-	t.Run("writeDimms", func(t *testing.T) {
-		srvUUID := mustCreateServerRecord(t, db, "write-dimms")
-
-		device := &DeviceView{
-			DeviceID: srvUUID,
-			Inv: &common.Device{
-				Memory: []*common.Memory{
-					&common.Memory{
-						Common: common.Common{ // stutter much?
-							Vendor:      "Elephant",
-							ProductName: "ivory",
-							Serial:      "my-serial-number",
-							Firmware: &common.Firmware{
-								Installed: "installed-version",
-							},
-							Status: &common.Status{
-								State:  "carceral",
-								Health: "meh",
-							},
-						},
-						ID:           "first",
-						Slot:         "DIMM.Socket.4",
-						SizeBytes:    int64(1024),
-						ClockSpeedHz: int64(60),
-					},
-					&common.Memory{
-						ID: "bogus",
-					},
-				},
-			},
-			Inband: true,
-		}
-
-		tx := db.MustBegin()
-		err := device.writeDimms(context.TODO(), tx)
-		require.NoError(t, err)
-		_ = tx.Commit()
-
-		// interrogate the database to validate our transformation
-		// we expect a server component record, an attributes record,
-		// and a versioned attributes record
-		scc, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugPhysicalMem)),
-			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), scc)
-
-		scr, err := models.ServerComponents(
-			models.ServerComponentWhere.Name.EQ(null.StringFrom(common.SlugPhysicalMem)),
-			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
-		).One(context.TODO(), db)
-		require.NoError(t, err)
-
-		ac, err := models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(inbandComponentNamespace),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), ac)
-
-		vac, err := models.VersionedAttributes(
-			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(inbandComponentNamespace),
-		).Count(context.TODO(), db)
-		require.NoError(t, err)
-		require.Equal(t, int64(1), vac)
-
-		// update the DIMM record
-		device.Inv.Memory = []*common.Memory{
-			&common.Memory{
-				Common: common.Common{
-					Vendor:      "Elephant",
-					ProductName: "ivory",
-					Serial:      "my-serial-number",
-					Firmware: &common.Firmware{
-						Installed: "installed-version",
-					},
-					Status: &common.Status{
-						State:  "contented",
-						Health: "healthy",
-					},
-				},
-				ID:           "first",
-				Slot:         "DIMM.Socket.4",
-				SizeBytes:    int64(4096),
-				ClockSpeedHz: int64(120),
+			Attributes: &rivets.ComponentAttributes{
+				PhysicalID: "my-id",
 			},
 		}
 
 		tx = db.MustBegin()
-		err = device.writeDimms(context.TODO(), tx)
+		err = composeRecords(context.TODO(), tx, update, inband, srvUUID.String())
 		require.NoError(t, err)
 		_ = tx.Commit()
 
-		ac, err = models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(inbandComponentNamespace),
+		scc, err = models.ServerComponents(
+			models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
+			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
 		).Count(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, int64(1), ac)
+		require.Equal(t, int64(1), scc)
 
-		ar, err := models.Attributes(
-			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.AttributeWhere.Namespace.EQ(inbandComponentNamespace),
+		scr, err = models.ServerComponents(
+			models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
+			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
 		).One(context.TODO(), db)
 		require.NoError(t, err)
-		// unpack the Data to validate the update
-		var attr attributes
-		err = json.Unmarshal([]byte(ar.Data), &attr)
+
+		// validate the record counts of the attributes/versioned-attributes
+		ac, err = models.Attributes(
+			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
+			models.AttributeWhere.Namespace.EQ(attributeNS),
+		).Count(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, int64(120), attr.ClockSpeedHz)
-		require.Equal(t, int64(4096), attr.SizeBytes)
+		require.Equal(t, int64(1), ac, "attribute record")
+
+		ar, err = models.Attributes(
+			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
+			models.AttributeWhere.Namespace.EQ(attributeNS),
+		).One(context.TODO(), db)
+		require.NoError(t, err)
+		require.NotNil(t, ar.Data)
+		attr, err := componentAttributesFromJSON(ar.Data)
+		require.NoError(t, err)
+		require.Equal(t, update.Attributes, attr)
 
 		vac, err = models.VersionedAttributes(
 			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(inbandComponentNamespace),
+			models.VersionedAttributeWhere.Namespace.EQ(fwns),
 		).Count(context.TODO(), db)
 		require.NoError(t, err)
-		require.Equal(t, int64(2), vac)
+		require.Equal(t, int64(2), vac, "firmware record")
 
-		vrec, err := models.VersionedAttributes(
+		fwr, err = models.VersionedAttributes(
 			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
-			models.VersionedAttributeWhere.Namespace.EQ(inbandComponentNamespace),
+			models.VersionedAttributeWhere.Namespace.EQ(fwns),
 			qm.OrderBy("tally DESC"),
 		).One(context.TODO(), db)
 		require.NoError(t, err)
-
-		vattr := versionedAttributes{}
-		err = json.Unmarshal([]byte(vrec.Data), &vattr)
+		fwData, err = firmwareFromJSON(fwr.Data)
 		require.NoError(t, err)
-		require.Equal(t, "contented", vattr.Status.State)
+		require.Equal(t, update.Firmware, fwData)
+
+		vac, err = models.VersionedAttributes(
+			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
+			models.VersionedAttributeWhere.Namespace.EQ(sns),
+		).Count(context.TODO(), db)
+		require.NoError(t, err)
+		require.Equal(t, int64(2), vac, "status record")
+
+		sr, err = models.VersionedAttributes(
+			models.VersionedAttributeWhere.ServerComponentID.EQ(null.StringFrom(scr.ID)),
+			models.VersionedAttributeWhere.Namespace.EQ(sns),
+			qm.OrderBy("tally DESC"),
+		).One(context.TODO(), db)
+		require.NoError(t, err)
+		srData, err = statusFromJSON(sr.Data)
+		require.NoError(t, err)
+		require.Equal(t, update.Status, srData)
+
+		// validate that we can get all the component data we expect
+		comps, err := componentsFromDatabase(context.TODO(), db, inband, srvUUID.String())
+		require.NoError(t, err)
+		require.Len(t, comps, 1)
 	})
 }

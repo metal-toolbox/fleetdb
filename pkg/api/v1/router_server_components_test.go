@@ -199,12 +199,12 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 	}
 
 	// expect atleast 1 component type to proceed
-	assert.Len(t, componentTypeSlice, 1)
+	assert.GreaterOrEqual(t, len(componentTypeSlice), 1)
 
 	// fixture to create a server components
 	csFixtureCreate := fleetdbapi.ServerComponentSlice{
 		{
-			ServerUUID:        servers[0].UUID,
+			ServerUUID:        servers[1].UUID,
 			Name:              "My Lucky Fin",
 			Vendor:            "barracuda",
 			Model:             "a lucky fin",
@@ -226,7 +226,7 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 	}
 
 	// create server component
-	_, err = s.Client.CreateComponents(context.TODO(), servers[0].UUID, csFixtureCreate)
+	_, err = s.Client.CreateComponents(context.TODO(), servers[1].UUID, csFixtureCreate)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -247,10 +247,10 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 		},
 		{
 			"component Versioned Attributes is returned as expected",
-			servers[0].UUID,
+			servers[1].UUID,
 			3,
 			fleetdbapi.ServerComponent{
-				ServerUUID:        servers[0].UUID,
+				ServerUUID:        servers[1].UUID,
 				Name:              "My Lucky Fin",
 				Vendor:            "barracuda",
 				Model:             "a lucky fin",
@@ -504,8 +504,16 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 				t.Fatal(err)
 			}
 
+			var nemo *fleetdbapi.Server
+			for _, s := range servers {
+				if s.Name == dbtools.FixtureNemo.Name.String {
+					nemo = &s
+				}
+			}
+			require.NotNil(t, nemo, "couldn't find nemo")
+
 			// update serial attribute for update to work
-			sc = fleetdbapi.ServerComponentSlice{servers[0].Components[0]}
+			sc = fleetdbapi.ServerComponentSlice{nemo.Components[0]}
 			sc[0].Serial = "lala"
 		}
 

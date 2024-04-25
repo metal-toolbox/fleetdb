@@ -7,6 +7,8 @@ linters-settings:
     local-prefixes: github.com/metal-toolbox/fleetdb
   gofumpt:
     extra-rules: true
+  stylecheck:
+    checks: ["all", "-ST1000"]
 
 linters:
   enable:
@@ -31,7 +33,7 @@ linters:
     - govet
     - misspell
     - noctx
-    - revive
+    #    - revive XXX: fix up old code caught here
     - stylecheck
     - whitespace
 

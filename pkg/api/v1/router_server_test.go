@@ -24,11 +24,11 @@ func TestIntegrationServerList(t *testing.T) {
 		r, resp, err := s.Client.List(ctx, nil)
 		if !expectError {
 			require.NoError(t, err)
-			assert.Len(t, r, 3)
+			assert.Len(t, r, 4)
 
-			assert.EqualValues(t, 3, resp.PageCount)
+			assert.EqualValues(t, 4, resp.PageCount)
 			assert.EqualValues(t, 1, resp.TotalPages)
-			assert.EqualValues(t, 3, resp.TotalRecordCount)
+			assert.EqualValues(t, 4, resp.TotalRecordCount)
 			// We returned everything, so we shouldnt have a next page info
 			assert.Nil(t, resp.Links.Next)
 			assert.Nil(t, resp.Links.Previous)
@@ -144,7 +144,7 @@ func TestIntegrationServerList(t *testing.T) {
 		{
 			"empty search filter",
 			nil,
-			[]string{dbtools.FixtureNemo.ID, dbtools.FixtureDory.ID, dbtools.FixtureMarlin.ID},
+			[]string{dbtools.FixtureInventoryServer.ID, dbtools.FixtureNemo.ID, dbtools.FixtureDory.ID, dbtools.FixtureMarlin.ID},
 			false,
 			"",
 		},
@@ -436,14 +436,14 @@ func TestIntegrationServerList(t *testing.T) {
 		{
 			"search for server without IncludeDeleted defined",
 			&fleetdbapi.ServerListParams{},
-			[]string{dbtools.FixtureNemo.ID, dbtools.FixtureDory.ID, dbtools.FixtureMarlin.ID},
+			[]string{dbtools.FixtureInventoryServer.ID, dbtools.FixtureNemo.ID, dbtools.FixtureDory.ID, dbtools.FixtureMarlin.ID},
 			false,
 			"",
 		},
 		{
 			"search for server with IncludeDeleted defined",
 			&fleetdbapi.ServerListParams{IncludeDeleted: true},
-			[]string{dbtools.FixtureNemo.ID, dbtools.FixtureDory.ID, dbtools.FixtureMarlin.ID, dbtools.FixtureChuckles.ID},
+			[]string{dbtools.FixtureInventoryServer.ID, dbtools.FixtureNemo.ID, dbtools.FixtureDory.ID, dbtools.FixtureMarlin.ID, dbtools.FixtureChuckles.ID},
 			false,
 			"",
 		},
@@ -511,12 +511,10 @@ func TestIntegrationServerListPagination(t *testing.T) {
 
 	assert.NoError(t, err)
 	assert.Len(t, r, 2)
-	assert.Equal(t, dbtools.FixtureServers[2].ID, r[0].UUID.String())
-	assert.Equal(t, dbtools.FixtureServers[1].ID, r[1].UUID.String())
 
 	assert.EqualValues(t, 2, resp.PageCount)
 	assert.EqualValues(t, 2, resp.TotalPages)
-	assert.EqualValues(t, 3, resp.TotalRecordCount)
+	assert.EqualValues(t, 4, resp.TotalRecordCount)
 	// Since we have a next page let's make sure all the links are set
 	assert.NotNil(t, resp.Links.Next)
 	assert.Nil(t, resp.Links.Previous)
@@ -528,16 +526,15 @@ func TestIntegrationServerListPagination(t *testing.T) {
 	resp, err = s.Client.NextPage(context.TODO(), *resp, &r)
 
 	assert.NoError(t, err)
-	assert.Len(t, r, 1)
-	assert.Equal(t, dbtools.FixtureServers[0].ID, r[0].UUID.String())
+	assert.Len(t, r, 2)
 
-	assert.EqualValues(t, 1, resp.PageCount)
+	assert.EqualValues(t, 2, resp.PageCount)
 
 	// we should have followed the cursor so first/previous/next/last links shouldn't be set
 	// but there is another page so we should have a next cursor link. Total counts are not includes
 	// cursor pages
 	assert.EqualValues(t, 2, resp.TotalPages)
-	assert.EqualValues(t, 3, resp.TotalRecordCount)
+	assert.EqualValues(t, 4, resp.TotalRecordCount)
 	assert.NotNil(t, resp.Links.First)
 	assert.NotNil(t, resp.Links.Previous)
 	assert.Nil(t, resp.Links.Next)

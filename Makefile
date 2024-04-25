@@ -14,7 +14,7 @@ test: | unit-test integration-test
 ## run integration tests
 integration-test: test-database
 	@echo Running integration tests...
-	@FLEETDB_CRDB_URI="${TEST_DB}" go test -cover -tags testtools,integration -p 1 ./...
+	@FLEETDB_CRDB_URI="${TEST_DB}" go test -cover -tags testtools,integration -p 1 -timeout 1m ./... 
 
 ## run lint and unit tests
 unit-test: | lint
@@ -24,7 +24,7 @@ unit-test: | lint
 ## check test coverage
 coverage: | test-database
 	@echo Generating coverage report...
-	@FLEETDB_CRDB_URI="${TEST_DB}" go test ./... -race -coverprofile=coverage.out -covermode=atomic -tags testtools -p 1
+	@FLEETDB_CRDB_URI="${TEST_DB}" go test ./... -race -coverprofile=coverage.out -covermode=atomic -tags testtools,integration -p 1
 	@go tool cover -func=coverage.out
 	@go tool cover -html=coverage.out
 

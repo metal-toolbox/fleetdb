@@ -140,6 +140,14 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 			srvBomByBmcMacAddress.GET("/:bmc_mac_address", amw.AuthRequired(readScopes("bmc-mac-address")), r.getBomFromBmcMacAddress)
 		}
 	}
+
+	// inventory endpoints
+	srvInventory := rg.Group("/inventory")
+	{
+		// uuid is the server id
+		srvInventory.GET("/:uuid", amw.AuthRequired(readScopes("server")), r.getInventory)
+		srvInventory.PUT("/:uuid", amw.AuthRequired(updateScopes("server")), r.setInventory)
+	}
 }
 
 func createScopes(items ...string) []string {

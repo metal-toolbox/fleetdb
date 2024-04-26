@@ -34,7 +34,7 @@ require (
 )
 
 require (
-	github.com/bmc-toolbox/common v0.0.0-20231204194243-7bcbccab7116
+	github.com/bmc-toolbox/common v0.0.0-20240426155832-c9882dbabcca
 	github.com/metal-toolbox/rivets v1.0.3
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	go.hollow.sh/toolbox v0.6.3

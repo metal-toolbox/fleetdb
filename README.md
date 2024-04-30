@@ -36,7 +36,7 @@ The `quickstart.yml` compose file will run server service from released images a
 docker-compose -f quickstart.yml -f quickstart-dev.yml up --build
 ```
 
-NOTE: `--build` is required to get docker-compose to rebuild the container if you have changes. You make also include the `quickstart-tracing.yml` file if you wish to have tracing support.
+NOTE: `--build` is required to get docker-compose to rebuild the container if you have changes. You may also include the `quickstart-tracing.yml` file if you wish to have tracing support.
 
 
 ### Adding/Changing database schema

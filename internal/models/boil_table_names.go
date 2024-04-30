@@ -12,6 +12,9 @@ var TableNames = struct {
 	ComponentFirmwareSet     string
 	ComponentFirmwareSetMap  string
 	ComponentFirmwareVersion string
+	ConfigComponentSettings  string
+	ConfigComponents         string
+	ConfigSets               string
 	ServerComponentTypes     string
 	ServerComponents         string
 	ServerCredentialTypes    string
@@ -27,6 +30,9 @@ var TableNames = struct {
 	ComponentFirmwareSet:     "component_firmware_set",
 	ComponentFirmwareSetMap:  "component_firmware_set_map",
 	ComponentFirmwareVersion: "component_firmware_version",
+	ConfigComponentSettings:  "config_component_settings",
+	ConfigComponents:         "config_components",
+	ConfigSets:               "config_sets",
 	ServerComponentTypes:     "server_component_types",
 	ServerComponents:         "server_components",
 	ServerCredentialTypes:    "server_credential_types",

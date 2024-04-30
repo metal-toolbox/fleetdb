@@ -14,12 +14,17 @@ test: | unit-test integration-test
 ## run integration tests
 integration-test: test-database
 	@echo Running integration tests...
-	@FLEETDB_CRDB_URI="${TEST_DB}" go test -cover -tags testtools,integration -p 1 -timeout 1m ./... 
+	@FLEETDB_CRDB_URI="${TEST_DB}" go test -cover -tags testtools,integration -p 1 -timeout 1m ./... | \
+	grep -v "could not be registered in Prometheus\" error=\"duplicate metrics collector registration attempted\"" # TODO; Figure out why this message spams when tests fail
 
-## run lint and unit tests
-unit-test: | lint
+## run unit tests
+unit-test: | test-database
 	@echo Running unit tests...
 	@FLEETDB_CRDB_URI="${TEST_DB}" go test -cover -short -tags testtools ./...
+
+## run single integration test. Example: make single-test test=TestIntegrationServerListComponents
+single-test:
+	@FLEETDB_CRDB_URI="${TEST_DB}" go test -timeout 30s -tags testtools -run ^${test}$$ github.com/metal-toolbox/fleetdb/pkg/api/v1 -v
 
 ## check test coverage
 coverage: | test-database
@@ -29,19 +34,21 @@ coverage: | test-database
 	@go tool cover -html=coverage.out
 
 ## lint
-lint: golint
-
-golint: | vendor
+lint: | vendor
 	@echo Linting Go files...
 	@golangci-lint run
 
 ## clean docker files
-clean: docker-clean
+clean: docker-clean test-clean
 	@echo Cleaning...
 	@rm -rf ./dist/
 	@rm -rf coverage.out
+
+## clean test env
+test-clean:
 	@go clean -testcache
 
+## download/tidy go modules
 vendor:
 	@go mod download
 	@go mod tidy
@@ -70,6 +77,22 @@ test-database: | vendor
 	@cockroach sql --insecure -e "create database fleetdb_test"
 	@FLEETDB_CRDB_URI="${TEST_DB}" go run main.go migrate up
 	@cockroach sql --insecure -e "use fleetdb_test; ALTER TABLE attributes DROP CONSTRAINT check_server_id_server_component_id; ALTER TABLE versioned_attributes DROP CONSTRAINT check_server_id_server_component_id;"
+
+## purge dev environment, build new image, and run tests
+fresh-test: clean
+	@make push-image-devel
+	@make docker-up
+	@make test
+
+## boil sql
+boil:
+	make docker-up
+	make test-database
+	sqlboiler crdb --add-soft-deletes
+
+## log into database
+psql:
+	@psql -d "${TEST_DB}"
 
 ## Build linux bin
 build-linux:

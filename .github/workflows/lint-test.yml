@@ -21,7 +21,7 @@ jobs:
           go-version: '1.22.1'
 
       - name: Install cockroach binary
-        run: curl https://binaries.cockroachdb.com/cockroach-v23.1.11.linux-amd64.tgz | tar -xz && sudo cp -i cockroach-v23.1.11.linux-amd64/cockroach /usr/local/bin/
+        run: curl https://binaries.cockroachdb.com/cockroach-v21.1.21.linux-amd64.tgz | tar -xz && sudo cp -i cockroach-v21.1.21.linux-amd64/cockroach /usr/local/bin/
 
       - name: Start test database
         run: cockroach start-single-node --insecure --background

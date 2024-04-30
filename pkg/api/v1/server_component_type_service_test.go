@@ -18,6 +18,7 @@ func TestServerComponentTypeServiceCreate(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		resp, err := c.CreateServerComponentType(ctx, hct)
+
 		if !expectError {
 			assert.Equal(t, "slug-1", resp.Slug)
 		}
@@ -34,6 +35,7 @@ func TestServerComponentTypeServiceList(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.ListServerComponentTypes(ctx, nil)
+
 		if !expectError {
 			assert.ElementsMatch(t, hct, res)
 		}

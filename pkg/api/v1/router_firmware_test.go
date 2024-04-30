@@ -17,7 +17,7 @@ func TestIntegrationFirmwareList(t *testing.T) {
 	s := serverTest(t)
 
 	scopes := []string{"read:server-component-firmwares", "write:server-component-firmwares"}
-	scopedRealClientTests(t, scopes, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	scopedRealClientTests(t, scopes, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		params := fleetdbapi.ComponentFirmwareVersionListParams{
@@ -37,6 +37,7 @@ func TestIntegrationFirmwareList(t *testing.T) {
 			assert.Nil(t, resp.Links.Next)
 			assert.Nil(t, resp.Links.Previous)
 		}
+
 		return err
 	})
 
@@ -132,7 +133,7 @@ func TestIntegrationFirmwareList(t *testing.T) {
 func TestIntegrationFirmwareGet(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 		fw, _, err := s.Client.GetServerComponentFirmware(ctx, uuid.MustParse(dbtools.FixtureDellR640BMC.ID))
 
@@ -148,7 +149,7 @@ func TestIntegrationFirmwareGet(t *testing.T) {
 func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		testFirmware := fleetdbapi.ComponentFirmwareVersion{
@@ -259,8 +260,10 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				assert.Contains(t, err.Error(), tt.expectedResponse)
+
 				return
 			}
+
 			assert.Equal(t, tt.firmware.UUID.String(), fwUUID.String())
 		})
 	}
@@ -269,7 +272,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 func TestIntegrationServerComponentFirmwareDelete(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, _ bool) error {
 		s.Client.SetToken(authToken)
 		_, err := s.Client.DeleteServerComponentFirmware(ctx, fleetdbapi.ComponentFirmwareVersion{UUID: uuid.MustParse(dbtools.FixtureDellR640CPLD.ID)})
 
@@ -283,7 +286,7 @@ func TestIntegrationServerComponentFirmwareDelete(t *testing.T) {
 func TestIntegrationServerComponentFirmwareUpdate(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		fw := fleetdbapi.ComponentFirmwareVersion{

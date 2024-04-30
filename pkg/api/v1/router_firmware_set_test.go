@@ -43,7 +43,7 @@ func TestIntegrationServerComponentFirmwareSetCreate(t *testing.T) {
 
 	var r640FirmwareIDs []string
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		var testFirmwareSet fleetdbapi.ComponentFirmwareSetRequest
@@ -165,6 +165,7 @@ func TestIntegrationServerComponentFirmwareSetCreate(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				assert.Contains(t, err.Error(), tt.expectedResponse)
+
 				return
 			}
 
@@ -185,12 +186,13 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		var err error
 
 		_, err = s.Client.UpdateComponentFirmwareSetRequest(ctx, firmwareSetID, fleetdbapi.ComponentFirmwareSetRequest{})
+
 		if !expectError {
 			return nil
 		}
@@ -404,6 +406,7 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				assert.Contains(t, err.Error(), tt.expectedResponse)
+
 				return
 			}
 
@@ -436,6 +439,7 @@ func TestIntegrationServerComponentFirmwareSetUpdate(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				assert.Contains(t, err.Error(), tt.expectedResponse)
+
 				return
 			}
 		})
@@ -452,7 +456,7 @@ func TestIntegrationServerComponentFirmwareSetGet(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		var err error
@@ -504,6 +508,7 @@ func TestIntegrationServerComponentFirmwareSetGet(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				assert.Contains(t, err.Error(), tt.expectedResponse)
+
 				return
 			}
 
@@ -554,7 +559,7 @@ func assertAttributesEqual(t *testing.T, a, b []byte) bool {
 func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		_, _, err := s.Client.ListServerComponentFirmwareSet(ctx, nil)
@@ -651,7 +656,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 						Keys:              []string{"model"},
 						Operator:          "eq",
 						Value:             "x11dph-t",
-						AttributeOperator: fleetdbapi.AttributeLogicalOR,
+						AttributeOperator: fleetdbapi.OperatorLogicalOR,
 					},
 				},
 			},
@@ -684,6 +689,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 			if tt.expectedError {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
+
 				return
 			}
 
@@ -760,12 +766,13 @@ func TestIntegrationServerComponentFirmwareSetDelete(t *testing.T) {
 
 	var firmwareSetID uuid.UUID
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		var err error
 
 		_, err = s.Client.DeleteServerComponentFirmwareSet(ctx, firmwareSetID)
+
 		if !expectError {
 			return nil
 		}
@@ -816,6 +823,7 @@ func TestIntegrationServerComponentFirmwareSetDelete(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				assert.Contains(t, err.Error(), tt.expectedResponse)
+
 				return
 			}
 
@@ -831,12 +839,13 @@ func TestIntegrationServerComponentFirmwareSetRemoveFirmware(t *testing.T) {
 
 	var firmwareSetID uuid.UUID
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		var err error
 
 		_, err = s.Client.RemoveServerComponentFirmwareSetFirmware(ctx, firmwareSetID, fleetdbapi.ComponentFirmwareSetRequest{})
+
 		if !expectError {
 			return nil
 		}
@@ -913,6 +922,7 @@ func TestIntegrationServerComponentFirmwareSetRemoveFirmware(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				assert.Contains(t, err.Error(), tt.expectedResponse)
+
 				return
 			}
 

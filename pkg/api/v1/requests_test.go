@@ -68,6 +68,7 @@ func Test_Do(t *testing.T) {
 	for _, tc := range testcases {
 		t.Run(tc.name, func(t *testing.T) {
 			server := httptest.NewServer(tc.serveMux)
+
 			client, err := NewClientWithToken("dummy", server.URL, nil)
 			if err != nil {
 				t.Fatal(err)
@@ -87,6 +88,7 @@ func Test_Do(t *testing.T) {
 				}
 
 				assert.Contains(t, err.Error(), tc.expectedErrorContains)
+
 				return
 			}
 

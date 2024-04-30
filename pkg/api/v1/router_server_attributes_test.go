@@ -17,7 +17,7 @@ import (
 func TestIntegrationServerCreateAttributes(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		attrs := fleetdbapi.Attributes{
@@ -40,7 +40,7 @@ func TestIntegrationServerCreateAttributes(t *testing.T) {
 func TestIntegrationServerListAttributes(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		attrs, resp, err := s.Client.ListAttributes(ctx, uuid.MustParse(dbtools.FixtureNemo.ID), nil)
@@ -78,7 +78,7 @@ func TestIntegrationServerListAttributes(t *testing.T) {
 func TestIntegrationServerGetAttributes(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		attr, resp, err := s.Client.GetAttributes(ctx, uuid.MustParse(dbtools.FixtureNemo.ID), dbtools.FixtureNamespaceMetadata)
@@ -96,7 +96,7 @@ func TestIntegrationServerGetAttributes(t *testing.T) {
 func TestIntegrationServerDeleteAttributes(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		_, err := s.Client.DeleteAttributes(ctx, uuid.MustParse(dbtools.FixtureNemo.ID), dbtools.FixtureNamespaceMetadata)
@@ -116,7 +116,7 @@ func TestIntegrationServerDeleteAttributes(t *testing.T) {
 func TestIntegrationServerUpdateAttributes(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		_, err := s.Client.UpdateAttributes(ctx, uuid.MustParse(dbtools.FixtureDory.ID), dbtools.FixtureNamespaceMetadata, json.RawMessage([]byte(`{"setting":"enabled"}`)))

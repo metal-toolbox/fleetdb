@@ -20,6 +20,7 @@ func TestFleetdbCreate(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.Create(ctx, srv)
+
 		if !expectError {
 			assert.Equal(t, "00000000-0000-0000-0000-000000001234", res.String())
 		}
@@ -29,7 +30,7 @@ func TestFleetdbCreate(t *testing.T) {
 }
 
 func TestFleetdbDelete(t *testing.T) {
-	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+	mockClientTests(t, func(ctx context.Context, respCode int, _ bool) error {
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource deleted"}`))
 		c := mockClient(string(jsonResponse), respCode)
 		_, err := c.Delete(ctx, fleetdbapi.Server{UUID: uuid.New()})
@@ -37,6 +38,7 @@ func TestFleetdbDelete(t *testing.T) {
 		return err
 	})
 }
+
 func TestFleetdbGet(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
 		srv := fleetdbapi.Server{UUID: uuid.New(), FacilityCode: "Test1"}
@@ -45,6 +47,7 @@ func TestFleetdbGet(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.Get(ctx, srv.UUID)
+
 		if !expectError {
 			assert.Equal(t, srv.UUID, res.UUID)
 			assert.Equal(t, srv.FacilityCode, res.FacilityCode)
@@ -62,6 +65,7 @@ func TestFleetdbList(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.List(ctx, nil)
+
 		if !expectError {
 			assert.ElementsMatch(t, srv, res)
 		}
@@ -71,7 +75,7 @@ func TestFleetdbList(t *testing.T) {
 }
 
 func TestFleetdbUpdate(t *testing.T) {
-	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+	mockClientTests(t, func(ctx context.Context, respCode int, _ bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource updated"})
 		require.Nil(t, err)
 
@@ -83,7 +87,7 @@ func TestFleetdbUpdate(t *testing.T) {
 }
 
 func TestFleetdbCreateAttributes(t *testing.T) {
-	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+	mockClientTests(t, func(ctx context.Context, respCode int, _ bool) error {
 		attr := fleetdbapi.Attributes{Namespace: "unit-test", Data: json.RawMessage([]byte(`{"test":"unit"}`))}
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource created"}`))
 
@@ -101,6 +105,7 @@ func TestFleetdbGetAttributes(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.GetAttributes(ctx, uuid.UUID{}, "unit-test")
+
 		if !expectError {
 			assert.Equal(t, attr, res)
 		}
@@ -110,7 +115,7 @@ func TestFleetdbGetAttributes(t *testing.T) {
 }
 
 func TestFleetdbDeleteAttributes(t *testing.T) {
-	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+	mockClientTests(t, func(ctx context.Context, respCode int, _ bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource deleted"})
 		require.Nil(t, err)
 
@@ -129,6 +134,7 @@ func TestFleetdbListAttributes(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.ListAttributes(ctx, uuid.UUID{}, nil)
+
 		if !expectError {
 			assert.ElementsMatch(t, attrs, res)
 		}
@@ -138,7 +144,7 @@ func TestFleetdbListAttributes(t *testing.T) {
 }
 
 func TestFleetdbUpdateAttributes(t *testing.T) {
-	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+	mockClientTests(t, func(ctx context.Context, respCode int, _ bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource updated"})
 		require.Nil(t, err)
 
@@ -157,6 +163,7 @@ func TestFleetdbComponentsGet(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.GetComponents(ctx, uuid.UUID{}, nil)
+
 		if !expectError {
 			assert.ElementsMatch(t, sc, res)
 		}
@@ -173,6 +180,7 @@ func TestFleetdbComponentsList(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.ListComponents(ctx, &fleetdbapi.ServerComponentListParams{Name: "unit-test", Serial: "1234"})
+
 		if !expectError {
 			assert.ElementsMatch(t, sc, res)
 		}
@@ -188,6 +196,7 @@ func TestFleetdbComponentsCreate(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, err := c.CreateComponents(ctx, uuid.New(), fleetdbapi.ServerComponentSlice{{Name: "unit-test"}})
+
 		if !expectError {
 			assert.Contains(t, res.Message, "resource created")
 		}
@@ -203,6 +212,7 @@ func TestFleetdbComponentsUpdate(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, err := c.UpdateComponents(ctx, uuid.New(), fleetdbapi.ServerComponentSlice{{Name: "unit-test"}})
+
 		if !expectError {
 			assert.Contains(t, res.Message, "resource updated")
 		}
@@ -218,6 +228,7 @@ func TestFleetdbVersionedAttributeCreate(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		resp, err := c.CreateVersionedAttributes(ctx, uuid.New(), va)
+
 		if !expectError {
 			assert.Equal(t, "the-namespace", resp.Slug)
 		}
@@ -234,6 +245,7 @@ func TestFleetdbGetVersionedAttributess(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.GetVersionedAttributes(ctx, uuid.New(), "namespace")
+
 		if !expectError {
 			assert.ElementsMatch(t, va, res)
 		}
@@ -250,6 +262,7 @@ func TestFleetdbListVersionedAttributess(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.ListVersionedAttributes(ctx, uuid.New())
+
 		if !expectError {
 			assert.ElementsMatch(t, va, res)
 		}
@@ -270,6 +283,7 @@ func TestFleetdbCreateServerComponentFirmware(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.CreateServerComponentFirmware(ctx, firmware)
+
 		if !expectError {
 			assert.Equal(t, "00000000-0000-0000-0000-000000001234", res.String())
 		}
@@ -279,7 +293,7 @@ func TestFleetdbCreateServerComponentFirmware(t *testing.T) {
 }
 
 func TestFleetdbServerComponentFirmwareDelete(t *testing.T) {
-	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+	mockClientTests(t, func(ctx context.Context, respCode int, _ bool) error {
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource deleted"}`))
 		c := mockClient(string(jsonResponse), respCode)
 		_, err := c.DeleteServerComponentFirmware(ctx, fleetdbapi.ComponentFirmwareVersion{UUID: uuid.New()})
@@ -300,6 +314,7 @@ func TestFleetdbServerComponentFirmwareGet(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.GetServerComponentFirmware(ctx, firmware.UUID)
+
 		if !expectError {
 			assert.Equal(t, firmware.UUID, res.UUID)
 			assert.Equal(t, firmware.Vendor, res.Vendor)
@@ -324,6 +339,7 @@ func TestFleetdbServerComponentFirmwareList(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, _, err := c.ListServerComponentFirmware(ctx, nil)
+
 		if !expectError {
 			assert.ElementsMatch(t, firmware, res)
 		}
@@ -333,7 +349,7 @@ func TestFleetdbServerComponentFirmwareList(t *testing.T) {
 }
 
 func TestFleetdbServerComponentFirmwareUpdate(t *testing.T) {
-	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
+	mockClientTests(t, func(ctx context.Context, respCode int, _ bool) error {
 		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource updated"})
 		require.Nil(t, err)
 
@@ -352,6 +368,7 @@ func TestBillOfMaterialsBatchUpload(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		res, err := c.BillOfMaterialsBatchUpload(ctx, bom)
+
 		if !expectError {
 			assert.Equal(t, []interface{}([]interface{}{
 				map[string]interface{}{
@@ -375,6 +392,7 @@ func TestGetBomInfoByAOCMacAddr(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		respBom, _, err := c.GetBomInfoByAOCMacAddr(ctx, "fakeAocMacAddress1")
+
 		if !expectError {
 			assert.Equal(t, &bom, respBom)
 		}
@@ -391,6 +409,7 @@ func TestGetBomInfoByBMCMacAddr(t *testing.T) {
 
 		c := mockClient(string(jsonResponse), respCode)
 		respBom, _, err := c.GetBomInfoByBMCMacAddr(ctx, "fakeBmcMacAddress1")
+
 		if !expectError {
 			assert.Equal(t, &bom, respBom)
 		}

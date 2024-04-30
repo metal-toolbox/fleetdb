@@ -200,11 +200,14 @@ func TestIntegrationBomUpload(t *testing.T) {
 				if err == nil {
 					t.Fatalf("BillOfMaterialsBatchUpload(%v) expect error, got nil", tc.uploadBoms)
 				}
+
 				if !strings.Contains(err.Error(), tc.expectedUploadErrorMsg) {
 					t.Fatalf("BillOfMaterialsBatchUpload(%v) expect error %v, got %v", tc.uploadBoms, tc.expectedUploadErrorMsg, err)
 				}
+
 				return
 			}
+
 			if err != nil {
 				t.Fatalf("BillOfMaterialsBatchUpload(%v) failed to upload, err %v", tc.uploadBoms, err)
 				return
@@ -215,6 +218,7 @@ func TestIntegrationBomUpload(t *testing.T) {
 				if err == nil {
 					t.Fatalf("GetBomInfoByAOCMacAddr(%v) expect error, got nil", tc.aocMacAddress)
 				}
+
 				return
 			}
 
@@ -351,11 +355,14 @@ func TestIntegrationGetBomByAocMacAddr(t *testing.T) {
 				if err == nil {
 					t.Fatalf("GetBomInfoByAOCMacAddr(%v) expect error, got nil", tc.aocMacAddress)
 				}
+
 				if !strings.Contains(err.Error(), tc.expectedAocMacAddressErrorMsg) {
 					t.Fatalf("GetBomInfoByAOCMacAddr(%v) expect error %v, got %v", tc.aocMacAddress, tc.expectedAocMacAddressErrorMsg, err)
 				}
+
 				return
 			}
+
 			if err != nil {
 				t.Fatalf("GetBomInfoByAOCMacAddr(%v) failed to upload, err %v", tc.aocMacAddress, err)
 				return
@@ -456,11 +463,14 @@ func TestIntegrationGetBomByBmcMacAddr(t *testing.T) {
 				if err == nil {
 					t.Fatalf("GetBomInfoByBMCMacAddr(%v) expect error, got nil", tc.bmcMacAddress)
 				}
+
 				if !strings.Contains(err.Error(), tc.expectedBmcMacAddressErrorMsg) {
 					t.Fatalf("GetBomInfoByBMCMacAddr(%v) expect error %v, got %v", tc.bmcMacAddress, tc.expectedBmcMacAddressErrorMsg, err)
 				}
+
 				return
 			}
+
 			if err != nil {
 				t.Fatalf("GetBomInfoByBMCMacAddr(%v) failed to upload, err %v", tc.bmcMacAddress, err)
 				return

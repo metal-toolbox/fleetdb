@@ -24,11 +24,11 @@ import (
 
 // ConfigSet is an object representing the database table.
 type ConfigSet struct {
-	ID        string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	Name      string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Version   string    `boil:"version" json:"version" toml:"version" yaml:"version"`
-	CreatedAt null.Time `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
-	UpdatedAt null.Time `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
+	ID        string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	Name      string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Version   null.String `boil:"version" json:"version,omitempty" toml:"version" yaml:"version,omitempty"`
+	CreatedAt null.Time   `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
+	UpdatedAt null.Time   `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
 
 	R *configSetR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L configSetL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -67,13 +67,13 @@ var ConfigSetTableColumns = struct {
 var ConfigSetWhere = struct {
 	ID        whereHelperstring
 	Name      whereHelperstring
-	Version   whereHelperstring
+	Version   whereHelpernull_String
 	CreatedAt whereHelpernull_Time
 	UpdatedAt whereHelpernull_Time
 }{
 	ID:        whereHelperstring{field: "\"config_sets\".\"id\""},
 	Name:      whereHelperstring{field: "\"config_sets\".\"name\""},
-	Version:   whereHelperstring{field: "\"config_sets\".\"version\""},
+	Version:   whereHelpernull_String{field: "\"config_sets\".\"version\""},
 	CreatedAt: whereHelpernull_Time{field: "\"config_sets\".\"created_at\""},
 	UpdatedAt: whereHelpernull_Time{field: "\"config_sets\".\"updated_at\""},
 }
@@ -107,8 +107,8 @@ type configSetL struct{}
 
 var (
 	configSetAllColumns            = []string{"id", "name", "version", "created_at", "updated_at"}
-	configSetColumnsWithoutDefault = []string{"name", "version"}
-	configSetColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	configSetColumnsWithoutDefault = []string{"name"}
+	configSetColumnsWithDefault    = []string{"id", "version", "created_at", "updated_at"}
 	configSetPrimaryKeyColumns     = []string{"id"}
 	configSetGeneratedColumns      = []string{}
 )

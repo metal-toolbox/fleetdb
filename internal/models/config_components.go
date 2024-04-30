@@ -24,14 +24,14 @@ import (
 
 // ConfigComponent is an object representing the database table.
 type ConfigComponent struct {
-	ID            string    `boil:"id" json:"id" toml:"id" yaml:"id"`
-	FKConfigSetID string    `boil:"fk_config_set_id" json:"fk_config_set_id" toml:"fk_config_set_id" yaml:"fk_config_set_id"`
-	Name          string    `boil:"name" json:"name" toml:"name" yaml:"name"`
-	Vendor        string    `boil:"vendor" json:"vendor" toml:"vendor" yaml:"vendor"`
-	Model         string    `boil:"model" json:"model" toml:"model" yaml:"model"`
-	Serial        string    `boil:"serial" json:"serial" toml:"serial" yaml:"serial"`
-	CreatedAt     null.Time `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
-	UpdatedAt     null.Time `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
+	ID            string      `boil:"id" json:"id" toml:"id" yaml:"id"`
+	FKConfigSetID string      `boil:"fk_config_set_id" json:"fk_config_set_id" toml:"fk_config_set_id" yaml:"fk_config_set_id"`
+	Name          string      `boil:"name" json:"name" toml:"name" yaml:"name"`
+	Vendor        null.String `boil:"vendor" json:"vendor,omitempty" toml:"vendor" yaml:"vendor,omitempty"`
+	Model         null.String `boil:"model" json:"model,omitempty" toml:"model" yaml:"model,omitempty"`
+	Serial        null.String `boil:"serial" json:"serial,omitempty" toml:"serial" yaml:"serial,omitempty"`
+	CreatedAt     null.Time   `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
+	UpdatedAt     null.Time   `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
 
 	R *configComponentR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L configComponentL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -83,18 +83,18 @@ var ConfigComponentWhere = struct {
 	ID            whereHelperstring
 	FKConfigSetID whereHelperstring
 	Name          whereHelperstring
-	Vendor        whereHelperstring
-	Model         whereHelperstring
-	Serial        whereHelperstring
+	Vendor        whereHelpernull_String
+	Model         whereHelpernull_String
+	Serial        whereHelpernull_String
 	CreatedAt     whereHelpernull_Time
 	UpdatedAt     whereHelpernull_Time
 }{
 	ID:            whereHelperstring{field: "\"config_components\".\"id\""},
 	FKConfigSetID: whereHelperstring{field: "\"config_components\".\"fk_config_set_id\""},
 	Name:          whereHelperstring{field: "\"config_components\".\"name\""},
-	Vendor:        whereHelperstring{field: "\"config_components\".\"vendor\""},
-	Model:         whereHelperstring{field: "\"config_components\".\"model\""},
-	Serial:        whereHelperstring{field: "\"config_components\".\"serial\""},
+	Vendor:        whereHelpernull_String{field: "\"config_components\".\"vendor\""},
+	Model:         whereHelpernull_String{field: "\"config_components\".\"model\""},
+	Serial:        whereHelpernull_String{field: "\"config_components\".\"serial\""},
 	CreatedAt:     whereHelpernull_Time{field: "\"config_components\".\"created_at\""},
 	UpdatedAt:     whereHelpernull_Time{field: "\"config_components\".\"updated_at\""},
 }
@@ -138,8 +138,8 @@ type configComponentL struct{}
 
 var (
 	configComponentAllColumns            = []string{"id", "fk_config_set_id", "name", "vendor", "model", "serial", "created_at", "updated_at"}
-	configComponentColumnsWithoutDefault = []string{"fk_config_set_id", "name", "vendor", "model", "serial"}
-	configComponentColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
+	configComponentColumnsWithoutDefault = []string{"fk_config_set_id", "name"}
+	configComponentColumnsWithDefault    = []string{"id", "vendor", "model", "serial", "created_at", "updated_at"}
 	configComponentPrimaryKeyColumns     = []string{"id"}
 	configComponentGeneratedColumns      = []string{}
 )

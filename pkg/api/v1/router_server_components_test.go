@@ -44,7 +44,7 @@ func componentByNameVendorModelSerial(name, vendor, model, serial string, sc fle
 func TestIntegrationServerListComponents(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		attrs, _, err := s.Client.ListComponents(ctx, nil)
@@ -169,7 +169,7 @@ func TestIntegrationServerListComponents(t *testing.T) {
 func TestIntegrationServerGetComponents(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		attrs, _, err := s.Client.GetComponents(ctx, uuid.MustParse(dbtools.FixtureNemo.ID), nil)
@@ -275,6 +275,7 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 			if tt.errorMsg != "" {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
+
 				return
 			}
 
@@ -311,7 +312,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 	var componentTypeSlice fleetdbapi.ServerComponentTypeSlice
 
 	// run default client tests
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		var sc fleetdbapi.ServerComponentSlice
@@ -459,6 +460,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 			if tt.errorMsg != "" {
 				assert.NotNil(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
+
 				return
 			}
 
@@ -467,6 +469,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 			assert.Contains(t, res.Message, tt.responseMsg)
 
 			params := &fleetdbapi.ServerComponentListParams{Name: tt.components[0].Name}
+
 			got, _, err := s.Client.ListComponents(context.TODO(), params)
 			if err != nil {
 				t.Error(err)
@@ -490,7 +493,7 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 	var servers []fleetdbapi.Server
 
 	// run default client tests
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		var sc fleetdbapi.ServerComponentSlice
@@ -727,6 +730,7 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 			if tt.errorMsg != "" {
 				assert.NotNil(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
+
 				return
 			}
 
@@ -759,12 +763,13 @@ func TestIntegrationServerComponentDelete(t *testing.T) {
 
 	var serverID uuid.UUID
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		var err error
 
 		_, err = s.Client.DeleteServerComponents(ctx, serverID)
+
 		if !expectError {
 			return nil
 		}
@@ -808,6 +813,7 @@ func TestIntegrationServerComponentDelete(t *testing.T) {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errorMsg)
 				assert.Contains(t, err.Error(), tt.expectedResponse)
+
 				return
 			}
 

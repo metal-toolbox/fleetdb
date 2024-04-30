@@ -13,7 +13,7 @@ import (
 func TestIntegrationServerCredentialTypesList(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		r, resp, err := s.Client.ListServerCredentialTypes(ctx, nil)
@@ -37,7 +37,7 @@ func TestIntegrationServerCredentialTypesCreate(t *testing.T) {
 	ctx := context.TODO()
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		resp, err := s.Client.CreateServerCredentialType(ctx, &fleetdbapi.ServerCredentialType{Name: "Test Type"})

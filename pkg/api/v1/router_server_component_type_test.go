@@ -15,7 +15,7 @@ import (
 func TestIntegrationCreateServerComponentType(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		hct := fleetdbapi.ServerComponentType{Name: "integration-test"}
@@ -36,7 +36,7 @@ func TestIntegrationCreateServerComponentType(t *testing.T) {
 func TestIntegrationListServerComponentTypes(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		r, resp, err := s.Client.ListServerComponentTypes(ctx, nil)

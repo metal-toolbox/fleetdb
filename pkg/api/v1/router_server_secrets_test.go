@@ -17,7 +17,7 @@ func TestIntegrationServerCredentialsUpsert(t *testing.T) {
 	ctx := context.TODO()
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		id := uuid.MustParse(dbtools.FixtureDory.ID)
@@ -104,7 +104,7 @@ func TestIntegrationServerCredentialsUpsert(t *testing.T) {
 func TestIntegrationServerSecretsDelete(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		id := uuid.MustParse(dbtools.FixtureNemo.ID)

@@ -19,7 +19,7 @@ func (r *Router) bomsUpload(c *gin.Context) {
 		return
 	}
 
-	err := crdb.ExecuteTx(c.Request.Context(), r.DB.DB, nil, func(tx *sql.Tx) error {
+	err := crdb.ExecuteTx(c.Request.Context(), r.DB.DB, nil, func(_ *sql.Tx) error {
 		for _, bom := range boms {
 			dbBomInfo, err := (bom).toDBModel()
 			if err != nil {
@@ -52,6 +52,7 @@ func (r *Router) bomsUpload(c *gin.Context) {
 				}
 			}
 		}
+
 		return nil
 	})
 	if err != nil {

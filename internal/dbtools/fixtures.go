@@ -89,6 +89,10 @@ var (
 
 	// Inventory fixtures
 	FixtureInventoryServer *models.Server
+
+	FixtureConfigSet               *models.ConfigSet
+	FixtureConfigComponents        []*models.ConfigComponent
+	FixtureConfigComponentSettings [][]*models.ConfigComponentSetting
 )
 
 func addFixtures(t *testing.T) error {
@@ -148,6 +152,10 @@ func addFixtures(t *testing.T) error {
 	}
 
 	if err := setupInventoryFixture(ctx, testDB); err != nil {
+		return err
+	}
+
+	if err := setupConfigSet(ctx, testDB); err != nil {
 		return err
 	}
 
@@ -646,6 +654,86 @@ func setupInventoryFixture(ctx context.Context, db *sqlx.DB) error {
 	if err := vendorAttrRecord.Insert(ctx, db, boil.Infer()); err != nil {
 		return err
 	}
+
+	return nil
+}
+
+func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
+	settings := [][]*models.ConfigComponentSetting{
+		{
+			{
+				SettingsKey:   "BootOrder",
+				SettingsValue: "dev2,dev3,dev4",
+			},
+			{
+				SettingsKey:   "Mode",
+				SettingsValue: "UEFI",
+			},
+		},
+		{
+			{
+				SettingsKey:   "PXEEnable",
+				SettingsValue: "true",
+				Custom:        null.NewJSON([]byte(`{}`), true),
+			},
+			{
+				SettingsKey:   "SRIOVEnable",
+				SettingsValue: "false",
+			},
+			{
+				SettingsKey:   "position",
+				SettingsValue: "1",
+				Custom:        null.NewJSON([]byte(`{ "lanes": 8 }`), true),
+			},
+		},
+	}
+
+	components := []*models.ConfigComponent{
+		{
+			Name:   "Fixture Test SM Motherboard",
+			Vendor: null.StringFrom("SUPERMICRO"),
+			Serial: null.StringFrom("BIOS"),
+			Model:  null.StringFrom("ATX"),
+		},
+		{
+			Name:   "Fixture Test Intel Network Adapter",
+			Vendor: null.StringFrom("Intel"),
+			Serial: null.StringFrom("NIC"),
+			Model:  null.StringFrom("PCIE"),
+		},
+	}
+
+	configSet := models.ConfigSet{
+		Name:    "Fixture Test Config Set",
+		Version: null.StringFrom("version"),
+	}
+
+	err := configSet.Insert(ctx, db, boil.Infer())
+	if err != nil {
+		return err
+	}
+
+	for c := range components {
+		components[c].FKConfigSetID = configSet.ID
+
+		err = configSet.AddFKConfigSetConfigComponents(ctx, db, true, components[c])
+		if err != nil {
+			return err
+		}
+
+		for s := range settings[c] {
+			settings[c][s].FKComponentID = components[c].ID
+		}
+
+		err = components[c].AddFKComponentConfigComponentSettings(ctx, db, true, settings[c]...)
+		if err != nil {
+			return err
+		}
+	}
+
+	FixtureConfigSet = &configSet
+	FixtureConfigComponents = components
+	FixtureConfigComponentSettings = settings
 
 	return nil
 }

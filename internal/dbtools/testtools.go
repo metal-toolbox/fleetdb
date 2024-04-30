@@ -111,6 +111,7 @@ func cleanDB(t *testing.T) {
 	if _, err := models.Servers(qm.WithDeleted()).DeleteAll(ctx, boil.GetContextDB(), true); err != nil {
 		t.Error(errors.Wrap(err, "table: model.Servers"))
 	}
+
 	deleteFixture(ctx, t, models.AttributesFirmwareSets())
 	deleteFixture(ctx, t, models.ComponentFirmwareSets())
 	deleteFixture(ctx, t, models.ComponentFirmwareSetMaps())
@@ -121,6 +122,10 @@ func cleanDB(t *testing.T) {
 	deleteFixture(ctx, t, models.AocMacAddresses())
 	deleteFixture(ctx, t, models.BMCMacAddresses())
 	deleteFixture(ctx, t, models.BomInfos())
+
+	deleteFixture(ctx, t, models.ConfigComponentSettings())
+	deleteFixture(ctx, t, models.ConfigComponents())
+	deleteFixture(ctx, t, models.ConfigSets())
 
 	testDB.Exec("SET sql_safe_updates = true;")
 }

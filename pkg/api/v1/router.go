@@ -148,6 +148,16 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 		srvInventory.GET("/:uuid", amw.AuthRequired(readScopes("server")), r.getInventory)
 		srvInventory.PUT("/:uuid", amw.AuthRequired(updateScopes("server")), r.setInventory)
 	}
+
+	// /server-config-sets
+	srvCfgSets := rg.Group("/server-config-sets")
+	{
+		srvCfgSets.GET("", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetList)
+		srvCfgSets.POST("", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetCreate)
+		srvCfgSets.GET("/:uuid", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetGet)
+		srvCfgSets.PUT("/:uuid", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetUpdate)
+		srvCfgSets.DELETE("/:uuid", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetDelete)
+	}
 }
 
 func createScopes(items ...string) []string {

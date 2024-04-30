@@ -19,6 +19,7 @@ const (
 	serverCredentialsEndpoint           = "credentials"
 	serverCredentialTypeEndpoint        = "server-credential-types"
 	serverComponentFirmwareSetsEndpoint = "server-component-firmware-sets"
+	serverConfigSetEndpoint             = "server-config-sets"
 	bomInfoEndpoint                     = "bill-of-materials"
 	uploadFileEndpoint                  = "batch-upload"
 	bomByMacAOCAddressEndpoint          = "aoc-mac-address"
@@ -33,38 +34,52 @@ type ClientInterface interface {
 	Get(context.Context, uuid.UUID) (*Server, *ServerResponse, error)
 	List(context.Context, *ServerListParams) ([]Server, *ServerResponse, error)
 	Update(context.Context, uuid.UUID, Server) (*ServerResponse, error)
+
 	CreateAttributes(context.Context, uuid.UUID, Attributes) (*ServerResponse, error)
 	DeleteAttributes(ctx context.Context, u uuid.UUID, ns string) (*ServerResponse, error)
 	GetAttributes(context.Context, uuid.UUID, string) (*Attributes, *ServerResponse, error)
 	ListAttributes(context.Context, uuid.UUID, *PaginationParams) ([]Attributes, *ServerResponse, error)
 	UpdateAttributes(ctx context.Context, u uuid.UUID, ns string, data json.RawMessage) (*ServerResponse, error)
+
 	GetComponents(context.Context, uuid.UUID, *PaginationParams) ([]ServerComponent, *ServerResponse, error)
 	ListComponents(context.Context, *ServerComponentListParams) ([]ServerComponent, *ServerResponse, error)
 	CreateComponents(context.Context, uuid.UUID, ServerComponentSlice) (*ServerResponse, error)
 	UpdateComponents(context.Context, uuid.UUID, ServerComponentSlice) (*ServerResponse, error)
 	DeleteServerComponents(context.Context, uuid.UUID) (*ServerResponse, error)
+
 	CreateVersionedAttributes(context.Context, uuid.UUID, VersionedAttributes) (*ServerResponse, error)
 	GetVersionedAttributes(context.Context, uuid.UUID, string) ([]VersionedAttributes, *ServerResponse, error)
 	ListVersionedAttributes(context.Context, uuid.UUID) ([]VersionedAttributes, *ServerResponse, error)
+
 	CreateServerComponentFirmware(context.Context, ComponentFirmwareVersion) (*uuid.UUID, *ServerResponse, error)
 	DeleteServerComponentFirmware(context.Context, ComponentFirmwareVersion) (*ServerResponse, error)
 	GetServerComponentFirmware(context.Context, uuid.UUID) (*ComponentFirmwareVersion, *ServerResponse, error)
 	ListServerComponentFirmware(context.Context, *ComponentFirmwareVersionListParams) ([]ComponentFirmwareVersion, *ServerResponse, error)
 	UpdateServerComponentFirmware(context.Context, uuid.UUID, ComponentFirmwareVersion) (*ServerResponse, error)
+
 	CreateServerComponentFirmwareSet(context.Context, ComponentFirmwareSetRequest) (*uuid.UUID, *ServerResponse, error)
 	UpdateComponentFirmwareSetRequest(context.Context, ComponentFirmwareSetRequest) (*uuid.UUID, *ServerResponse, error)
 	GetServerComponentFirmwareSet(context.Context, uuid.UUID) (*ComponentFirmwareSet, *ServerResponse, error)
 	ListServerComponentFirmwareSet(context.Context, *ComponentFirmwareSetListParams) ([]ComponentFirmwareSet, *ServerResponse, error)
 	DeleteServerComponentFirmwareSet(context.Context, uuid.UUID) (*ServerResponse, error)
+
 	GetCredential(context.Context, uuid.UUID, string) (*ServerCredential, *ServerResponse, error)
 	SetCredential(context.Context, uuid.UUID, string, string) (*ServerResponse, error)
 	DeleteCredential(context.Context, uuid.UUID, string) (*ServerResponse, error)
 	ListServerCredentialTypes(context.Context) (*ServerResponse, error)
+
 	BillOfMaterialsBatchUpload(context.Context, []Bom) (*ServerResponse, error)
 	GetBomInfoByAOCMacAddr(context.Context, string) (*Bom, *ServerResponse, error)
 	GetBomInfoByBMCMacAddr(context.Context, string) (*Bom, *ServerResponse, error)
+
 	GetServerInventory(context.Context, uuid.UUID, bool) (*rivets.Server, *ServerResponse, error)
 	SetServerInventory(context.Context, uuid.UUID, *rivets.Server, bool) (*ServerResponse, error)
+
+	CreateServerConfigSet(context.Context, ConfigSet) (*uuid.UUID, *ServerResponse, error)
+	GetServerConfigSet(context.Context, uuid.UUID) (*ConfigSet, *ServerResponse, error)
+	DeleteServerConfigSet(context.Context, uuid.UUID) (*ServerResponse, error)
+	ListServerConfigSet(context.Context) (*ServerResponse, error)
+	UpdateServerConfigSet(context.Context, uuid.UUID, ConfigSet) (*ServerResponse, error)
 }
 
 // Create will attempt to create a server in Hollow and return the new server's UUID
@@ -460,4 +475,63 @@ func (c *Client) SetServerInventory(ctx context.Context, srvID uuid.UUID,
 
 	path := fmt.Sprintf("%s/%s?mode=%s", inventoryEndpoint, srvID.String(), mode)
 	return c.put(ctx, path, srv)
+}
+
+// CreateServerConfigSet will store the ConfigSet, and return the generated UUID of the ConfigSet
+func (c *Client) CreateServerConfigSet(ctx context.Context, set ConfigSet) (*ServerResponse, error) {
+	resp, err := c.post(ctx, serverConfigSetEndpoint, set)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// GetServerConfigSet will retrieve the ConfigSet referred to by the given ID if found
+func (c *Client) GetServerConfigSet(ctx context.Context, id uuid.UUID) (*ServerResponse, error) {
+	path := fmt.Sprintf("%s/%s", serverConfigSetEndpoint, id)
+	cfg := &ConfigSet{}
+	resp := ServerResponse{Record: cfg}
+
+	if err := c.get(ctx, path, &resp); err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
+// DeleteServerConfigSet will delete the ConfigSet referred to by the given ID if found
+func (c *Client) DeleteServerConfigSet(ctx context.Context, id uuid.UUID) (*ServerResponse, error) {
+	path := fmt.Sprintf("%s/%s", serverConfigSetEndpoint, id)
+
+	resp, err := c.delete(ctx, path)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
+}
+
+// ListServerConfigSet will return a list of ConfigSets referred to by the given query. More details about querying at the type definition of ConfigSetListParams.
+func (c *Client) ListServerConfigSet(ctx context.Context, params *ConfigSetListParams) (*ServerResponse, error) {
+	cfg := &[]ConfigSet{}
+	resp := ServerResponse{Records: cfg}
+
+	err := c.list(ctx, serverConfigSetEndpoint, params, &resp)
+	if err != nil {
+		return nil, err
+	}
+
+	return &resp, nil
+}
+
+// UpdateServerConfigSet will update a config set.
+func (c *Client) UpdateServerConfigSet(ctx context.Context, id uuid.UUID, set ConfigSet) (*ServerResponse, error) {
+	path := fmt.Sprintf("%s/%s", serverConfigSetEndpoint, id)
+	resp, err := c.put(ctx, path, set)
+	if err != nil {
+		return nil, err
+	}
+
+	return resp, nil
 }

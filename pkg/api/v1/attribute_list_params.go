@@ -9,39 +9,15 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 )
 
-// OperatorType is used to control what kind of search is performed for an AttributeListParams value.
-type OperatorType string
-
-// AttributeOperatorType is used to define how one or more AttributeListParam values should be SQL queried.
-type AttributeOperatorType string
-
-const (
-	// AttributeLogicalOR can be passed into a AttributeListParam to SQL select the attribute an OR clause.
-	AttributeLogicalOR AttributeOperatorType = "or"
-	// AttributeLogicalAND is the default attribute operator, it can be passed into a AttributeListParam to SQL select the attribute a AND clause.
-	AttributeLogicalAND AttributeOperatorType = "and"
-)
-
-const (
-	// OperatorEqual means the value has to match the keys exactly
-	OperatorEqual OperatorType = "eq"
-	// OperatorLike allows you to pass in a value with % in it and match anything like it. If your string has no % in it one will be added to the end automatically
-	OperatorLike = "like"
-	// OperatorGreaterThan will convert the value at the given key to an int and return results that are greater than Value
-	OperatorGreaterThan = "gt"
-	// OperatorLessThan will convert the value at the given key to an int and return results that are less than Value
-	OperatorLessThan = "lt"
-)
-
 // AttributeListParams allow you to filter the results based on attributes
 type AttributeListParams struct {
 	Namespace string
 	Keys      []string
-	Operator  OperatorType
+	Operator  OperatorComparitorType
 	Value     string
-	// AttributeOperatorType is used to define how this AttributeListParam value should be SQL queried
-	// this value defaults to AttributeLogicalAND.
-	AttributeOperator AttributeOperatorType
+	// OperatorLogicalType is used to define how this AttributeListParam value should be SQL queried
+	// this value defaults to OperatorLogicalAND.
+	AttributeOperator OperatorLogicalType
 }
 
 func encodeAttributesListParams(alp []AttributeListParams, key string, q url.Values) {
@@ -88,8 +64,8 @@ func parseQueryAttributesListParams(c *gin.Context, key string) []AttributeListP
 		param.Keys = strings.Split(parts[1], ".")
 
 		if len(parts) == 4 || len(parts) == 5 { // nolint
-			switch o := (*OperatorType)(&parts[2]); *o {
-			case OperatorEqual, OperatorLike, OperatorGreaterThan, OperatorLessThan:
+			switch o := (*OperatorComparitorType)(&parts[2]); *o {
+			case OperatorComparitorEqual, OperatorComparitorLike, OperatorComparitorGreaterThan, OperatorComparitorLessThan:
 				param.Operator = *o
 				param.Value = parts[3]
 			}
@@ -98,14 +74,14 @@ func parseQueryAttributesListParams(c *gin.Context, key string) []AttributeListP
 			// - Theres 5 parts in the attr param string when split on `~`.
 			// - Theres multiple attribute query parameters defined.
 			if len(parts) == 5 && len(attrQueryParams) > 1 {
-				switch o := (*AttributeOperatorType)(&parts[4]); *o {
-				case AttributeLogicalAND, AttributeLogicalOR:
+				switch o := (*OperatorLogicalType)(&parts[4]); *o {
+				case OperatorLogicalAND, OperatorLogicalOR:
 					param.AttributeOperator = *o
 				}
 			}
 
 			// if the like search doesn't contain any % add one at the end
-			if param.Operator == OperatorLike && !strings.Contains(param.Value, "%") {
+			if param.Operator == OperatorComparitorLike && !strings.Contains(param.Value, "%") {
 				param.Value += "%"
 			}
 		}
@@ -146,7 +122,7 @@ func (p *AttributeListParams) queryMods(tblName string) qm.QueryMod {
 	queryMods := []qm.QueryMod{nsMod, qm.And(where, values...)}
 
 	// OR ( namespace AND JSONB query )
-	if p.AttributeOperator == AttributeLogicalOR {
+	if p.AttributeOperator == OperatorLogicalOR {
 		return qm.Or2(qm.Expr(queryMods...))
 	}
 
@@ -158,16 +134,16 @@ func (p *AttributeListParams) setJSONBWhereClause(tblName, jsonPath string, valu
 	where := ""
 
 	switch p.Operator {
-	case OperatorLessThan:
+	case OperatorComparitorLessThan:
 		values = append(values, p.Value)
 		where = fmt.Sprintf("json_extract_path_text(%s.data::JSONB, %s)::int < ?", tblName, jsonPath)
-	case OperatorGreaterThan:
+	case OperatorComparitorGreaterThan:
 		values = append(values, p.Value)
 		where = fmt.Sprintf("json_extract_path_text(%s.data::JSONB, %s)::int > ?", tblName, jsonPath)
-	case OperatorLike:
+	case OperatorComparitorLike:
 		values = append(values, p.Value)
 		where = fmt.Sprintf("json_extract_path_text(%s.data::JSONB, %s) LIKE ?", tblName, jsonPath)
-	case OperatorEqual:
+	case OperatorComparitorEqual:
 		values = append(values, p.Value)
 		where = fmt.Sprintf("json_extract_path_text(%s.data::JSONB, %s) = ?", tblName, jsonPath)
 	default:

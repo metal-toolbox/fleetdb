@@ -82,6 +82,14 @@ func deletedResponse(c *gin.Context) {
 	c.JSON(http.StatusOK, &ServerResponse{Message: "resource deleted"})
 }
 
+func deletedResponse2(c *gin.Context, count int64) {
+	if count <= 0 {
+		c.JSON(http.StatusNotFound, &ServerResponse{Message: "resource not found", Error: "Unable to delete resource", Slug: "0"})
+	} else {
+		c.JSON(http.StatusOK, &ServerResponse{Message: "resource deleted", Slug: fmt.Sprintf("%d", count)})
+	}
+}
+
 func updatedResponse(c *gin.Context, slug string) {
 	r := &ServerResponse{
 		Message: "resource updated",
@@ -104,6 +112,19 @@ func dbErrorResponse(c *gin.Context, err error) {
 		c.JSON(http.StatusNotFound, &ServerResponse{Message: "resource not found", Error: err.Error()})
 	} else {
 		c.JSON(http.StatusInternalServerError, &ServerResponse{Message: "datastore error", Error: err.Error()})
+	}
+}
+
+func dbErrorResponse2(c *gin.Context, message string, err error) {
+	if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
+		badRequestResponse(c, "", err)
+		return
+	}
+
+	if errors.Is(err, sql.ErrNoRows) {
+		c.JSON(http.StatusNotFound, &ServerResponse{Message: fmt.Sprintf("resource not found; %s", message), Error: err.Error()})
+	} else {
+		c.JSON(http.StatusInternalServerError, &ServerResponse{Message: fmt.Sprintf("datastore error; %s", message), Error: err.Error()})
 	}
 }
 
@@ -144,7 +165,8 @@ func listResponse(c *gin.Context, i interface{}, p paginationData) {
 
 func itemResponse(c *gin.Context, i interface{}) {
 	r := &ServerResponse{
-		Record: i,
+		Message: "resource retrieved",
+		Record:  i,
 		Links: ServerResponseLinks{
 			Self: &Link{Href: c.Request.URL.String()},
 		},

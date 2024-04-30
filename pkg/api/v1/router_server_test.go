@@ -18,7 +18,7 @@ import (
 func TestIntegrationServerList(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		r, resp, err := s.Client.List(ctx, nil)
@@ -52,7 +52,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceMetadata,
 						Keys:      []string{"age"},
-						Operator:  fleetdbapi.OperatorLessThan,
+						Operator:  fleetdbapi.OperatorComparitorLessThan,
 						Value:     "7",
 					},
 				},
@@ -68,7 +68,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceMetadata,
 						Keys:      []string{"age"},
-						Operator:  fleetdbapi.OperatorGreaterThan,
+						Operator:  fleetdbapi.OperatorComparitorGreaterThan,
 						Value:     "11",
 					},
 				},
@@ -94,13 +94,13 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "blue-tang",
 					},
 					{
 						Namespace: dbtools.FixtureNamespaceMetadata,
 						Keys:      []string{"location"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "East Australian Current",
 					},
 				},
@@ -116,7 +116,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"nested", "tag"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "finding-nemo",
 					},
 				},
@@ -132,7 +132,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"nested", "number"},
-						Operator:  fleetdbapi.OperatorGreaterThan,
+						Operator:  fleetdbapi.OperatorComparitorGreaterThan,
 						Value:     "1",
 					},
 				},
@@ -164,7 +164,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "clown",
 					},
 				},
@@ -172,7 +172,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "new",
 					},
 				},
@@ -188,7 +188,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "clown",
 					},
 				},
@@ -196,7 +196,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "old",
 					},
 				},
@@ -256,7 +256,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "new",
 					},
 				},
@@ -278,7 +278,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "new",
 					},
 				},
@@ -297,7 +297,7 @@ func TestIntegrationServerList(t *testing.T) {
 							{
 								Namespace: dbtools.FixtureNamespaceVersioned,
 								Keys:      []string{"something"},
-								Operator:  fleetdbapi.OperatorEqual,
+								Operator:  fleetdbapi.OperatorComparitorEqual,
 								Value:     "cool",
 							},
 						},
@@ -318,7 +318,7 @@ func TestIntegrationServerList(t *testing.T) {
 							{
 								Namespace: dbtools.FixtureNamespaceVersioned,
 								Keys:      []string{"something"},
-								Operator:  fleetdbapi.OperatorEqual,
+								Operator:  fleetdbapi.OperatorComparitorEqual,
 								Value:     "cool",
 							},
 						},
@@ -328,7 +328,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "clown",
 					},
 				},
@@ -347,7 +347,7 @@ func TestIntegrationServerList(t *testing.T) {
 							{
 								Namespace: dbtools.FixtureNamespaceVersioned,
 								Keys:      []string{"something"},
-								Operator:  fleetdbapi.OperatorEqual,
+								Operator:  fleetdbapi.OperatorComparitorEqual,
 								Value:     "cool",
 							},
 						},
@@ -357,7 +357,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceVersioned,
 						Keys:      []string{"name"},
-						Operator:  fleetdbapi.OperatorEqual,
+						Operator:  fleetdbapi.OperatorComparitorEqual,
 						Value:     "old",
 					},
 				},
@@ -454,7 +454,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdbapi.OperatorLike,
+						Operator:  fleetdbapi.OperatorComparitorLike,
 						Value:     "%lo%",
 					},
 				},
@@ -470,7 +470,7 @@ func TestIntegrationServerList(t *testing.T) {
 					{
 						Namespace: dbtools.FixtureNamespaceOtherdata,
 						Keys:      []string{"type"},
-						Operator:  fleetdbapi.OperatorLike,
+						Operator:  fleetdbapi.OperatorComparitorLike,
 						Value:     "%lo",
 					},
 				},
@@ -558,7 +558,7 @@ func TestIntegrationServerGetPreload(t *testing.T) {
 func TestIntegrationServerGetDeleted(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		r, _, err := s.Client.Get(ctx, uuid.MustParse(dbtools.FixtureChuckles.ID))
@@ -590,7 +590,7 @@ func TestIntegrationServerListPreload(t *testing.T) {
 func TestIntegrationServerCreate(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		testServer := fleetdbapi.Server{
@@ -638,7 +638,7 @@ func TestIntegrationServerCreate(t *testing.T) {
 func TestIntegrationServerDelete(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, _ bool) error {
 		s.Client.SetToken(authToken)
 		_, err := s.Client.Delete(ctx, fleetdbapi.Server{UUID: uuid.MustParse(dbtools.FixtureNemo.ID)})
 
@@ -695,7 +695,7 @@ func TestIntegrationServerDelete(t *testing.T) {
 func TestIntegrationServerUpdate(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		resp, err := s.Client.Update(ctx, uuid.MustParse(dbtools.FixtureDory.ID), fleetdbapi.Server{Name: "The New Dory"})
@@ -712,7 +712,7 @@ func TestIntegrationServerUpdate(t *testing.T) {
 func TestIntegrationFleetdbCreateVersionedAttributes(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		va := fleetdbapi.VersionedAttributes{Namespace: "hollow.integegration.test", Data: json.RawMessage([]byte(`{"test":"integration"}`))}
@@ -769,7 +769,7 @@ func TestIntegrationFleetdbCreateVersionedAttributesIncrementCounter(t *testing.
 func TestIntegrationFleetdbListVersionedAttributes(t *testing.T) {
 	s := serverTest(t)
 
-	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
 		res, _, err := s.Client.ListVersionedAttributes(ctx, uuid.MustParse(dbtools.FixtureNemo.ID))

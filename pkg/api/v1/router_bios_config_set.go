@@ -2,8 +2,8 @@ package fleetdbapi
 
 import (
 	"context"
-	"fmt"
 	"database/sql"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -15,9 +15,9 @@ import (
 )
 
 var (
-	errBiosConfigSetRoute  = errors.New("error fullfilling config set request")
-	errConfigListRoute = errors.New("error fullfilling config set list request")
-	errNullRelation    = errors.New("sqlboiler relation was unexpectedly null")
+	errBiosConfigSetRoute = errors.New("error fullfilling config set request")
+	errConfigListRoute    = errors.New("error fullfilling config set list request")
+	errNullRelation       = errors.New("sqlboiler relation was unexpectedly null")
 )
 
 func (r *Router) serverBiosConfigSetCreate(c *gin.Context) {
@@ -235,7 +235,7 @@ func (r *Router) updateBiosConfigSet(ctx context.Context, set *BiosConfigSet, ol
 	return dbSet.ID, tx.Commit()
 }
 
-func updateBiosConfigSetDeleteHelper(ctx context.Context, tx* sql.Tx, components []*models.BiosConfigComponent, settings []*models.BiosConfigSetting) error {
+func updateBiosConfigSetDeleteHelper(ctx context.Context, tx *sql.Tx, components []*models.BiosConfigComponent, settings []*models.BiosConfigSetting) error {
 	// Delete components not found in new set
 	for _, component := range components {
 		_, err := component.Delete(ctx, tx) // Dont need to delete settings. CASCADE will handle that
@@ -255,7 +255,7 @@ func updateBiosConfigSetDeleteHelper(ctx context.Context, tx* sql.Tx, components
 	return nil
 }
 
-func updateBiosConfigSetInsertUpdateHelper(ctx context.Context, tx* sql.Tx, components []*models.BiosConfigComponent, componentsToUpdate []bool, settingsToUpdate [][]bool) error {
+func updateBiosConfigSetInsertUpdateHelper(ctx context.Context, tx *sql.Tx, components []*models.BiosConfigComponent, componentsToUpdate []bool, settingsToUpdate [][]bool) error {
 	for c, component := range components {
 		if component.R == nil {
 			return errNullRelation

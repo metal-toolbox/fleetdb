@@ -9,12 +9,12 @@ import (
 
 // BiosConfigSet represents a BIOS Configuration Set
 type BiosConfigSet struct {
-	ID         string            `json:"id"`
-	Name       string            `json:"name" binding:"required"`
-	Version    string            `json:"version" binding:"required"`
+	ID         string                `json:"id"`
+	Name       string                `json:"name" binding:"required"`
+	Version    string                `json:"version" binding:"required"`
 	Components []BiosConfigComponent `json:"components" binding:"required"`
-	CreatedAt  time.Time         `json:"created_at"`
-	UpdatedAt  time.Time         `json:"updated_at"`
+	CreatedAt  time.Time             `json:"created_at"`
+	UpdatedAt  time.Time             `json:"updated_at"`
 }
 
 // toDBModelBiosConfigSet converts a BiosConfigSet into a models.BiosConfigSet (created by sqlboiler)

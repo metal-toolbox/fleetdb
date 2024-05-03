@@ -8,10 +8,10 @@ import (
 
 // BiosConfigComponentQuery defines values you can query BiosConfigComponents with. Empty strings are ignored.
 type BiosConfigComponentQuery struct {
-	Name     string                        `query:"name"`
-	Vendor   string                        `query:"vendor"`
-	Model    string                        `query:"model"`
-	Serial   string                        `query:"serial"`
+	Name     string                   `query:"name"`
+	Vendor   string                   `query:"vendor"`
+	Model    string                   `query:"model"`
+	Serial   string                   `query:"serial"`
 	Settings []BiosConfigSettingQuery `query:"settings"`
 }
 

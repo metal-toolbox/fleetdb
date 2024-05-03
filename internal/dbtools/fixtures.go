@@ -90,9 +90,9 @@ var (
 	// Inventory fixtures
 	FixtureInventoryServer *models.Server
 
-	FixtureBiosConfigSet               *models.BiosConfigSet
-	FixtureBiosConfigComponents        []*models.BiosConfigComponent
-	FixtureBiosConfigSettings [][]*models.BiosConfigSetting
+	FixtureBiosConfigSet        *models.BiosConfigSet
+	FixtureBiosConfigComponents []*models.BiosConfigComponent
+	FixtureBiosConfigSettings   [][]*models.BiosConfigSetting
 )
 
 func addFixtures(t *testing.T) error {
@@ -674,7 +674,7 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 			{
 				SettingsKey:   "PXEEnable",
 				SettingsValue: "true",
-				Raw:        null.NewJSON([]byte(`{}`), true),
+				Raw:           null.NewJSON([]byte(`{}`), true),
 			},
 			{
 				SettingsKey:   "SRIOVEnable",
@@ -683,7 +683,7 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 			{
 				SettingsKey:   "position",
 				SettingsValue: "1",
-				Raw:        null.NewJSON([]byte(`{ "lanes": 8 }`), true),
+				Raw:           null.NewJSON([]byte(`{ "lanes": 8 }`), true),
 			},
 		},
 	}

@@ -20,15 +20,15 @@ import (
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
-func TestIntegrationServerConfigSetCreate(t *testing.T) {
+func TestIntegrationServerBiosConfigSetCreate(t *testing.T) {
 	s := serverTest(t)
 
 	realClientTests(t, func(realClientTestCtx context.Context, authToken string, _ int, _ bool) error {
 		s.Client.SetToken(authToken)
 
-		configSetTemp := configSetTest
-		configSetTemp.ID = ""
-		resp, err := s.Client.CreateServerConfigSet(realClientTestCtx, configSetTest)
+		BiosConfigSetTemp := BiosConfigSetTest
+		BiosConfigSetTemp.ID = ""
+		resp, err := s.Client.CreateServerBiosConfigSet(realClientTestCtx, BiosConfigSetTest)
 		if err != nil {
 			return err
 		}
@@ -36,15 +36,15 @@ func TestIntegrationServerConfigSetCreate(t *testing.T) {
 		_, err = uuid.Parse(resp.Slug)
 		assert.NoError(t, err)
 
-		configSetTest.ID = resp.Slug
+		BiosConfigSetTest.ID = resp.Slug
 
 		return nil
 	})
 
 	var testCases = []struct {
 		testName      string
-		configSetName string
-		configSetID   string
+		BiosConfigSetName string
+		BiosConfigSetID   string
 		expectedError bool
 		msgs          []string
 	}{
@@ -67,24 +67,24 @@ func TestIntegrationServerConfigSetCreate(t *testing.T) {
 			"",
 			"",
 			true,
-			[]string{"invalid payload: ConfigSetCreate{}", "Field validation for 'Name' failed on the 'required' tag", "400"},
+			[]string{"invalid payload: BiosConfigSetCreate{}", "Field validation for 'Name' failed on the 'required' tag", "400"},
 		},
 		{
 			"config set router: config set create; duplicate config",
 			"Integration Test Config Set Fail 2",
-			dbtools.FixtureConfigSet.ID,
+			dbtools.FixtureBiosConfigSet.ID,
 			true,
-			[]string{fmt.Sprintf("unable to insert into %s", models.TableNames.ConfigSets), "duplicate key value violates unique constraint", "400"},
+			[]string{fmt.Sprintf("unable to insert into %s", models.TableNames.BiosConfigSets), "duplicate key value violates unique constraint", "400"},
 		},
 	}
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			configSetTemp := configSetTest
-			configSetTemp.Name = tc.configSetName
-			configSetTemp.ID = tc.configSetID
+			BiosConfigSetTemp := BiosConfigSetTest
+			BiosConfigSetTemp.Name = tc.BiosConfigSetName
+			BiosConfigSetTemp.ID = tc.BiosConfigSetID
 
-			resp, err := s.Client.CreateServerConfigSet(context.TODO(), configSetTemp)
+			resp, err := s.Client.CreateServerBiosConfigSet(context.TODO(), BiosConfigSetTemp)
 			if tc.expectedError {
 				assert.Error(t, err)
 				assert.Nil(t, resp)
@@ -98,8 +98,8 @@ func TestIntegrationServerConfigSetCreate(t *testing.T) {
 					assert.Contains(t, resp.Message, msg)
 				}
 
-				if tc.configSetID != "" {
-					assert.Equal(t, tc.configSetID, resp.Slug)
+				if tc.BiosConfigSetID != "" {
+					assert.Equal(t, tc.BiosConfigSetID, resp.Slug)
 				} else {
 					_, err = uuid.Parse(resp.Slug)
 					assert.NoError(t, err)
@@ -109,39 +109,39 @@ func TestIntegrationServerConfigSetCreate(t *testing.T) {
 	}
 }
 
-func TestIntegrationServerConfigSetGet(t *testing.T) {
+func TestIntegrationServerBiosConfigSetGet(t *testing.T) {
 	s := serverTest(t)
 
 	realClientTests(t, func(realClientTestCtx context.Context, authToken string, _ int, _ bool) error {
 		s.Client.SetToken(authToken)
 
-		parsedID, err := uuid.Parse(dbtools.FixtureConfigSet.ID)
+		parsedID, err := uuid.Parse(dbtools.FixtureBiosConfigSet.ID)
 		require.NoError(t, err)
 
-		resp, err := s.Client.GetServerConfigSet(realClientTestCtx, parsedID)
+		resp, err := s.Client.GetServerBiosConfigSet(realClientTestCtx, parsedID)
 		if err != nil {
 			return err
 		}
 
-		assertEntireConfigSetEqual(t,
-			dbtools.FixtureConfigSet,
-			dbtools.FixtureConfigComponents,
-			dbtools.FixtureConfigComponentSettings,
-			resp.Record.(*fleetdbapi.ConfigSet))
+		assertEntireBiosConfigSetEqual(t,
+			dbtools.FixtureBiosConfigSet,
+			dbtools.FixtureBiosConfigComponents,
+			dbtools.FixtureBiosConfigSettings,
+			resp.Record.(*fleetdbapi.BiosConfigSet))
 
 		return nil
 	})
 
 	var testCases = []struct {
 		testName         string
-		configSetID      string
+		BiosConfigSetID      string
 		expectedError    bool
 		expectedResponse string
 		msg              string
 	}{
 		{
 			"config set router: config set get; success",
-			dbtools.FixtureConfigSet.ID,
+			dbtools.FixtureBiosConfigSet.ID,
 			false,
 			"200",
 			"resource retrieved",
@@ -157,10 +157,10 @@ func TestIntegrationServerConfigSetGet(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			id, err := uuid.Parse(tc.configSetID)
+			id, err := uuid.Parse(tc.BiosConfigSetID)
 			assert.NoError(t, err)
 
-			resp, err := s.Client.GetServerConfigSet(context.TODO(), id)
+			resp, err := s.Client.GetServerBiosConfigSet(context.TODO(), id)
 
 			if tc.expectedError {
 				assert.Nil(t, resp)
@@ -173,23 +173,23 @@ func TestIntegrationServerConfigSetGet(t *testing.T) {
 				assert.NotNil(t, resp)
 				assert.Contains(t, resp.Message, tc.msg)
 
-				var set *fleetdbapi.ConfigSet = resp.Record.(*fleetdbapi.ConfigSet)
+				var set *fleetdbapi.BiosConfigSet = resp.Record.(*fleetdbapi.BiosConfigSet)
 
-				// Fixtures are stored as models.ConfigSet, while the API returns fleetdbapi.ConfigSet, so we must manually compare the values
-				assertEntireConfigSetEqual(t,
-					dbtools.FixtureConfigSet,
-					dbtools.FixtureConfigComponents,
-					dbtools.FixtureConfigComponentSettings,
+				// Fixtures are stored as models.BiosConfigSet, while the API returns fleetdbapi.BiosConfigSet, so we must manually compare the values
+				assertEntireBiosConfigSetEqual(t,
+					dbtools.FixtureBiosConfigSet,
+					dbtools.FixtureBiosConfigComponents,
+					dbtools.FixtureBiosConfigSettings,
 					set)
 			}
 		})
 	}
 }
 
-func TestIntegrationServerConfigSetDelete(t *testing.T) {
+func TestIntegrationServerBiosConfigSetDelete(t *testing.T) {
 	s := serverTest(t)
 
-	configSetTemp := configSetTest
+	BiosConfigSetTemp := BiosConfigSetTest
 
 	realClientTests(t, func(realClientTestCtx context.Context, authToken string, _ int, expectedError bool) error {
 		s.Client.SetToken(authToken)
@@ -200,16 +200,16 @@ func TestIntegrationServerConfigSetDelete(t *testing.T) {
 			parsedID, err = uuid.NewUUID()
 			require.NoError(t, err)
 		} else {
-			configSetTemp.Name = "Integration Test Config Set Delete"
-			configSetTemp.ID = ""
-			resp, err := s.Client.CreateServerConfigSet(realClientTestCtx, configSetTemp)
+			BiosConfigSetTemp.Name = "Integration Test Config Set Delete"
+			BiosConfigSetTemp.ID = ""
+			resp, err := s.Client.CreateServerBiosConfigSet(realClientTestCtx, BiosConfigSetTemp)
 			require.NoError(t, err)
 
 			parsedID, err = uuid.Parse(resp.Slug)
 			require.NoError(t, err)
 		}
 
-		_, err := s.Client.DeleteServerConfigSet(realClientTestCtx, parsedID)
+		_, err := s.Client.DeleteServerBiosConfigSet(realClientTestCtx, parsedID)
 		if err != nil {
 			return err
 		}
@@ -219,7 +219,7 @@ func TestIntegrationServerConfigSetDelete(t *testing.T) {
 
 	var testCases = []struct {
 		testName         string
-		configSetID      string
+		BiosConfigSetID      string
 		expectedError    bool
 		expectedResponse string
 		msg              string
@@ -242,21 +242,21 @@ func TestIntegrationServerConfigSetDelete(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			configSetTemp.Name = tc.testName
-			configSetTemp.ID = ""
-			resp, err := s.Client.CreateServerConfigSet(context.TODO(), configSetTemp)
+			BiosConfigSetTemp.Name = tc.testName
+			BiosConfigSetTemp.ID = ""
+			resp, err := s.Client.CreateServerBiosConfigSet(context.TODO(), BiosConfigSetTemp)
 			require.NoError(t, err)
 			require.NotNil(t, resp)
 
-			if tc.configSetID == "" {
-				tc.configSetID = resp.Slug
+			if tc.BiosConfigSetID == "" {
+				tc.BiosConfigSetID = resp.Slug
 			}
 
-			parsedID, err := uuid.Parse(tc.configSetID)
+			parsedID, err := uuid.Parse(tc.BiosConfigSetID)
 			require.NoError(t, err)
 			require.NotNil(t, resp)
 
-			resp, err = s.Client.DeleteServerConfigSet(context.TODO(), parsedID)
+			resp, err = s.Client.DeleteServerBiosConfigSet(context.TODO(), parsedID)
 
 			if tc.expectedError {
 				assert.Nil(t, resp)
@@ -272,45 +272,45 @@ func TestIntegrationServerConfigSetDelete(t *testing.T) {
 	}
 }
 
-func TestIntegrationServerConfigSetUpdate(t *testing.T) {
+func TestIntegrationServerBiosConfigSetUpdate(t *testing.T) {
 	s := serverTest(t)
 
 	realClientTests(t, func(realClientTestCtx context.Context, authToken string, _ int, expectedError bool) error {
 		s.Client.SetToken(authToken)
 
-		configSetTemp := configSetTest
+		BiosConfigSetTemp := BiosConfigSetTest
 		var parsedID uuid.UUID
 		var err error
 
 		if expectedError {
-			parsedID, err = uuid.Parse(configSetTest.ID)
+			parsedID, err = uuid.Parse(BiosConfigSetTest.ID)
 			require.NoError(t, err)
 		} else {
-			configSetTemp.ID = ""
-			configSetTemp.Name = "Integration Test Config Set Update"
-			configSetTemp.Version = "oldVersion"
-			resp, err := s.Client.CreateServerConfigSet(realClientTestCtx, configSetTemp)
+			BiosConfigSetTemp.ID = ""
+			BiosConfigSetTemp.Name = "Integration Test Config Set Update"
+			BiosConfigSetTemp.Version = "oldVersion"
+			resp, err := s.Client.CreateServerBiosConfigSet(realClientTestCtx, BiosConfigSetTemp)
 			require.NoError(t, err)
 			require.NotNil(t, resp)
 
-			configSetTemp.ID = resp.Slug
+			BiosConfigSetTemp.ID = resp.Slug
 
 			parsedID, err = uuid.Parse(resp.Slug)
 			require.NoError(t, err)
 
-			configSetTemp.Version = "newVersion"
+			BiosConfigSetTemp.Version = "newVersion"
 		}
 
-		_, err = s.Client.UpdateServerConfigSet(realClientTestCtx, parsedID, configSetTemp)
+		_, err = s.Client.UpdateServerBiosConfigSet(realClientTestCtx, parsedID, BiosConfigSetTemp)
 		if err != nil {
 			return err
 		}
 
 		if !expectedError {
-			resp, err := s.Client.GetServerConfigSet(realClientTestCtx, parsedID)
+			resp, err := s.Client.GetServerBiosConfigSet(realClientTestCtx, parsedID)
 			require.NoError(t, err)
 			require.NotNil(t, resp)
-			assert.Equal(t, configSetTemp.Version, resp.Record.(*fleetdbapi.ConfigSet).Version)
+			assert.Equal(t, BiosConfigSetTemp.Version, resp.Record.(*fleetdbapi.BiosConfigSet).Version)
 		}
 
 		return nil
@@ -318,14 +318,14 @@ func TestIntegrationServerConfigSetUpdate(t *testing.T) {
 
 	var testCases = []struct {
 		testName         string
-		configSetID      string
+		BiosConfigSetID      string
 		expectedError    bool
 		expectedResponse string
 		msg              string
 	}{
 		{
 			"config set router: config set update; success",
-			configSetTest.ID,
+			BiosConfigSetTest.ID,
 			false,
 			"200",
 			"resource updated",
@@ -341,29 +341,29 @@ func TestIntegrationServerConfigSetUpdate(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			configSetTemp := configSetTest
-			configSetTemp.Version = "superNewVersion"
+			BiosConfigSetTemp := BiosConfigSetTest
+			BiosConfigSetTemp.Version = "superNewVersion"
 
-			parsedID, err := uuid.Parse(tc.configSetID)
+			parsedID, err := uuid.Parse(tc.BiosConfigSetID)
 			require.NoError(t, err)
 
 			if !tc.expectedError {
-				configSetTemp.ID = ""
-				configSetTemp.Name = "Integration Test Config Set Update 2"
-				configSetTemp.Version = "oldVersion"
-				resp, err := s.Client.CreateServerConfigSet(context.TODO(), configSetTemp)
+				BiosConfigSetTemp.ID = ""
+				BiosConfigSetTemp.Name = "Integration Test Config Set Update 2"
+				BiosConfigSetTemp.Version = "oldVersion"
+				resp, err := s.Client.CreateServerBiosConfigSet(context.TODO(), BiosConfigSetTemp)
 				require.NoError(t, err)
 				require.NotNil(t, resp)
 
-				configSetTemp.ID = resp.Slug
+				BiosConfigSetTemp.ID = resp.Slug
 
 				parsedID, err = uuid.Parse(resp.Slug)
 				require.NoError(t, err)
 
-				configSetTemp.Version = "newVersion"
+				BiosConfigSetTemp.Version = "newVersion"
 			}
 
-			resp, err := s.Client.UpdateServerConfigSet(context.TODO(), parsedID, configSetTemp)
+			resp, err := s.Client.UpdateServerBiosConfigSet(context.TODO(), parsedID, BiosConfigSetTemp)
 
 			if tc.expectedError {
 				assert.Nil(t, resp)
@@ -378,25 +378,25 @@ func TestIntegrationServerConfigSetUpdate(t *testing.T) {
 				parsedID, err := uuid.Parse(resp.Slug)
 				require.NoError(t, err)
 
-				resp, err := s.Client.GetServerConfigSet(context.TODO(), parsedID)
+				resp, err := s.Client.GetServerBiosConfigSet(context.TODO(), parsedID)
 				require.NoError(t, err)
 				require.NotNil(t, resp)
-				assert.Equal(t, resp.Record.(*fleetdbapi.ConfigSet).Version, configSetTemp.Version)
+				assert.Equal(t, resp.Record.(*fleetdbapi.BiosConfigSet).Version, BiosConfigSetTemp.Version)
 			}
 		})
 	}
 }
 
-func TestIntegrationServerConfigSetList(t *testing.T) {
+func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 	s := serverTest(t)
 
 	realClientTests(t, func(realClientTestCtx context.Context, authToken string, _ int, _ bool) error {
 		s.Client.SetToken(authToken)
 
-		testConfigSetQueryParams := fleetdbapi.ConfigSetListParams{
-			Params: []fleetdbapi.ConfigSetQueryParams{
+		testBiosConfigSetQueryParams := fleetdbapi.BiosConfigSetListParams{
+			Params: []fleetdbapi.BiosConfigSetQueryParams{
 				{
-					Set: fleetdbapi.ConfigSetQuery{
+					Set: fleetdbapi.BiosConfigSetQuery{
 						Name: "Fixture Test Config Set",
 					},
 					LogicalOperator:    fleetdbapi.OperatorLogicalOR,
@@ -406,7 +406,7 @@ func TestIntegrationServerConfigSetList(t *testing.T) {
 			Pagination: fleetdbapi.PaginationParams{},
 		}
 
-		_, err := s.Client.ListServerConfigSet(realClientTestCtx, &testConfigSetQueryParams)
+		_, err := s.Client.ListServerBiosConfigSet(realClientTestCtx, &testBiosConfigSetQueryParams)
 		if err != nil {
 			return err
 		}
@@ -415,31 +415,31 @@ func TestIntegrationServerConfigSetList(t *testing.T) {
 	})
 
 	// Setup for queries
-	configSetSetup := configSetTest
-	configSetSetup.ID = ""
-	configSetSetup.Name = "List Test 1"
-	resp, err := s.Client.CreateServerConfigSet(context.TODO(), configSetSetup)
+	BiosConfigSetSetup := BiosConfigSetTest
+	BiosConfigSetSetup.ID = ""
+	BiosConfigSetSetup.Name = "List Test 1"
+	resp, err := s.Client.CreateServerBiosConfigSet(context.TODO(), BiosConfigSetSetup)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	configSetSetup.ID = ""
-	configSetSetup.Name = "List Test 2"
-	resp, err = s.Client.CreateServerConfigSet(context.TODO(), configSetSetup)
+	BiosConfigSetSetup.ID = ""
+	BiosConfigSetSetup.Name = "List Test 2"
+	resp, err = s.Client.CreateServerBiosConfigSet(context.TODO(), BiosConfigSetSetup)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	configSetSetup.ID = ""
-	configSetSetup.Name = "List Test 3"
-	configSetSetup.Components[0].Name = "Dell Motherboard"
-	resp, err = s.Client.CreateServerConfigSet(context.TODO(), configSetSetup)
+	BiosConfigSetSetup.ID = ""
+	BiosConfigSetSetup.Name = "List Test 3"
+	BiosConfigSetSetup.Components[0].Name = "Dell Motherboard"
+	resp, err = s.Client.CreateServerBiosConfigSet(context.TODO(), BiosConfigSetSetup)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
 	// Find none
-	listTestParams0 := fleetdbapi.ConfigSetListParams{
-		Params: []fleetdbapi.ConfigSetQueryParams{
+	listTestParams0 := fleetdbapi.BiosConfigSetListParams{
+		Params: []fleetdbapi.BiosConfigSetQueryParams{
 			{
-				Set: fleetdbapi.ConfigSetQuery{
+				Set: fleetdbapi.BiosConfigSetQuery{
 					Name: "Not a good name",
 				},
 				LogicalOperator:    fleetdbapi.OperatorLogicalAND,
@@ -450,10 +450,10 @@ func TestIntegrationServerConfigSetList(t *testing.T) {
 	}
 
 	// Get all 3
-	listTestParams1 := fleetdbapi.ConfigSetListParams{
-		Params: []fleetdbapi.ConfigSetQueryParams{
+	listTestParams1 := fleetdbapi.BiosConfigSetListParams{
+		Params: []fleetdbapi.BiosConfigSetQueryParams{
 			{
-				Set: fleetdbapi.ConfigSetQuery{
+				Set: fleetdbapi.BiosConfigSetQuery{
 					Name: "List Test",
 				},
 				LogicalOperator:    fleetdbapi.OperatorLogicalAND,
@@ -464,17 +464,17 @@ func TestIntegrationServerConfigSetList(t *testing.T) {
 	}
 
 	// Get all but "List Test 3"
-	listTestParams2 := fleetdbapi.ConfigSetListParams{
-		Params: []fleetdbapi.ConfigSetQueryParams{
+	listTestParams2 := fleetdbapi.BiosConfigSetListParams{
+		Params: []fleetdbapi.BiosConfigSetQueryParams{
 			{
-				Set: fleetdbapi.ConfigSetQuery{
+				Set: fleetdbapi.BiosConfigSetQuery{
 					Name: "List Test",
 				},
 				LogicalOperator:    fleetdbapi.OperatorLogicalAND,
 				ComparitorOperator: fleetdbapi.OperatorComparitorLike,
 			},
 			{
-				Set: fleetdbapi.ConfigSetQuery{
+				Set: fleetdbapi.BiosConfigSetQuery{
 					Name: "List Test 3",
 				},
 				LogicalOperator:    fleetdbapi.OperatorLogicalAND,
@@ -485,12 +485,12 @@ func TestIntegrationServerConfigSetList(t *testing.T) {
 	}
 
 	// Get all based on components "%Motherboard"
-	listTestParams3 := fleetdbapi.ConfigSetListParams{
-		Params: []fleetdbapi.ConfigSetQueryParams{
+	listTestParams3 := fleetdbapi.BiosConfigSetListParams{
+		Params: []fleetdbapi.BiosConfigSetQueryParams{
 			{
-				Set: fleetdbapi.ConfigSetQuery{
+				Set: fleetdbapi.BiosConfigSetQuery{
 					Name: "List Test",
-					Components: []fleetdbapi.ConfigComponentQuery{
+					Components: []fleetdbapi.BiosConfigComponentQuery{
 						{
 							Name: "%Motherboard",
 						},
@@ -503,18 +503,18 @@ func TestIntegrationServerConfigSetList(t *testing.T) {
 		Pagination: fleetdbapi.PaginationParams{},
 	}
 	// Get all but the 3rd based on components "SM Motherboard"
-	listTestParams4 := fleetdbapi.ConfigSetListParams{
-		Params: []fleetdbapi.ConfigSetQueryParams{
+	listTestParams4 := fleetdbapi.BiosConfigSetListParams{
+		Params: []fleetdbapi.BiosConfigSetQueryParams{
 			{
-				Set: fleetdbapi.ConfigSetQuery{
+				Set: fleetdbapi.BiosConfigSetQuery{
 					Name: "List Test",
 				},
 				LogicalOperator:    fleetdbapi.OperatorLogicalAND,
 				ComparitorOperator: fleetdbapi.OperatorComparitorLike,
 			},
 			{
-				Set: fleetdbapi.ConfigSetQuery{
-					Components: []fleetdbapi.ConfigComponentQuery{
+				Set: fleetdbapi.BiosConfigSetQuery{
+					Components: []fleetdbapi.BiosConfigComponentQuery{
 						{
 							Name: "SM Motherboard",
 						},
@@ -529,7 +529,7 @@ func TestIntegrationServerConfigSetList(t *testing.T) {
 
 	var testCases = []struct {
 		testName      string
-		params        fleetdbapi.ConfigSetListParams
+		params        fleetdbapi.BiosConfigSetListParams
 		expectedCount int
 		expectedError bool
 	}{
@@ -567,7 +567,7 @@ func TestIntegrationServerConfigSetList(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
-			resp, err := s.Client.ListServerConfigSet(context.TODO(), &tc.params)
+			resp, err := s.Client.ListServerBiosConfigSet(context.TODO(), &tc.params)
 
 			if tc.expectedError {
 				assert.Nil(t, resp)
@@ -576,14 +576,14 @@ func TestIntegrationServerConfigSetList(t *testing.T) {
 				require.NoError(t, err)
 				require.NotNil(t, resp)
 
-				assert.Equal(t, tc.expectedCount, len(*resp.Records.(*[]fleetdbapi.ConfigSet)))
+				assert.Equal(t, tc.expectedCount, len(*resp.Records.(*[]fleetdbapi.BiosConfigSet)))
 			}
 		})
 	}
 }
 
-func assertEntireConfigSetEqual(t *testing.T, expectedConfigSet *models.ConfigSet, expectedComponents []*models.ConfigComponent, expectedSettings [][]*models.ConfigComponentSetting, actual *fleetdbapi.ConfigSet) {
-	assertConfigSetEqual(t, expectedConfigSet, actual)
+func assertEntireBiosConfigSetEqual(t *testing.T, expectedBiosConfigSet *models.BiosConfigSet, expectedComponents []*models.BiosConfigComponent, expectedSettings [][]*models.BiosConfigSetting, actual *fleetdbapi.BiosConfigSet) {
+	assertBiosConfigSetEqual(t, expectedBiosConfigSet, actual)
 	require.Equal(t, len(expectedComponents), len(actual.Components))
 	require.Equal(t, len(expectedSettings), len(actual.Components))
 
@@ -593,14 +593,14 @@ func assertEntireConfigSetEqual(t *testing.T, expectedConfigSet *models.ConfigSe
 
 		for _, actualComponent := range actual.Components {
 			if actualComponent.ID == expectedComponent.ID {
-				assertConfigComponentEqual(t, expectedComponent, &actualComponent)
+				assertBiosConfigComponentEqual(t, expectedComponent, &actualComponent)
 
 				for _, expectedSetting := range expectedSettings[i] {
 					foundSetting := false
 
 					for _, actualSetting := range actualComponent.Settings {
 						if actualSetting.ID == expectedSetting.ID {
-							assertConfigComponentSettingEqual(t, expectedSetting, &actualSetting)
+							assertBiosConfigSettingEqual(t, expectedSetting, &actualSetting)
 
 							foundSetting = true
 
@@ -625,41 +625,41 @@ func assertEntireConfigSetEqual(t *testing.T, expectedConfigSet *models.ConfigSe
 	}
 }
 
-func assertConfigSetEqual(t *testing.T, expected *models.ConfigSet, actual *fleetdbapi.ConfigSet) {
+func assertBiosConfigSetEqual(t *testing.T, expected *models.BiosConfigSet, actual *fleetdbapi.BiosConfigSet) {
 	assert.Equal(t, expected.Name, actual.Name)
-	assert.Equal(t, expected.Version.String, actual.Version)
+	assert.Equal(t, expected.Version, actual.Version)
 
 	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
 	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
 
 }
 
-func assertConfigComponentEqual(t *testing.T, expected *models.ConfigComponent, actual *fleetdbapi.ConfigComponent) {
+func assertBiosConfigComponentEqual(t *testing.T, expected *models.BiosConfigComponent, actual *fleetdbapi.BiosConfigComponent) {
 	assert.Equal(t, expected.Name, actual.Name)
-	assert.Equal(t, expected.Vendor.String, actual.Vendor)
-	assert.Equal(t, expected.Model.String, actual.Model)
-	assert.Equal(t, expected.Serial.String, actual.Serial)
+	assert.Equal(t, expected.Vendor, actual.Vendor)
+	assert.Equal(t, expected.Model, actual.Model)
+	assert.Equal(t, expected.Serial, actual.Serial)
 
 	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
 	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
 }
 
-func assertConfigComponentSettingEqual(t *testing.T, expected *models.ConfigComponentSetting, actual *fleetdbapi.ConfigComponentSetting) {
+func assertBiosConfigSettingEqual(t *testing.T, expected *models.BiosConfigSetting, actual *fleetdbapi.BiosConfigSetting) {
 	assert.Equal(t, expected.SettingsKey, actual.Key)
 	assert.Equal(t, expected.SettingsValue, actual.Value)
 
 	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
 	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
 
-	if expected.Custom.IsZero() {
-		assert.Nil(t, actual.Custom)
+	if expected.Raw.IsZero() {
+		assert.Nil(t, actual.Raw)
 	} else { // JSON []byte can have excess namespace, so lets remove that when comparing
 		var expectedBuffer bytes.Buffer
-		err := json.Compact(&expectedBuffer, expected.Custom.JSON)
+		err := json.Compact(&expectedBuffer, expected.Raw.JSON)
 		require.NoError(t, err)
 
 		var actualBuffer bytes.Buffer
-		err = json.Compact(&actualBuffer, actual.Custom)
+		err = json.Compact(&actualBuffer, actual.Raw)
 		require.NoError(t, err)
 
 		assert.Equal(t, expectedBuffer.Bytes(), actualBuffer.Bytes())

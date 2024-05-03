@@ -12,17 +12,17 @@ import (
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
-var configSetTest fleetdbapi.ConfigSet = fleetdbapi.ConfigSet{
+var BiosConfigSetTest fleetdbapi.BiosConfigSet = fleetdbapi.BiosConfigSet{
 	ID:      uuid.NewString(),
 	Name:    "Test",
 	Version: "version",
-	Components: []fleetdbapi.ConfigComponent{
+	Components: []fleetdbapi.BiosConfigComponent{
 		{
 			Name:   "SM Motherboard",
 			Vendor: "SUPERMICRO",
 			Serial: "BIOS",
 			Model:  "ATX",
-			Settings: []fleetdbapi.ConfigComponentSetting{
+			Settings: []fleetdbapi.BiosConfigSetting{
 				{
 					Key:   "BootOrder",
 					Value: "dev2,dev3,dev4",
@@ -38,11 +38,11 @@ var configSetTest fleetdbapi.ConfigSet = fleetdbapi.ConfigSet{
 			Vendor: "Intel",
 			Serial: "NIC",
 			Model:  "PCIE",
-			Settings: []fleetdbapi.ConfigComponentSetting{
+			Settings: []fleetdbapi.BiosConfigSetting{
 				{
 					Key:    "PXEEnable",
 					Value:  "true",
-					Custom: []byte(`{}`),
+					Raw: []byte(`{}`),
 				},
 				{
 					Key:   "SRIOVEnable",
@@ -51,20 +51,20 @@ var configSetTest fleetdbapi.ConfigSet = fleetdbapi.ConfigSet{
 				{
 					Key:    "position",
 					Value:  "1",
-					Custom: []byte(`{ "lanes": 8 }`),
+					Raw: []byte(`{ "lanes": 8 }`),
 				},
 			},
 		},
 	},
 }
 
-func TestConfigSetCreate(t *testing.T) {
+func TestBiosConfigSetCreate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
-		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource created", Slug: configSetTest.ID})
+		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource created", Slug: BiosConfigSetTest.ID})
 		require.NoError(t, err)
 
 		c := mockClient(string(jsonResponse), respCode)
-		resp, err := c.CreateServerConfigSet(ctx, configSetTest)
+		resp, err := c.CreateServerBiosConfigSet(ctx, BiosConfigSetTest)
 
 		if expectError {
 			assert.Error(t, err)
@@ -73,30 +73,30 @@ func TestConfigSetCreate(t *testing.T) {
 		}
 
 		require.NotNil(t, resp) // stop testing if resp is nil
-		assert.Equal(t, configSetTest.ID, resp.Slug)
+		assert.Equal(t, BiosConfigSetTest.ID, resp.Slug)
 
 		return err
 	})
 }
 
-func TestConfigSetDelete(t *testing.T) {
+func TestBiosConfigSetDelete(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, _ bool) error {
 		jsonResponse := json.RawMessage([]byte(`{"message": "resource deleted"}`))
 		c := mockClient(string(jsonResponse), respCode)
-		_, err := c.DeleteServerConfigSet(ctx, uuid.New())
+		_, err := c.DeleteServerBiosConfigSet(ctx, uuid.New())
 
 		return err
 	})
 }
 
-func TestConfigSetGet(t *testing.T) {
+func TestBiosConfigSetGet(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
-		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Record: &configSetTest})
+		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Record: &BiosConfigSetTest})
 		assert.NoError(t, err)
 
 		c := mockClient(string(jsonResponse), respCode)
 
-		resp, err := c.GetServerConfigSet(ctx, uuid.New())
+		resp, err := c.GetServerBiosConfigSet(ctx, uuid.New())
 		if expectError {
 			assert.Error(t, err)
 
@@ -105,7 +105,7 @@ func TestConfigSetGet(t *testing.T) {
 
 		assert.NoError(t, err)
 		require.NotNil(t, resp) // stop testing if set is nil
-		assert.Equal(t, configSetTest, *resp.Record.(*fleetdbapi.ConfigSet))
+		assert.Equal(t, BiosConfigSetTest, *resp.Record.(*fleetdbapi.BiosConfigSet))
 
 		return err
 	})
@@ -113,16 +113,16 @@ func TestConfigSetGet(t *testing.T) {
 
 func TestConfgSetList(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
-		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Records: &[]fleetdbapi.ConfigSet{configSetTest}})
+		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Records: &[]fleetdbapi.BiosConfigSet{BiosConfigSetTest}})
 		assert.NoError(t, err)
 
 		c := mockClient(string(jsonResponse), respCode)
 
-		testConfigSetQueryParams := fleetdbapi.ConfigSetListParams{
-			Params: []fleetdbapi.ConfigSetQueryParams{
+		testBiosConfigSetQueryParams := fleetdbapi.BiosConfigSetListParams{
+			Params: []fleetdbapi.BiosConfigSetQueryParams{
 				{
-					Set: fleetdbapi.ConfigSetQuery{
-						Components: []fleetdbapi.ConfigComponentQuery{
+					Set: fleetdbapi.BiosConfigSetQuery{
+						Components: []fleetdbapi.BiosConfigComponentQuery{
 							{
 								Name: "RTX",
 							},
@@ -132,10 +132,10 @@ func TestConfgSetList(t *testing.T) {
 					ComparitorOperator: fleetdbapi.OperatorComparitorLike,
 				},
 				{
-					Set: fleetdbapi.ConfigSetQuery{
-						Components: []fleetdbapi.ConfigComponentQuery{
+					Set: fleetdbapi.BiosConfigSetQuery{
+						Components: []fleetdbapi.BiosConfigComponentQuery{
 							{
-								Settings: []fleetdbapi.ConfigComponentSettingQuery{
+								Settings: []fleetdbapi.BiosConfigSettingQuery{
 									{
 										Key:   "PCIE Lanes",
 										Value: "x16",
@@ -157,7 +157,7 @@ func TestConfgSetList(t *testing.T) {
 			},
 		}
 
-		resp, err := c.ListServerConfigSet(ctx, &testConfigSetQueryParams)
+		resp, err := c.ListServerBiosConfigSet(ctx, &testBiosConfigSetQueryParams)
 		if expectError {
 			assert.Error(t, err)
 
@@ -166,7 +166,7 @@ func TestConfgSetList(t *testing.T) {
 
 		assert.NoError(t, err)
 		require.NotNil(t, resp)
-		assert.Equal(t, []fleetdbapi.ConfigSet{configSetTest}, *resp.Records.(*[]fleetdbapi.ConfigSet))
+		assert.Equal(t, []fleetdbapi.BiosConfigSet{BiosConfigSetTest}, *resp.Records.(*[]fleetdbapi.BiosConfigSet))
 
 		return err
 	})
@@ -174,14 +174,14 @@ func TestConfgSetList(t *testing.T) {
 
 func TestConfgSetUpdate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
-		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource updated", Slug: configSetTest.ID})
+		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource updated", Slug: BiosConfigSetTest.ID})
 		require.NoError(t, err)
 
-		id, err := uuid.Parse(configSetTest.ID)
+		id, err := uuid.Parse(BiosConfigSetTest.ID)
 		require.NoError(t, err)
 
 		c := mockClient(string(jsonResponse), respCode)
-		resp, err := c.UpdateServerConfigSet(ctx, id, configSetTest)
+		resp, err := c.UpdateServerBiosConfigSet(ctx, id, BiosConfigSetTest)
 
 		if expectError {
 			assert.Error(t, err)
@@ -190,7 +190,7 @@ func TestConfgSetUpdate(t *testing.T) {
 		}
 
 		require.NotNil(t, resp) // stop testing if resp is nil
-		assert.Equal(t, configSetTest.ID, resp.Slug)
+		assert.Equal(t, BiosConfigSetTest.ID, resp.Slug)
 
 		return err
 	})

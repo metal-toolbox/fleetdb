@@ -12,32 +12,32 @@ import (
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
-// ConfigSetQuery defines values you can query ConfigSets with. Empty strings are ignored.
-type ConfigSetQuery struct {
+// BiosConfigSetQuery defines values you can query BiosConfigSets with. Empty strings are ignored.
+type BiosConfigSetQuery struct {
 	Name       string                 `query:"name"`
 	Version    string                 `query:"version"`
-	Components []ConfigComponentQuery `query:"components"`
+	Components []BiosConfigComponentQuery `query:"components"`
 }
 
-// ConfigSetQueryParams defines a ConfigSetQuery struct and operators you can use to query ConfigSets with. If LogicalOperator is an empty string, it will default to OperatorLogicalAND. If ComparitorOperator is an empty string, it will default to OperatorComparitorEqual
-type ConfigSetQueryParams struct {
-	Set                ConfigSetQuery         `query:"set"`
+// BiosConfigSetQueryParams defines a BiosConfigSetQuery struct and operators you can use to query BiosConfigSets with. If LogicalOperator is an empty string, it will default to OperatorLogicalAND. If ComparitorOperator is an empty string, it will default to OperatorComparitorEqual
+type BiosConfigSetQueryParams struct {
+	Set                BiosConfigSetQuery         `query:"set"`
 	LogicalOperator    OperatorLogicalType    `query:"logical"`
 	ComparitorOperator OperatorComparitorType `query:"comparitor"`
 }
 
-// ConfigSetListParams params is an array of potential expressions when querying.
+// BiosConfigSetListParams params is an array of potential expressions when querying.
 // Each one will have a Set. This Set will define values you want to search on, empty strings will be ignored.
 // The ComparitorOperator will define how you want to compare those values
-// All values within a single ConfigSetQueryParams item will be grouped together and "AND"'ed
-// The LogicalOperator will define how that ConfigSetQueryParams item will be grouped with other ConfigSetQueryParams items
-type ConfigSetListParams struct {
-	Params     []ConfigSetQueryParams `query:"params"`
+// All values within a single BiosConfigSetQueryParams item will be grouped together and "AND"'ed
+// The LogicalOperator will define how that BiosConfigSetQueryParams item will be grouped with other BiosConfigSetQueryParams items
+type BiosConfigSetListParams struct {
+	Params     []BiosConfigSetQueryParams `query:"params"`
 	Pagination PaginationParams       `query:"pagination"`
 }
 
 // setQuery implements queryParams.
-func (p *ConfigSetListParams) setQuery(q url.Values) {
+func (p *BiosConfigSetListParams) setQuery(q url.Values) {
 	if p == nil {
 		return
 	}
@@ -62,8 +62,8 @@ func (p *ConfigSetListParams) setQuery(q url.Values) {
 	}
 }
 
-func parseConfigSetListParams(c *gin.Context) (*ConfigSetListParams, error) {
-	params := ConfigSetListParams{}
+func parseBiosConfigSetListParams(c *gin.Context) (*BiosConfigSetListParams, error) {
+	params := BiosConfigSetListParams{}
 	bytes := c.Request.URL.RawQuery
 
 	parser := urlquery.NewParser()
@@ -78,7 +78,7 @@ func parseConfigSetListParams(c *gin.Context) (*ConfigSetListParams, error) {
 }
 
 // queryMods converts the list params into sql conditions that can be added to sql queries
-func (p *ConfigSetListParams) queryMods() []qm.QueryMod {
+func (p *BiosConfigSetListParams) queryMods() []qm.QueryMod {
 	mods := []qm.QueryMod{}
 
 	// Only INNER JOIN if we have query params for settings or components
@@ -88,8 +88,8 @@ func (p *ConfigSetListParams) queryMods() []qm.QueryMod {
 	for i := range p.Params {
 		whereMods := []qm.QueryMod{}
 
-		whereMods = appendOperatorQueryMod(whereMods, p.Params[i].ComparitorOperator, models.ConfigSetTableColumns.Name, p.Params[i].Set.Name)
-		whereMods = appendOperatorQueryMod(whereMods, p.Params[i].ComparitorOperator, models.ConfigSetTableColumns.Version, p.Params[i].Set.Version)
+		whereMods = appendOperatorQueryMod(whereMods, p.Params[i].ComparitorOperator, models.BiosConfigSetTableColumns.Name, p.Params[i].Set.Name)
+		whereMods = appendOperatorQueryMod(whereMods, p.Params[i].ComparitorOperator, models.BiosConfigSetTableColumns.Version, p.Params[i].Set.Version)
 
 		for j := range p.Params[i].Set.Components {
 			haveComponents = true
@@ -120,17 +120,17 @@ func (p *ConfigSetListParams) queryMods() []qm.QueryMod {
 	// Join Components table
 	if haveComponents {
 		mods = append(mods, qm.InnerJoin(fmt.Sprintf("%s on %s = %s",
-			models.TableNames.ConfigComponents,
-			models.ConfigSetTableColumns.ID,
-			models.ConfigComponentTableColumns.FKConfigSetID)))
+			models.TableNames.BiosConfigComponents,
+			models.BiosConfigSetTableColumns.ID,
+			models.BiosConfigComponentTableColumns.FKBiosConfigSetID)))
 	}
 
 	// Join Settings into Components
 	if haveSettings {
 		mods = append(mods, qm.InnerJoin(fmt.Sprintf("%s on %s = %s",
-			models.TableNames.ConfigComponentSettings,
-			models.ConfigComponentTableColumns.ID,
-			models.ConfigComponentSettingTableColumns.FKComponentID)))
+			models.TableNames.BiosConfigSettings,
+			models.BiosConfigComponentTableColumns.ID,
+			models.BiosConfigSettingTableColumns.FKBiosConfigComponentID)))
 	}
 
 	mods = append(mods, p.Pagination.queryMods()...)

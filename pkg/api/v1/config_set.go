@@ -4,8 +4,6 @@ import (
 	// "bytes"
 	"time"
 
-	"github.com/volatiletech/null/v8"
-
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
@@ -23,7 +21,7 @@ type ConfigSet struct {
 func (cs *ConfigSet) toDBModelConfigSet() *models.ConfigSet {
 	dbcs := &models.ConfigSet{
 		Name:    cs.Name,
-		Version: null.StringFrom(cs.Version),
+		Version: cs.Version,
 		ID:      cs.ID,
 	}
 
@@ -34,7 +32,7 @@ func (cs *ConfigSet) toDBModelConfigSet() *models.ConfigSet {
 func (cs *ConfigSet) fromDBModelConfigSet(set *models.ConfigSet) error {
 	cs.ID = set.ID
 	cs.Name = set.Name
-	cs.Version = set.Version.String
+	cs.Version = set.Version
 	cs.CreatedAt = set.CreatedAt.Time
 	cs.UpdatedAt = set.CreatedAt.Time
 

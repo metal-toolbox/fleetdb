@@ -3,8 +3,8 @@
 
 CREATE TABLE public.config_sets (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
-    name STRING  UNIQUE NOT NULL,
-    version STRING NULL,
+    name STRING UNIQUE NOT NULL,
+    version STRING NOT NULL,
     created_at TIMESTAMPTZ NULL,
     updated_at TIMESTAMPTZ NULL
 );
@@ -13,9 +13,9 @@ CREATE TABLE public.config_components (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     fk_config_set_id UUID NOT NULL REFERENCES public.config_sets(id) ON DELETE CASCADE,
     name STRING NOT NULL,
-    vendor STRING NULL,
-    model STRING NULL,
-    serial STRING NULL,
+    vendor STRING NOT NULL,
+    model STRING NOT NULL,
+    serial STRING NOT NULL,
     created_at TIMESTAMPTZ NULL,
     updated_at TIMESTAMPTZ NULL,
     UNIQUE (fk_config_set_id, name)

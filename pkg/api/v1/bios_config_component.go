@@ -8,14 +8,14 @@ import (
 
 // BiosConfigComponent represents a BIOS Configuration Component
 type BiosConfigComponent struct {
-	ID        string                   `json:"id"`
-	Name      string                   `json:"name" binding:"required"`
-	Vendor    string                   `json:"vendor"`
-	Model     string                   `json:"model"`
-	Serial    string                   `json:"serial"`
+	ID        string              `json:"id"`
+	Name      string              `json:"name" binding:"required"`
+	Vendor    string              `json:"vendor"`
+	Model     string              `json:"model"`
+	Serial    string              `json:"serial"`
 	Settings  []BiosConfigSetting `json:"settings" binding:"required"`
-	CreatedAt time.Time                `json:"created_at"`
-	UpdatedAt time.Time                `json:"updated_at"`
+	CreatedAt time.Time           `json:"created_at"`
+	UpdatedAt time.Time           `json:"updated_at"`
 }
 
 func (cc *BiosConfigComponent) toDBModelBiosConfigComponent() *models.BiosConfigComponent {

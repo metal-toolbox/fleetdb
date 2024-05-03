@@ -13,7 +13,7 @@ type BiosConfigSetting struct {
 	ID        string    `json:"id"`
 	Key       string    `json:"key" binding:"required"`
 	Value     string    `json:"value" binding:"required"`
-	Raw    []byte    `json:"raw,omitempty"`
+	Raw       []byte    `json:"raw,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -22,7 +22,7 @@ func (ccs *BiosConfigSetting) toDBModelBiosConfigSetting() *models.BiosConfigSet
 	dbccs := &models.BiosConfigSetting{
 		SettingsKey:   ccs.Key,
 		SettingsValue: ccs.Value,
-		Raw:        null.JSONFrom(ccs.Raw),
+		Raw:           null.JSONFrom(ccs.Raw),
 	}
 
 	return dbccs

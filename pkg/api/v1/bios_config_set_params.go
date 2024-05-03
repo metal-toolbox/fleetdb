@@ -14,14 +14,14 @@ import (
 
 // BiosConfigSetQuery defines values you can query BiosConfigSets with. Empty strings are ignored.
 type BiosConfigSetQuery struct {
-	Name       string                 `query:"name"`
-	Version    string                 `query:"version"`
+	Name       string                     `query:"name"`
+	Version    string                     `query:"version"`
 	Components []BiosConfigComponentQuery `query:"components"`
 }
 
 // BiosConfigSetQueryParams defines a BiosConfigSetQuery struct and operators you can use to query BiosConfigSets with. If LogicalOperator is an empty string, it will default to OperatorLogicalAND. If ComparitorOperator is an empty string, it will default to OperatorComparitorEqual
 type BiosConfigSetQueryParams struct {
-	Set                BiosConfigSetQuery         `query:"set"`
+	Set                BiosConfigSetQuery     `query:"set"`
 	LogicalOperator    OperatorLogicalType    `query:"logical"`
 	ComparitorOperator OperatorComparitorType `query:"comparitor"`
 }
@@ -33,7 +33,7 @@ type BiosConfigSetQueryParams struct {
 // The LogicalOperator will define how that BiosConfigSetQueryParams item will be grouped with other BiosConfigSetQueryParams items
 type BiosConfigSetListParams struct {
 	Params     []BiosConfigSetQueryParams `query:"params"`
-	Pagination PaginationParams       `query:"pagination"`
+	Pagination PaginationParams           `query:"pagination"`
 }
 
 // setQuery implements queryParams.

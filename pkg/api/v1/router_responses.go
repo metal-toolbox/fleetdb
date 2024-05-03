@@ -78,6 +78,7 @@ func createdResponse(c *gin.Context, slug string) {
 	c.JSON(http.StatusCreated, r)
 }
 
+// DEPRECATED; Replace with deletedResponse2
 func deletedResponse(c *gin.Context) {
 	c.JSON(http.StatusOK, &ServerResponse{Message: "resource deleted"})
 }
@@ -102,6 +103,7 @@ func updatedResponse(c *gin.Context, slug string) {
 	c.JSON(http.StatusOK, r)
 }
 
+// DEPRECATED; Replace with deletedResponse2
 func dbErrorResponse(c *gin.Context, err error) {
 	if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 		badRequestResponse(c, "", err)

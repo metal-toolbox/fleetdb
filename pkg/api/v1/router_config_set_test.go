@@ -627,7 +627,7 @@ func assertEntireConfigSetEqual(t *testing.T, expectedConfigSet *models.ConfigSe
 
 func assertConfigSetEqual(t *testing.T, expected *models.ConfigSet, actual *fleetdbapi.ConfigSet) {
 	assert.Equal(t, expected.Name, actual.Name)
-	assert.Equal(t, expected.Version.String, actual.Version)
+	assert.Equal(t, expected.Version, actual.Version)
 
 	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
 	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
@@ -636,9 +636,9 @@ func assertConfigSetEqual(t *testing.T, expected *models.ConfigSet, actual *flee
 
 func assertConfigComponentEqual(t *testing.T, expected *models.ConfigComponent, actual *fleetdbapi.ConfigComponent) {
 	assert.Equal(t, expected.Name, actual.Name)
-	assert.Equal(t, expected.Vendor.String, actual.Vendor)
-	assert.Equal(t, expected.Model.String, actual.Model)
-	assert.Equal(t, expected.Serial.String, actual.Serial)
+	assert.Equal(t, expected.Vendor, actual.Vendor)
+	assert.Equal(t, expected.Model, actual.Model)
+	assert.Equal(t, expected.Serial, actual.Serial)
 
 	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
 	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)

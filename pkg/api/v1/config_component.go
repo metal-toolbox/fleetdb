@@ -3,8 +3,6 @@ package fleetdbapi
 import (
 	"time"
 
-	"github.com/volatiletech/null/v8"
-
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
@@ -23,9 +21,9 @@ type ConfigComponent struct {
 func (cc *ConfigComponent) toDBModelConfigComponent() *models.ConfigComponent {
 	dbcc := &models.ConfigComponent{
 		Name:   cc.Name,
-		Vendor: null.StringFrom(cc.Vendor),
-		Model:  null.StringFrom(cc.Model),
-		Serial: null.StringFrom(cc.Serial),
+		Vendor: cc.Vendor,
+		Model:  cc.Model,
+		Serial: cc.Serial,
 	}
 
 	return dbcc
@@ -35,9 +33,9 @@ func (cc *ConfigComponent) toDBModelConfigComponent() *models.ConfigComponent {
 func (cc *ConfigComponent) fromDBModelConfigComponent(component *models.ConfigComponent) {
 	cc.ID = component.ID
 	cc.Name = component.Name
-	cc.Vendor = component.Vendor.String
-	cc.Model = component.Model.String
-	cc.Serial = component.Serial.String
+	cc.Vendor = component.Vendor
+	cc.Model = component.Model
+	cc.Serial = component.Serial
 	cc.CreatedAt = component.CreatedAt.Time
 	cc.UpdatedAt = component.CreatedAt.Time
 

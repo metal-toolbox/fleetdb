@@ -691,21 +691,21 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 	components := []*models.ConfigComponent{
 		{
 			Name:   "Fixture Test SM Motherboard",
-			Vendor: null.StringFrom("SUPERMICRO"),
-			Serial: null.StringFrom("BIOS"),
-			Model:  null.StringFrom("ATX"),
+			Vendor: "SUPERMICRO",
+			Serial: "BIOS",
+			Model:  "ATX",
 		},
 		{
 			Name:   "Fixture Test Intel Network Adapter",
-			Vendor: null.StringFrom("Intel"),
-			Serial: null.StringFrom("NIC"),
-			Model:  null.StringFrom("PCIE"),
+			Vendor: "Intel",
+			Serial: "NIC",
+			Model:  "PCIE",
 		},
 	}
 
 	configSet := models.ConfigSet{
 		Name:    "Fixture Test Config Set",
-		Version: null.StringFrom("version"),
+		Version: "version",
 	}
 
 	err := configSet.Insert(ctx, db, boil.Infer())

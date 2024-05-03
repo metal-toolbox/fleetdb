@@ -14,23 +14,23 @@ import (
 )
 
 var (
-	errConfigSetRoute  = errors.New("error fullfilling config set request")
+	errBiosConfigSetRoute  = errors.New("error fullfilling config set request")
 	errConfigListRoute = errors.New("error fullfilling config set list request")
 	errNullRelation    = errors.New("sqlboiler relation was unexpectedly null")
 )
 
-func (r *Router) serverConfigSetCreate(c *gin.Context) {
-	var payload ConfigSet
+func (r *Router) serverBiosConfigSetCreate(c *gin.Context) {
+	var payload BiosConfigSet
 
 	// Unmarshal JSON payload
 	err := c.ShouldBindJSON(&payload)
 	if err != nil {
-		badRequestResponse(c, "invalid payload: ConfigSetCreate{}; failed to unmarshal config set", err)
+		badRequestResponse(c, "invalid payload: BiosConfigSetCreate{}; failed to unmarshal config set", err)
 		return
 	}
 
 	// Insert DBModel into DB
-	id, err := r.insertConfigSet(c.Request.Context(), &payload)
+	id, err := r.insertBiosConfigSet(c.Request.Context(), &payload)
 	if err != nil {
 		dbErrorResponse(c, err)
 		return
@@ -39,27 +39,27 @@ func (r *Router) serverConfigSetCreate(c *gin.Context) {
 	createdResponse(c, id)
 }
 
-func (r *Router) serverConfigSetGet(c *gin.Context) {
+func (r *Router) serverBiosConfigSetGet(c *gin.Context) {
 	// Get Config Set
 	id := c.Param("uuid")
 	if id == "" || id == uuid.Nil.String() {
-		badRequestResponse(c, "no UUID query param", errConfigSetRoute)
+		badRequestResponse(c, "no UUID query param", errBiosConfigSetRoute)
 		return
 	}
 
 	mods := []qm.QueryMod{
-		qm.Where(fmt.Sprintf("%s = ?", models.ConfigSetTableColumns.ID), id),
+		qm.Where(fmt.Sprintf("%s = ?", models.BiosConfigSetTableColumns.ID), id),
 	}
 
-	dbConfigSet, err := r.eagerLoadConfigSet(c.Request.Context(), mods)
+	dbBiosConfigSet, err := r.eagerLoadBiosConfigSet(c.Request.Context(), mods)
 	if err != nil {
 		dbErrorResponse(c, err)
 		return
 	}
 
 	// Convert to Marshallable struct
-	var set ConfigSet
-	err = set.fromDBModelConfigSet(dbConfigSet)
+	var set BiosConfigSet
+	err = set.fromDBModelBiosConfigSet(dbBiosConfigSet)
 	if err != nil {
 		dbErrorResponse(c, err)
 		return
@@ -68,13 +68,13 @@ func (r *Router) serverConfigSetGet(c *gin.Context) {
 	itemResponse(c, set)
 }
 
-func (r *Router) serverConfigSetDelete(c *gin.Context) {
+func (r *Router) serverBiosConfigSetDelete(c *gin.Context) {
 	id := c.Param("uuid")
 	if id == "" || id == uuid.Nil.String() {
-		badRequestResponse(c, "no UUID query param", errConfigSetRoute)
+		badRequestResponse(c, "no UUID query param", errBiosConfigSetRoute)
 	}
 
-	set := &models.ConfigSet{}
+	set := &models.BiosConfigSet{}
 	set.ID = id
 
 	// Delete Config Set
@@ -87,8 +87,8 @@ func (r *Router) serverConfigSetDelete(c *gin.Context) {
 	deletedResponse2(c, count)
 }
 
-func (r *Router) serverConfigSetList(c *gin.Context) {
-	params, err := parseConfigSetListParams(c)
+func (r *Router) serverBiosConfigSetList(c *gin.Context) {
+	params, err := parseBiosConfigSetListParams(c)
 	if err != nil {
 		badRequestResponse(c, "invalid query params", errConfigListRoute)
 		return
@@ -96,22 +96,22 @@ func (r *Router) serverConfigSetList(c *gin.Context) {
 
 	mods := params.queryMods()
 
-	count, err := models.ConfigSets().Count(c.Request.Context(), r.DB)
+	count, err := models.BiosConfigSets().Count(c.Request.Context(), r.DB)
 	if err != nil {
 		dbErrorResponse(c, err)
 		return
 	}
 
-	dbSets, err := r.eagerLoadAllConfigSets(c.Request.Context(), mods)
+	dbSets, err := r.eagerLoadAllBiosConfigSets(c.Request.Context(), mods)
 	if err != nil {
 		dbErrorResponse(c, err)
 		return
 	}
 
-	sets := make([]ConfigSet, len(dbSets))
+	sets := make([]BiosConfigSet, len(dbSets))
 
 	for i, dbSet := range dbSets {
-		err = sets[i].fromDBModelConfigSet(dbSet)
+		err = sets[i].fromDBModelBiosConfigSet(dbSet)
 		if err != nil {
 			dbErrorResponse(c, err)
 			return
@@ -127,34 +127,34 @@ func (r *Router) serverConfigSetList(c *gin.Context) {
 	listResponse(c, sets, pd)
 }
 
-func (r *Router) serverConfigSetUpdate(c *gin.Context) {
-	var payload ConfigSet
+func (r *Router) serverBiosConfigSetUpdate(c *gin.Context) {
+	var payload BiosConfigSet
 
 	// Get ID
 	id := c.Param("uuid")
 	if id == "" || id == uuid.Nil.String() {
-		badRequestResponse(c, "no UUID query param", errConfigSetRoute)
+		badRequestResponse(c, "no UUID query param", errBiosConfigSetRoute)
 	}
 
 	// Unmarshal JSON payload
 	err := c.ShouldBindJSON(&payload)
 	if err != nil {
-		badRequestResponse(c, "invalid payload: ConfigSetUpdate{}; failed to unmarshal config set", err)
+		badRequestResponse(c, "invalid payload: BiosConfigSetUpdate{}; failed to unmarshal config set", err)
 		return
 	}
 
 	mods := []qm.QueryMod{
-		qm.Where(fmt.Sprintf("%s = ?", models.ConfigSetTableColumns.ID), id),
+		qm.Where(fmt.Sprintf("%s = ?", models.BiosConfigSetTableColumns.ID), id),
 	}
 
-	oldSet, err := r.eagerLoadConfigSet(c.Request.Context(), mods)
+	oldSet, err := r.eagerLoadBiosConfigSet(c.Request.Context(), mods)
 	if err != nil {
 		dbErrorResponse2(c, "failed to get config set that we want to update", err)
 		return
 	}
 
 	// Insert DBModel into DB
-	id, err = r.updateConfigSet(c.Request.Context(), &payload, oldSet)
+	id, err = r.updateBiosConfigSet(c.Request.Context(), &payload, oldSet)
 	if err != nil {
 		dbErrorResponse2(c, "failed to update config set", err)
 		return
@@ -163,7 +163,7 @@ func (r *Router) serverConfigSetUpdate(c *gin.Context) {
 	updatedResponse(c, id)
 }
 
-func (r *Router) updateConfigSet(ctx context.Context, set *ConfigSet, oldDBSet *models.ConfigSet) (string, error) {
+func (r *Router) updateBiosConfigSet(ctx context.Context, set *BiosConfigSet, oldDBSet *models.BiosConfigSet) (string, error) {
 	tx, err := r.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return "", errors.Wrap(err, "0")
@@ -173,7 +173,7 @@ func (r *Router) updateConfigSet(ctx context.Context, set *ConfigSet, oldDBSet *
 	// nolint:errcheck
 	defer tx.Rollback()
 
-	dbSet := set.toDBModelConfigSet()
+	dbSet := set.toDBModelBiosConfigSet()
 	dbSet.ID = set.ID
 
 	_, err = dbSet.Update(ctx, tx, boil.Infer())
@@ -181,21 +181,21 @@ func (r *Router) updateConfigSet(ctx context.Context, set *ConfigSet, oldDBSet *
 		return "", errors.Wrap(err, fmt.Sprintf("IDs: %s", dbSet.ID))
 	}
 
-	var oldComponents []*models.ConfigComponent
-	var oldSettings []*models.ConfigComponentSetting
-	var components []*models.ConfigComponent
-	var settings []*models.ConfigComponentSetting
-	var settingsToDelete []*models.ConfigComponentSetting
-	var componentsToDelete []*models.ConfigComponent
+	var oldComponents []*models.BiosConfigComponent
+	var oldSettings []*models.BiosConfigSetting
+	var components []*models.BiosConfigComponent
+	var settings []*models.BiosConfigSetting
+	var settingsToDelete []*models.BiosConfigSetting
+	var componentsToDelete []*models.BiosConfigComponent
 	var componentsToUpdate []bool
 	var settingsToUpdate [][]bool
 
 	if oldDBSet.R != nil {
-		oldComponents = oldDBSet.R.FKConfigSetConfigComponents
+		oldComponents = oldDBSet.R.FKBiosConfigSetBiosConfigComponents
 	}
 
 	if dbSet.R != nil {
-		components = dbSet.R.FKConfigSetConfigComponents
+		components = dbSet.R.FKBiosConfigSetBiosConfigComponents
 	}
 
 	componentsToUpdate = make([]bool, len(components))
@@ -207,21 +207,21 @@ func (r *Router) updateConfigSet(ctx context.Context, set *ConfigSet, oldDBSet *
 		for c, component := range components {
 			if oldComponent.Name == component.Name {
 				component.ID = oldComponent.ID
-				component.FKConfigSetID = dbSet.ID
+				component.FKBiosConfigSetID = dbSet.ID
 				componentFound = true
 
 				componentsToUpdate[c] = true
 
 				if component.R != nil {
-					settings = component.R.FKComponentConfigComponentSettings
+					settings = component.R.FKBiosConfigComponentBiosConfigSettings
 				} else {
-					settings = []*models.ConfigComponentSetting{}
+					settings = []*models.BiosConfigSetting{}
 				}
 
 				if oldComponent.R != nil {
-					oldSettings = oldComponent.R.FKComponentConfigComponentSettings
+					oldSettings = oldComponent.R.FKBiosConfigComponentBiosConfigSettings
 				} else {
-					oldSettings = []*models.ConfigComponentSetting{}
+					oldSettings = []*models.BiosConfigSetting{}
 				}
 
 				settingsToUpdate[c] = make([]bool, len(settings))
@@ -232,7 +232,7 @@ func (r *Router) updateConfigSet(ctx context.Context, set *ConfigSet, oldDBSet *
 						if oldSetting.SettingsKey == setting.SettingsKey {
 							settingFound = true
 							setting.ID = oldSetting.ID
-							setting.FKComponentID = component.ID
+							setting.FKBiosConfigComponentID = component.ID
 
 							settingsToUpdate[c][s] = true
 						}
@@ -272,13 +272,13 @@ func (r *Router) updateConfigSet(ctx context.Context, set *ConfigSet, oldDBSet *
 			return "", errNullRelation
 		}
 
-		err := component.R.FKConfigSet.AddFKConfigSetConfigComponents(ctx, tx, !componentsToUpdate[c], component)
+		err := component.R.FKBiosConfigSet.AddFKBiosConfigSetBiosConfigComponents(ctx, tx, !componentsToUpdate[c], component)
 		if err != nil {
 			return "", err
 		}
 
-		for s, setting := range components[c].R.FKComponentConfigComponentSettings {
-			err = component.AddFKComponentConfigComponentSettings(ctx, tx, !settingsToUpdate[c][s], setting)
+		for s, setting := range components[c].R.FKBiosConfigComponentBiosConfigSettings {
+			err = component.AddFKBiosConfigComponentBiosConfigSettings(ctx, tx, !settingsToUpdate[c][s], setting)
 			if err != nil {
 				return "", err
 			}
@@ -288,7 +288,7 @@ func (r *Router) updateConfigSet(ctx context.Context, set *ConfigSet, oldDBSet *
 	return dbSet.ID, tx.Commit()
 }
 
-func (r *Router) insertConfigSet(ctx context.Context, set *ConfigSet) (string, error) {
+func (r *Router) insertBiosConfigSet(ctx context.Context, set *BiosConfigSet) (string, error) {
 	tx, err := r.DB.BeginTx(ctx, nil)
 	if err != nil {
 		return "", err
@@ -298,7 +298,7 @@ func (r *Router) insertConfigSet(ctx context.Context, set *ConfigSet) (string, e
 	// nolint:errcheck
 	defer tx.Rollback()
 
-	dbSet := set.toDBModelConfigSet()
+	dbSet := set.toDBModelBiosConfigSet()
 
 	err = dbSet.Insert(ctx, tx, boil.Infer())
 	if err != nil {
@@ -306,16 +306,16 @@ func (r *Router) insertConfigSet(ctx context.Context, set *ConfigSet) (string, e
 	}
 
 	for _, component := range set.Components {
-		dbComponent := component.toDBModelConfigComponent()
+		dbComponent := component.toDBModelBiosConfigComponent()
 
-		err = dbSet.AddFKConfigSetConfigComponents(ctx, tx, true, dbComponent)
+		err = dbSet.AddFKBiosConfigSetBiosConfigComponents(ctx, tx, true, dbComponent)
 		if err != nil {
 			return "", err
 		}
 
 		for _, setting := range component.Settings {
-			dbSetting := setting.toDBModelConfigComponentSetting()
-			err = dbComponent.AddFKComponentConfigComponentSettings(ctx, tx, true, dbSetting)
+			dbSetting := setting.toDBModelBiosConfigSetting()
+			err = dbComponent.AddFKBiosConfigComponentBiosConfigSettings(ctx, tx, true, dbSetting)
 			if err != nil {
 				return "", err
 			}
@@ -325,18 +325,18 @@ func (r *Router) insertConfigSet(ctx context.Context, set *ConfigSet) (string, e
 	return dbSet.ID, tx.Commit()
 }
 
-func (r *Router) eagerLoadConfigSet(ctx context.Context, mods []qm.QueryMod) (*models.ConfigSet, error) {
+func (r *Router) eagerLoadBiosConfigSet(ctx context.Context, mods []qm.QueryMod) (*models.BiosConfigSet, error) {
 	// Eager load relations
-	mods = append(mods, qm.Load(models.ConfigSetRels.FKConfigSetConfigComponents))
+	mods = append(mods, qm.Load(models.BiosConfigSetRels.FKBiosConfigSetBiosConfigComponents))
 
-	dbSet, err := models.ConfigSets(mods...).One(ctx, r.DB)
+	dbSet, err := models.BiosConfigSets(mods...).One(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}
 
 	if dbSet.R != nil {
-		for i := range dbSet.R.FKConfigSetConfigComponents {
-			err := dbSet.R.FKConfigSetConfigComponents[i].L.LoadFKComponentConfigComponentSettings(ctx, r.DB, true, dbSet.R.FKConfigSetConfigComponents[i], nil)
+		for i := range dbSet.R.FKBiosConfigSetBiosConfigComponents {
+			err := dbSet.R.FKBiosConfigSetBiosConfigComponents[i].L.LoadFKBiosConfigComponentBiosConfigSettings(ctx, r.DB, true, dbSet.R.FKBiosConfigSetBiosConfigComponents[i], nil)
 			if err != nil {
 				return nil, err
 			}
@@ -348,18 +348,18 @@ func (r *Router) eagerLoadConfigSet(ctx context.Context, mods []qm.QueryMod) (*m
 	return dbSet, nil
 }
 
-func (r *Router) eagerLoadAllConfigSets(ctx context.Context, mods []qm.QueryMod) ([]*models.ConfigSet, error) {
+func (r *Router) eagerLoadAllBiosConfigSets(ctx context.Context, mods []qm.QueryMod) ([]*models.BiosConfigSet, error) {
 	// Eager load relations
-	mods = append(mods, qm.Load(models.ConfigSetRels.FKConfigSetConfigComponents))
+	mods = append(mods, qm.Load(models.BiosConfigSetRels.FKBiosConfigSetBiosConfigComponents))
 
-	dbSets, err := models.ConfigSets(mods...).All(ctx, r.DB)
+	dbSets, err := models.BiosConfigSets(mods...).All(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}
 
 	for _, dbSet := range dbSets {
-		for i := range dbSet.R.FKConfigSetConfigComponents {
-			err := dbSet.R.FKConfigSetConfigComponents[i].L.LoadFKComponentConfigComponentSettings(ctx, r.DB, true, dbSet.R.FKConfigSetConfigComponents[i], nil)
+		for i := range dbSet.R.FKBiosConfigSetBiosConfigComponents {
+			err := dbSet.R.FKBiosConfigSetBiosConfigComponents[i].L.LoadFKBiosConfigComponentBiosConfigSettings(ctx, r.DB, true, dbSet.R.FKBiosConfigSetBiosConfigComponents[i], nil)
 			if err != nil {
 				return nil, err
 			}

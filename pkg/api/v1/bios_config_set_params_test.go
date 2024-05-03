@@ -12,12 +12,12 @@ import (
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
-func TestConfigSetQuery(t *testing.T) {
-	testConfigSetQueryParams := ConfigSetListParams{
-		Params: []ConfigSetQueryParams{
+func TestBiosConfigSetQuery(t *testing.T) {
+	testBiosConfigSetQueryParams := BiosConfigSetListParams{
+		Params: []BiosConfigSetQueryParams{
 			{
-				Set: ConfigSetQuery{ // Look for all RTX cards
-					Components: []ConfigComponentQuery{
+				Set: BiosConfigSetQuery{ // Look for all RTX cards
+					Components: []BiosConfigComponentQuery{
 						{
 							Name: "RTX",
 						},
@@ -27,10 +27,10 @@ func TestConfigSetQuery(t *testing.T) {
 				ComparitorOperator: OperatorComparitorLike,
 			},
 			{
-				Set: ConfigSetQuery{ // Look for any components with PCIE that are using 16 PCIE lanes
-					Components: []ConfigComponentQuery{
+				Set: BiosConfigSetQuery{ // Look for any components with PCIE that are using 16 PCIE lanes
+					Components: []BiosConfigComponentQuery{
 						{
-							Settings: []ConfigComponentSettingQuery{
+							Settings: []BiosConfigSettingQuery{
 								{
 									Key:   "PCIE Lanes",
 									Value: "x16",
@@ -57,12 +57,12 @@ func TestConfigSetQuery(t *testing.T) {
 
 	testCases := []struct {
 		testName string
-		params   ConfigSetListParams
+		params   BiosConfigSetListParams
 		expected url.Values
 	}{
 		{
 			testName: "config set params: set query test 1",
-			params:   testConfigSetQueryParams,
+			params:   testBiosConfigSetQueryParams,
 			expected: values,
 		},
 	}
@@ -76,12 +76,12 @@ func TestConfigSetQuery(t *testing.T) {
 	}
 }
 
-func TestConfigSetQueryMods(t *testing.T) {
-	testConfigSetQueryParams := ConfigSetListParams{
-		Params: []ConfigSetQueryParams{
+func TestBiosConfigSetQueryMods(t *testing.T) {
+	testBiosConfigSetQueryParams := BiosConfigSetListParams{
+		Params: []BiosConfigSetQueryParams{
 			{
-				Set: ConfigSetQuery{ // Look for all RTX cards
-					Components: []ConfigComponentQuery{
+				Set: BiosConfigSetQuery{ // Look for all RTX cards
+					Components: []BiosConfigComponentQuery{
 						{
 							Name: "RTX",
 						},
@@ -91,10 +91,10 @@ func TestConfigSetQueryMods(t *testing.T) {
 				ComparitorOperator: OperatorComparitorLike,
 			},
 			{
-				Set: ConfigSetQuery{ // Look for any components with PCIE that are using 16 PCIE lanes
-					Components: []ConfigComponentQuery{
+				Set: BiosConfigSetQuery{ // Look for any components with PCIE that are using 16 PCIE lanes
+					Components: []BiosConfigComponentQuery{
 						{
-							Settings: []ConfigComponentSettingQuery{
+							Settings: []BiosConfigSettingQuery{
 								{
 									Key:   "PCIE Lanes",
 									Value: "x16",
@@ -118,39 +118,39 @@ func TestConfigSetQueryMods(t *testing.T) {
 
 	mods := []qm.QueryMod{}
 	whereMods := []qm.QueryMod{}
-	whereMods = appendOperatorQueryMod(whereMods, OperatorComparitorLike, models.ConfigComponentTableColumns.Name, testConfigSetQueryParams.Params[0].Set.Components[0].Name)
+	whereMods = appendOperatorQueryMod(whereMods, OperatorComparitorLike, models.BiosConfigComponentTableColumns.Name, testBiosConfigSetQueryParams.Params[0].Set.Components[0].Name)
 	whereMods = []qm.QueryMod{
 		qm.Or2(qm.Expr(whereMods...)),
 	}
 	mods = append(mods, whereMods...)
 
 	whereMods = []qm.QueryMod{}
-	whereMods = appendOperatorQueryMod(whereMods, OperatorComparitorEqual, models.ConfigComponentSettingTableColumns.SettingsKey, testConfigSetQueryParams.Params[1].Set.Components[0].Settings[0].Key)
-	whereMods = appendOperatorQueryMod(whereMods, OperatorComparitorEqual, models.ConfigComponentSettingTableColumns.SettingsValue, testConfigSetQueryParams.Params[1].Set.Components[0].Settings[0].Value)
+	whereMods = appendOperatorQueryMod(whereMods, OperatorComparitorEqual, models.BiosConfigSettingTableColumns.SettingsKey, testBiosConfigSetQueryParams.Params[1].Set.Components[0].Settings[0].Key)
+	whereMods = appendOperatorQueryMod(whereMods, OperatorComparitorEqual, models.BiosConfigSettingTableColumns.SettingsValue, testBiosConfigSetQueryParams.Params[1].Set.Components[0].Settings[0].Value)
 	whereMods = []qm.QueryMod{
 		qm.Expr(whereMods...),
 	}
 	mods = append(mods, whereMods...)
 
 	mods = append(mods, qm.InnerJoin(fmt.Sprintf("%s on %s = %s",
-		models.TableNames.ConfigComponents,
-		models.ConfigSetTableColumns.ID,
-		models.ConfigComponentTableColumns.FKConfigSetID)))
+		models.TableNames.BiosConfigComponents,
+		models.BiosConfigSetTableColumns.ID,
+		models.BiosConfigComponentTableColumns.FKBiosConfigSetID)))
 	mods = append(mods, qm.InnerJoin(fmt.Sprintf("%s on %s = %s",
-		models.TableNames.ConfigComponentSettings,
-		models.ConfigComponentTableColumns.ID,
-		models.ConfigComponentSettingTableColumns.FKComponentID)))
+		models.TableNames.BiosConfigSettings,
+		models.BiosConfigComponentTableColumns.ID,
+		models.BiosConfigSettingTableColumns.FKBiosConfigComponentID)))
 
-	mods = append(mods, testConfigSetQueryParams.Pagination.queryMods()...)
+	mods = append(mods, testBiosConfigSetQueryParams.Pagination.queryMods()...)
 
 	testCases := []struct {
 		testName string
-		params   ConfigSetListParams
+		params   BiosConfigSetListParams
 		mods     []qm.QueryMod
 	}{
 		{
 			testName: "config set params: set query mod test 1",
-			params:   testConfigSetQueryParams,
+			params:   testBiosConfigSetQueryParams,
 			mods:     mods,
 		},
 	}

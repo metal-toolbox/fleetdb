@@ -8,34 +8,34 @@ import (
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
-// ConfigComponentSetting represents a Configuration Component Setting
-type ConfigComponentSetting struct {
+// BiosConfigSetting represents a BIOS Configuration Component Setting
+type BiosConfigSetting struct {
 	ID        string    `json:"id"`
 	Key       string    `json:"key" binding:"required"`
 	Value     string    `json:"value" binding:"required"`
-	Custom    []byte    `json:"custom,omitempty"`
+	Raw    []byte    `json:"raw,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-func (ccs *ConfigComponentSetting) toDBModelConfigComponentSetting() *models.ConfigComponentSetting {
-	dbccs := &models.ConfigComponentSetting{
+func (ccs *BiosConfigSetting) toDBModelBiosConfigSetting() *models.BiosConfigSetting {
+	dbccs := &models.BiosConfigSetting{
 		SettingsKey:   ccs.Key,
 		SettingsValue: ccs.Value,
-		Custom:        null.JSONFrom(ccs.Custom),
+		Raw:        null.JSONFrom(ccs.Raw),
 	}
 
 	return dbccs
 }
 
-func (ccs *ConfigComponentSetting) fromDBModelConfigComponentSetting(setting *models.ConfigComponentSetting) {
+func (ccs *BiosConfigSetting) fromDBModelBiosConfigSetting(setting *models.BiosConfigSetting) {
 	ccs.ID = setting.ID
 	ccs.Key = setting.SettingsKey
 	ccs.Value = setting.SettingsValue
 	ccs.CreatedAt = setting.CreatedAt.Time
 	ccs.UpdatedAt = setting.UpdatedAt.Time
 
-	if !setting.Custom.IsZero() {
-		ccs.Custom = setting.Custom.JSON
+	if !setting.Raw.IsZero() {
+		ccs.Raw = setting.Raw.JSON
 	}
 }

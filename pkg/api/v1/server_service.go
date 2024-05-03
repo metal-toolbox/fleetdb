@@ -19,7 +19,7 @@ const (
 	serverCredentialsEndpoint           = "credentials"
 	serverCredentialTypeEndpoint        = "server-credential-types"
 	serverComponentFirmwareSetsEndpoint = "server-component-firmware-sets"
-	serverConfigSetEndpoint             = "server-config-sets"
+	serverBiosConfigSetEndpoint             = "server-config-sets"
 	bomInfoEndpoint                     = "bill-of-materials"
 	uploadFileEndpoint                  = "batch-upload"
 	bomByMacAOCAddressEndpoint          = "aoc-mac-address"
@@ -75,11 +75,11 @@ type ClientInterface interface {
 	GetServerInventory(context.Context, uuid.UUID, bool) (*rivets.Server, *ServerResponse, error)
 	SetServerInventory(context.Context, uuid.UUID, *rivets.Server, bool) (*ServerResponse, error)
 
-	CreateServerConfigSet(context.Context, ConfigSet) (*uuid.UUID, *ServerResponse, error)
-	GetServerConfigSet(context.Context, uuid.UUID) (*ConfigSet, *ServerResponse, error)
-	DeleteServerConfigSet(context.Context, uuid.UUID) (*ServerResponse, error)
-	ListServerConfigSet(context.Context) (*ServerResponse, error)
-	UpdateServerConfigSet(context.Context, uuid.UUID, ConfigSet) (*ServerResponse, error)
+	CreateServerBiosConfigSet(context.Context, BiosConfigSet) (*uuid.UUID, *ServerResponse, error)
+	GetServerBiosConfigSet(context.Context, uuid.UUID) (*BiosConfigSet, *ServerResponse, error)
+	DeleteServerBiosConfigSet(context.Context, uuid.UUID) (*ServerResponse, error)
+	ListServerBiosConfigSet(context.Context) (*ServerResponse, error)
+	UpdateServerBiosConfigSet(context.Context, uuid.UUID, BiosConfigSet) (*ServerResponse, error)
 }
 
 // Create will attempt to create a server in Hollow and return the new server's UUID
@@ -477,9 +477,9 @@ func (c *Client) SetServerInventory(ctx context.Context, srvID uuid.UUID,
 	return c.put(ctx, path, srv)
 }
 
-// CreateServerConfigSet will store the ConfigSet, and return the generated UUID of the ConfigSet
-func (c *Client) CreateServerConfigSet(ctx context.Context, set ConfigSet) (*ServerResponse, error) {
-	resp, err := c.post(ctx, serverConfigSetEndpoint, set)
+// CreateServerBiosConfigSet will store the BiosConfigSet, and return the generated UUID of the BiosConfigSet
+func (c *Client) CreateServerBiosConfigSet(ctx context.Context, set BiosConfigSet) (*ServerResponse, error) {
+	resp, err := c.post(ctx, serverBiosConfigSetEndpoint, set)
 	if err != nil {
 		return nil, err
 	}
@@ -487,10 +487,10 @@ func (c *Client) CreateServerConfigSet(ctx context.Context, set ConfigSet) (*Ser
 	return resp, nil
 }
 
-// GetServerConfigSet will retrieve the ConfigSet referred to by the given ID if found
-func (c *Client) GetServerConfigSet(ctx context.Context, id uuid.UUID) (*ServerResponse, error) {
-	path := fmt.Sprintf("%s/%s", serverConfigSetEndpoint, id)
-	cfg := &ConfigSet{}
+// GetServerBiosConfigSet will retrieve the BiosConfigSet referred to by the given ID if found
+func (c *Client) GetServerBiosConfigSet(ctx context.Context, id uuid.UUID) (*ServerResponse, error) {
+	path := fmt.Sprintf("%s/%s", serverBiosConfigSetEndpoint, id)
+	cfg := &BiosConfigSet{}
 	resp := ServerResponse{Record: cfg}
 
 	if err := c.get(ctx, path, &resp); err != nil {
@@ -500,9 +500,9 @@ func (c *Client) GetServerConfigSet(ctx context.Context, id uuid.UUID) (*ServerR
 	return &resp, nil
 }
 
-// DeleteServerConfigSet will delete the ConfigSet referred to by the given ID if found
-func (c *Client) DeleteServerConfigSet(ctx context.Context, id uuid.UUID) (*ServerResponse, error) {
-	path := fmt.Sprintf("%s/%s", serverConfigSetEndpoint, id)
+// DeleteServerBiosConfigSet will delete the BiosConfigSet referred to by the given ID if found
+func (c *Client) DeleteServerBiosConfigSet(ctx context.Context, id uuid.UUID) (*ServerResponse, error) {
+	path := fmt.Sprintf("%s/%s", serverBiosConfigSetEndpoint, id)
 
 	resp, err := c.delete(ctx, path)
 	if err != nil {
@@ -512,12 +512,12 @@ func (c *Client) DeleteServerConfigSet(ctx context.Context, id uuid.UUID) (*Serv
 	return resp, nil
 }
 
-// ListServerConfigSet will return a list of ConfigSets referred to by the given query. More details about querying at the type definition of ConfigSetListParams.
-func (c *Client) ListServerConfigSet(ctx context.Context, params *ConfigSetListParams) (*ServerResponse, error) {
-	cfg := &[]ConfigSet{}
+// ListServerBiosConfigSet will return a list of BiosConfigSets referred to by the given query. More details about querying at the type definition of BiosConfigSetListParams.
+func (c *Client) ListServerBiosConfigSet(ctx context.Context, params *BiosConfigSetListParams) (*ServerResponse, error) {
+	cfg := &[]BiosConfigSet{}
 	resp := ServerResponse{Records: cfg}
 
-	err := c.list(ctx, serverConfigSetEndpoint, params, &resp)
+	err := c.list(ctx, serverBiosConfigSetEndpoint, params, &resp)
 	if err != nil {
 		return nil, err
 	}
@@ -525,9 +525,9 @@ func (c *Client) ListServerConfigSet(ctx context.Context, params *ConfigSetListP
 	return &resp, nil
 }
 
-// UpdateServerConfigSet will update a config set.
-func (c *Client) UpdateServerConfigSet(ctx context.Context, id uuid.UUID, set ConfigSet) (*ServerResponse, error) {
-	path := fmt.Sprintf("%s/%s", serverConfigSetEndpoint, id)
+// UpdateServerBiosConfigSet will update a config set.
+func (c *Client) UpdateServerBiosConfigSet(ctx context.Context, id uuid.UUID, set BiosConfigSet) (*ServerResponse, error) {
+	path := fmt.Sprintf("%s/%s", serverBiosConfigSetEndpoint, id)
 	resp, err := c.put(ctx, path, set)
 	if err != nil {
 		return nil, err

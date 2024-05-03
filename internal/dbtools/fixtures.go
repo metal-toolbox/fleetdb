@@ -90,9 +90,9 @@ var (
 	// Inventory fixtures
 	FixtureInventoryServer *models.Server
 
-	FixtureConfigSet               *models.ConfigSet
-	FixtureConfigComponents        []*models.ConfigComponent
-	FixtureConfigComponentSettings [][]*models.ConfigComponentSetting
+	FixtureBiosConfigSet               *models.BiosConfigSet
+	FixtureBiosConfigComponents        []*models.BiosConfigComponent
+	FixtureBiosConfigSettings [][]*models.BiosConfigSetting
 )
 
 func addFixtures(t *testing.T) error {
@@ -659,7 +659,7 @@ func setupInventoryFixture(ctx context.Context, db *sqlx.DB) error {
 }
 
 func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
-	settings := [][]*models.ConfigComponentSetting{
+	settings := [][]*models.BiosConfigSetting{
 		{
 			{
 				SettingsKey:   "BootOrder",
@@ -674,7 +674,7 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 			{
 				SettingsKey:   "PXEEnable",
 				SettingsValue: "true",
-				Custom:        null.NewJSON([]byte(`{}`), true),
+				Raw:        null.NewJSON([]byte(`{}`), true),
 			},
 			{
 				SettingsKey:   "SRIOVEnable",
@@ -683,12 +683,12 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 			{
 				SettingsKey:   "position",
 				SettingsValue: "1",
-				Custom:        null.NewJSON([]byte(`{ "lanes": 8 }`), true),
+				Raw:        null.NewJSON([]byte(`{ "lanes": 8 }`), true),
 			},
 		},
 	}
 
-	components := []*models.ConfigComponent{
+	components := []*models.BiosConfigComponent{
 		{
 			Name:   "Fixture Test SM Motherboard",
 			Vendor: "SUPERMICRO",
@@ -703,7 +703,7 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 		},
 	}
 
-	configSet := models.ConfigSet{
+	configSet := models.BiosConfigSet{
 		Name:    "Fixture Test Config Set",
 		Version: "version",
 	}
@@ -714,26 +714,26 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 	}
 
 	for c := range components {
-		components[c].FKConfigSetID = configSet.ID
+		components[c].FKBiosConfigSetID = configSet.ID
 
-		err = configSet.AddFKConfigSetConfigComponents(ctx, db, true, components[c])
+		err = configSet.AddFKBiosConfigSetBiosConfigComponents(ctx, db, true, components[c])
 		if err != nil {
 			return err
 		}
 
 		for s := range settings[c] {
-			settings[c][s].FKComponentID = components[c].ID
+			settings[c][s].FKBiosConfigComponentID = components[c].ID
 		}
 
-		err = components[c].AddFKComponentConfigComponentSettings(ctx, db, true, settings[c]...)
+		err = components[c].AddFKBiosConfigComponentBiosConfigSettings(ctx, db, true, settings[c]...)
 		if err != nil {
 			return err
 		}
 	}
 
-	FixtureConfigSet = &configSet
-	FixtureConfigComponents = components
-	FixtureConfigComponentSettings = settings
+	FixtureBiosConfigSet = &configSet
+	FixtureBiosConfigComponents = components
+	FixtureBiosConfigSettings = settings
 
 	return nil
 }

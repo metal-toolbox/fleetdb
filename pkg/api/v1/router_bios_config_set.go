@@ -3,6 +3,7 @@ package fleetdbapi
 import (
 	"context"
 	"fmt"
+	"database/sql"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -182,9 +183,7 @@ func (r *Router) updateBiosConfigSet(ctx context.Context, set *BiosConfigSet, ol
 	}
 
 	var oldComponents []*models.BiosConfigComponent
-	var oldSettings []*models.BiosConfigSetting
 	var components []*models.BiosConfigComponent
-	var settings []*models.BiosConfigSetting
 	var settingsToDelete []*models.BiosConfigSetting
 	var componentsToDelete []*models.BiosConfigComponent
 	var componentsToUpdate []bool
@@ -212,36 +211,9 @@ func (r *Router) updateBiosConfigSet(ctx context.Context, set *BiosConfigSet, ol
 
 				componentsToUpdate[c] = true
 
-				if component.R != nil {
-					settings = component.R.FKBiosConfigComponentBiosConfigSettings
-				} else {
-					settings = []*models.BiosConfigSetting{}
-				}
-
-				if oldComponent.R != nil {
-					oldSettings = oldComponent.R.FKBiosConfigComponentBiosConfigSettings
-				} else {
-					oldSettings = []*models.BiosConfigSetting{}
-				}
-
-				settingsToUpdate[c] = make([]bool, len(settings))
-
-				for _, oldSetting := range oldSettings {
-					settingFound := false
-					for s, setting := range settings {
-						if oldSetting.SettingsKey == setting.SettingsKey {
-							settingFound = true
-							setting.ID = oldSetting.ID
-							setting.FKBiosConfigComponentID = component.ID
-
-							settingsToUpdate[c][s] = true
-						}
-					}
-
-					if !settingFound {
-						settingsToDelete = append(settingsToDelete, oldSetting)
-					}
-				}
+				toUpdate, toDelete := updateBiosConfigSetFindSettingsToDeleteUpdate(oldComponent, component)
+				settingsToUpdate[c] = toUpdate
+				settingsToDelete = append(settingsToDelete, toDelete...)
 			}
 		}
 
@@ -250,42 +222,98 @@ func (r *Router) updateBiosConfigSet(ctx context.Context, set *BiosConfigSet, ol
 		}
 	}
 
+	err = updateBiosConfigSetDeleteHelper(ctx, tx, componentsToDelete, settingsToDelete)
+	if err != nil {
+		return "", err
+	}
+
+	err = updateBiosConfigSetInsertUpdateHelper(ctx, tx, components, componentsToUpdate, settingsToUpdate)
+	if err != nil {
+		return "", err
+	}
+
+	return dbSet.ID, tx.Commit()
+}
+
+func updateBiosConfigSetDeleteHelper(ctx context.Context, tx* sql.Tx, components []*models.BiosConfigComponent, settings []*models.BiosConfigSetting) error {
 	// Delete components not found in new set
-	for _, component := range componentsToDelete {
+	for _, component := range components {
 		_, err := component.Delete(ctx, tx) // Dont need to delete settings. CASCADE will handle that
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
 
 	// Delete settings not found in updated components
-	for _, setting := range settingsToDelete {
+	for _, setting := range settings {
 		_, err := setting.Delete(ctx, tx)
 		if err != nil {
-			return "", err
+			return err
 		}
 	}
 
-	// Insert/Update components
+	return nil
+}
+
+func updateBiosConfigSetInsertUpdateHelper(ctx context.Context, tx* sql.Tx, components []*models.BiosConfigComponent, componentsToUpdate []bool, settingsToUpdate [][]bool) error {
 	for c, component := range components {
 		if component.R == nil {
-			return "", errNullRelation
+			return errNullRelation
 		}
 
 		err := component.R.FKBiosConfigSet.AddFKBiosConfigSetBiosConfigComponents(ctx, tx, !componentsToUpdate[c], component)
 		if err != nil {
-			return "", err
+			return err
 		}
 
 		for s, setting := range components[c].R.FKBiosConfigComponentBiosConfigSettings {
 			err = component.AddFKBiosConfigComponentBiosConfigSettings(ctx, tx, !settingsToUpdate[c][s], setting)
 			if err != nil {
-				return "", err
+				return err
 			}
 		}
 	}
 
-	return dbSet.ID, tx.Commit()
+	return nil
+}
+
+func updateBiosConfigSetFindSettingsToDeleteUpdate(oldComponent *models.BiosConfigComponent, newComponent *models.BiosConfigComponent) ([]bool, []*models.BiosConfigSetting) {
+	var oldSettings []*models.BiosConfigSetting
+	var settingsToDelete []*models.BiosConfigSetting
+	var settingsToUpdate []bool
+	var settings []*models.BiosConfigSetting
+
+	if newComponent.R != nil {
+		settings = newComponent.R.FKBiosConfigComponentBiosConfigSettings
+	} else {
+		settings = []*models.BiosConfigSetting{}
+	}
+	settingsToUpdate = make([]bool, len(settings))
+
+	if oldComponent.R != nil {
+		oldSettings = oldComponent.R.FKBiosConfigComponentBiosConfigSettings
+	} else {
+		oldSettings = []*models.BiosConfigSetting{}
+	}
+
+	for _, oldSetting := range oldSettings {
+		settingFound := false
+		for s, setting := range settings {
+			if oldSetting.SettingsKey == setting.SettingsKey {
+				settingFound = true
+				setting.ID = oldSetting.ID
+				setting.FKBiosConfigComponentID = newComponent.ID
+
+				settingsToUpdate[s] = true
+			}
+		}
+
+		if !settingFound {
+			settingsToDelete = append(settingsToDelete, oldSetting)
+		}
+	}
+
+	return settingsToUpdate, settingsToDelete
 }
 
 func (r *Router) insertBiosConfigSet(ctx context.Context, set *BiosConfigSet) (string, error) {
@@ -334,15 +362,13 @@ func (r *Router) eagerLoadBiosConfigSet(ctx context.Context, mods []qm.QueryMod)
 		return nil, err
 	}
 
-	if dbSet.R != nil {
+	if dbSet.R != nil { // Technically, a BiosConfigSet doesnt need any components to be a legit BiosConfigSet
 		for i := range dbSet.R.FKBiosConfigSetBiosConfigComponents {
 			err := dbSet.R.FKBiosConfigSetBiosConfigComponents[i].L.LoadFKBiosConfigComponentBiosConfigSettings(ctx, r.DB, true, dbSet.R.FKBiosConfigSetBiosConfigComponents[i], nil)
 			if err != nil {
 				return nil, err
 			}
 		}
-	} else {
-		return nil, errNullRelation
 	}
 
 	return dbSet, nil
@@ -358,10 +384,12 @@ func (r *Router) eagerLoadAllBiosConfigSets(ctx context.Context, mods []qm.Query
 	}
 
 	for _, dbSet := range dbSets {
-		for i := range dbSet.R.FKBiosConfigSetBiosConfigComponents {
-			err := dbSet.R.FKBiosConfigSetBiosConfigComponents[i].L.LoadFKBiosConfigComponentBiosConfigSettings(ctx, r.DB, true, dbSet.R.FKBiosConfigSetBiosConfigComponents[i], nil)
-			if err != nil {
-				return nil, err
+		if dbSet.R != nil {
+			for i := range dbSet.R.FKBiosConfigSetBiosConfigComponents {
+				err := dbSet.R.FKBiosConfigSetBiosConfigComponents[i].L.LoadFKBiosConfigComponentBiosConfigSettings(ctx, r.DB, true, dbSet.R.FKBiosConfigSetBiosConfigComponents[i], nil)
+				if err != nil {
+					return nil, err
+				}
 			}
 		}
 	}

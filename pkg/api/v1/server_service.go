@@ -19,7 +19,7 @@ const (
 	serverCredentialsEndpoint           = "credentials"
 	serverCredentialTypeEndpoint        = "server-credential-types"
 	serverComponentFirmwareSetsEndpoint = "server-component-firmware-sets"
-	serverBiosConfigSetEndpoint             = "server-config-sets"
+	serverBiosConfigSetEndpoint         = "server-bios-config-sets"
 	bomInfoEndpoint                     = "bill-of-materials"
 	uploadFileEndpoint                  = "batch-upload"
 	bomByMacAOCAddressEndpoint          = "aoc-mac-address"

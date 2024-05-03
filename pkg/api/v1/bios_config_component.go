@@ -6,20 +6,20 @@ import (
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
-// ConfigComponent represents a Configuration Component
-type ConfigComponent struct {
+// BiosConfigComponent represents a BIOS Configuration Component
+type BiosConfigComponent struct {
 	ID        string                   `json:"id"`
 	Name      string                   `json:"name" binding:"required"`
 	Vendor    string                   `json:"vendor"`
 	Model     string                   `json:"model"`
 	Serial    string                   `json:"serial"`
-	Settings  []ConfigComponentSetting `json:"settings" binding:"required"`
+	Settings  []BiosConfigSetting `json:"settings" binding:"required"`
 	CreatedAt time.Time                `json:"created_at"`
 	UpdatedAt time.Time                `json:"updated_at"`
 }
 
-func (cc *ConfigComponent) toDBModelConfigComponent() *models.ConfigComponent {
-	dbcc := &models.ConfigComponent{
+func (cc *BiosConfigComponent) toDBModelBiosConfigComponent() *models.BiosConfigComponent {
+	dbcc := &models.BiosConfigComponent{
 		Name:   cc.Name,
 		Vendor: cc.Vendor,
 		Model:  cc.Model,
@@ -29,8 +29,8 @@ func (cc *ConfigComponent) toDBModelConfigComponent() *models.ConfigComponent {
 	return dbcc
 }
 
-// fromDBModelConfigComponent converts a models.ConfigComponent (created by sqlboiler) into a ConfigComponent
-func (cc *ConfigComponent) fromDBModelConfigComponent(component *models.ConfigComponent) {
+// fromDBModelBiosConfigComponent converts a models.BiosConfigComponent (created by sqlboiler) into a BiosConfigComponent
+func (cc *BiosConfigComponent) fromDBModelBiosConfigComponent(component *models.BiosConfigComponent) {
 	cc.ID = component.ID
 	cc.Name = component.Name
 	cc.Vendor = component.Vendor
@@ -40,9 +40,9 @@ func (cc *ConfigComponent) fromDBModelConfigComponent(component *models.ConfigCo
 	cc.UpdatedAt = component.CreatedAt.Time
 
 	if component.R != nil {
-		cc.Settings = make([]ConfigComponentSetting, len(component.R.FKComponentConfigComponentSettings))
-		for i, dbSetting := range component.R.FKComponentConfigComponentSettings {
-			cc.Settings[i].fromDBModelConfigComponentSetting(dbSetting)
+		cc.Settings = make([]BiosConfigSetting, len(component.R.FKBiosConfigComponentBiosConfigSettings))
+		for i, dbSetting := range component.R.FKBiosConfigComponentBiosConfigSettings {
+			cc.Settings[i].fromDBModelBiosConfigSetting(dbSetting)
 		}
 	}
 }

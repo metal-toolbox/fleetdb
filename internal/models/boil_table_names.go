@@ -7,14 +7,14 @@ var TableNames = struct {
 	AocMacAddress            string
 	Attributes               string
 	AttributesFirmwareSet    string
+	BiosConfigComponents     string
+	BiosConfigSets           string
+	BiosConfigSettings       string
 	BMCMacAddress            string
 	BomInfo                  string
 	ComponentFirmwareSet     string
 	ComponentFirmwareSetMap  string
 	ComponentFirmwareVersion string
-	ConfigComponentSettings  string
-	ConfigComponents         string
-	ConfigSets               string
 	ServerComponentTypes     string
 	ServerComponents         string
 	ServerCredentialTypes    string
@@ -25,14 +25,14 @@ var TableNames = struct {
 	AocMacAddress:            "aoc_mac_address",
 	Attributes:               "attributes",
 	AttributesFirmwareSet:    "attributes_firmware_set",
+	BiosConfigComponents:     "bios_config_components",
+	BiosConfigSets:           "bios_config_sets",
+	BiosConfigSettings:       "bios_config_settings",
 	BMCMacAddress:            "bmc_mac_address",
 	BomInfo:                  "bom_info",
 	ComponentFirmwareSet:     "component_firmware_set",
 	ComponentFirmwareSetMap:  "component_firmware_set_map",
 	ComponentFirmwareVersion: "component_firmware_version",
-	ConfigComponentSettings:  "config_component_settings",
-	ConfigComponents:         "config_components",
-	ConfigSets:               "config_sets",
 	ServerComponentTypes:     "server_component_types",
 	ServerComponents:         "server_components",
 	ServerCredentialTypes:    "server_credential_types",

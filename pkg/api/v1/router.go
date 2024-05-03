@@ -152,11 +152,11 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 	// /server-config-sets
 	srvCfgSets := rg.Group("/server-config-sets")
 	{
-		srvCfgSets.GET("", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetList)
-		srvCfgSets.POST("", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetCreate)
-		srvCfgSets.GET("/:uuid", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetGet)
-		srvCfgSets.PUT("/:uuid", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetUpdate)
-		srvCfgSets.DELETE("/:uuid", amw.AuthRequired(readScopes("server-config-sets")), r.serverConfigSetDelete)
+		srvCfgSets.GET("", amw.AuthRequired(readScopes("server-config-sets")), r.serverBiosConfigSetList)
+		srvCfgSets.POST("", amw.AuthRequired(readScopes("server-config-sets")), r.serverBiosConfigSetCreate)
+		srvCfgSets.GET("/:uuid", amw.AuthRequired(readScopes("server-config-sets")), r.serverBiosConfigSetGet)
+		srvCfgSets.PUT("/:uuid", amw.AuthRequired(readScopes("server-config-sets")), r.serverBiosConfigSetUpdate)
+		srvCfgSets.DELETE("/:uuid", amw.AuthRequired(readScopes("server-config-sets")), r.serverBiosConfigSetDelete)
 	}
 }
 

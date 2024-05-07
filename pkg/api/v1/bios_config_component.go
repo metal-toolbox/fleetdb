@@ -12,7 +12,6 @@ type BiosConfigComponent struct {
 	Name      string              `json:"name" binding:"required"`
 	Vendor    string              `json:"vendor"`
 	Model     string              `json:"model"`
-	Serial    string              `json:"serial"`
 	Settings  []BiosConfigSetting `json:"settings" binding:"required"`
 	CreatedAt time.Time           `json:"created_at"`
 	UpdatedAt time.Time           `json:"updated_at"`
@@ -23,7 +22,6 @@ func (cc *BiosConfigComponent) toDBModelBiosConfigComponent() *models.BiosConfig
 		Name:   cc.Name,
 		Vendor: cc.Vendor,
 		Model:  cc.Model,
-		Serial: cc.Serial,
 	}
 
 	return dbcc
@@ -35,7 +33,6 @@ func (cc *BiosConfigComponent) fromDBModelBiosConfigComponent(component *models.
 	cc.Name = component.Name
 	cc.Vendor = component.Vendor
 	cc.Model = component.Model
-	cc.Serial = component.Serial
 	cc.CreatedAt = component.CreatedAt.Time
 	cc.UpdatedAt = component.CreatedAt.Time
 

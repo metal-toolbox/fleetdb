@@ -20,7 +20,6 @@ var BiosConfigSetTest fleetdbapi.BiosConfigSet = fleetdbapi.BiosConfigSet{
 		{
 			Name:   "SM Motherboard",
 			Vendor: "SUPERMICRO",
-			Serial: "BIOS",
 			Model:  "ATX",
 			Settings: []fleetdbapi.BiosConfigSetting{
 				{
@@ -36,22 +35,21 @@ var BiosConfigSetTest fleetdbapi.BiosConfigSet = fleetdbapi.BiosConfigSet{
 		{
 			Name:   "Intel Network Adapter",
 			Vendor: "Intel",
-			Serial: "NIC",
 			Model:  "PCIE",
 			Settings: []fleetdbapi.BiosConfigSetting{
 				{
-					Key:    "PXEEnable",
-					Value:  "true",
-					Raw: []byte(`{}`),
+					Key:   "PXEEnable",
+					Value: "true",
+					Raw:   []byte(`{}`),
 				},
 				{
 					Key:   "SRIOVEnable",
 					Value: "false",
 				},
 				{
-					Key:    "position",
-					Value:  "1",
-					Raw: []byte(`{ "lanes": 8 }`),
+					Key:   "position",
+					Value: "1",
+					Raw:   []byte(`{ "lanes": 8 }`),
 				},
 			},
 		},

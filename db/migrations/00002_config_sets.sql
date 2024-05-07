@@ -15,7 +15,6 @@ CREATE TABLE public.bios_config_components (
     name STRING NOT NULL,
     vendor STRING NOT NULL,
     model STRING NOT NULL,
-    serial STRING NOT NULL,
     created_at TIMESTAMPTZ NULL,
     updated_at TIMESTAMPTZ NULL,
     UNIQUE (fk_bios_config_set_id, name)

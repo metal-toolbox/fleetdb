@@ -42,11 +42,11 @@ func TestIntegrationServerBiosConfigSetCreate(t *testing.T) {
 	})
 
 	var testCases = []struct {
-		testName      string
+		testName          string
 		BiosConfigSetName string
 		BiosConfigSetID   string
-		expectedError bool
-		msgs          []string
+		expectedError     bool
+		msgs              []string
 	}{
 		{
 			"config set router: config set create; success",
@@ -134,7 +134,7 @@ func TestIntegrationServerBiosConfigSetGet(t *testing.T) {
 
 	var testCases = []struct {
 		testName         string
-		BiosConfigSetID      string
+		BiosConfigSetID  string
 		expectedError    bool
 		expectedResponse string
 		msg              string
@@ -219,7 +219,7 @@ func TestIntegrationServerBiosConfigSetDelete(t *testing.T) {
 
 	var testCases = []struct {
 		testName         string
-		BiosConfigSetID      string
+		BiosConfigSetID  string
 		expectedError    bool
 		expectedResponse string
 		msg              string
@@ -318,7 +318,7 @@ func TestIntegrationServerBiosConfigSetUpdate(t *testing.T) {
 
 	var testCases = []struct {
 		testName         string
-		BiosConfigSetID      string
+		BiosConfigSetID  string
 		expectedError    bool
 		expectedResponse string
 		msg              string
@@ -638,7 +638,6 @@ func assertBiosConfigComponentEqual(t *testing.T, expected *models.BiosConfigCom
 	assert.Equal(t, expected.Name, actual.Name)
 	assert.Equal(t, expected.Vendor, actual.Vendor)
 	assert.Equal(t, expected.Model, actual.Model)
-	assert.Equal(t, expected.Serial, actual.Serial)
 
 	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
 	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)

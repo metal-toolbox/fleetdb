@@ -11,7 +11,6 @@ type BiosConfigComponentQuery struct {
 	Name     string                   `query:"name"`
 	Vendor   string                   `query:"vendor"`
 	Model    string                   `query:"model"`
-	Serial   string                   `query:"serial"`
 	Settings []BiosConfigSettingQuery `query:"settings"`
 }
 
@@ -22,7 +21,6 @@ func (cc *BiosConfigComponentQuery) queryMods(comparitor OperatorComparitorType)
 	mods = appendOperatorQueryMod(mods, comparitor, models.BiosConfigComponentTableColumns.Name, cc.Name)
 	mods = appendOperatorQueryMod(mods, comparitor, models.BiosConfigComponentTableColumns.Vendor, cc.Vendor)
 	mods = appendOperatorQueryMod(mods, comparitor, models.BiosConfigComponentTableColumns.Model, cc.Model)
-	mods = appendOperatorQueryMod(mods, comparitor, models.BiosConfigComponentTableColumns.Serial, cc.Serial)
 	mods = appendOperatorQueryMod(mods, comparitor, models.BiosConfigComponentTableColumns.Vendor, cc.Vendor)
 
 	for i := range cc.Settings {

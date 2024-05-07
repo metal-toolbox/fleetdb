@@ -888,7 +888,7 @@ func testBiosConfigComponentsSelect(t *testing.T) {
 }
 
 var (
-	biosConfigComponentDBTypes = map[string]string{`ID`: `uuid`, `FKBiosConfigSetID`: `uuid`, `Name`: `string`, `Vendor`: `string`, `Model`: `string`, `Serial`: `string`, `CreatedAt`: `timestamptz`, `UpdatedAt`: `timestamptz`}
+	biosConfigComponentDBTypes = map[string]string{`ID`: `uuid`, `FKBiosConfigSetID`: `uuid`, `Name`: `string`, `Vendor`: `string`, `Model`: `string`, `CreatedAt`: `timestamptz`, `UpdatedAt`: `timestamptz`}
 	_                          = bytes.MinRead
 )
 

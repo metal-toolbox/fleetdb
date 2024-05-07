@@ -692,13 +692,11 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 		{
 			Name:   "Fixture Test SM Motherboard",
 			Vendor: "SUPERMICRO",
-			Serial: "BIOS",
 			Model:  "ATX",
 		},
 		{
 			Name:   "Fixture Test Intel Network Adapter",
 			Vendor: "Intel",
-			Serial: "NIC",
 			Model:  "PCIE",
 		},
 	}

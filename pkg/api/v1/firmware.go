@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/volatiletech/null/v8"
 
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
@@ -19,6 +20,8 @@ type ComponentFirmwareVersion struct {
 	Checksum      string    `json:"checksum" binding:"required,lowercase"`
 	UpstreamURL   string    `json:"upstream_url" binding:"required"`
 	RepositoryURL string    `json:"repository_url" binding:"required"`
+	// this has to be a pointer to a bool or the validator isn't happy.
+	InstallInband *bool     `json:"install_inband" binding:"required"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
@@ -41,11 +44,17 @@ func (f *ComponentFirmwareVersion) fromDBModel(dbF *models.ComponentFirmwareVers
 	f.RepositoryURL = dbF.RepositoryURL
 	f.CreatedAt = dbF.CreatedAt.Time
 	f.UpdatedAt = dbF.UpdatedAt.Time
+	f.InstallInband = &dbF.InstallInband.Bool
 
 	return nil
 }
 
 func (f *ComponentFirmwareVersion) toDBModel() (*models.ComponentFirmwareVersion, error) {
+	var installInband bool
+	if f.InstallInband != nil {
+		installInband = *f.InstallInband
+	}
+
 	dbF := &models.ComponentFirmwareVersion{
 		Component:     f.Component,
 		Vendor:        f.Vendor,
@@ -55,6 +64,7 @@ func (f *ComponentFirmwareVersion) toDBModel() (*models.ComponentFirmwareVersion
 		Checksum:      f.Checksum,
 		UpstreamURL:   f.UpstreamURL,
 		RepositoryURL: f.RepositoryURL,
+		InstallInband: null.BoolFrom(installInband),
 	}
 
 	if f.UUID.String() != uuid.Nil.String() {

@@ -29,10 +29,10 @@ func TestIntegrationFirmwareList(t *testing.T) {
 		r, resp, err := s.Client.ListServerComponentFirmware(ctx, &params)
 		if !expectError {
 			require.NoError(t, err)
-			assert.Len(t, r, 6)
-			assert.EqualValues(t, 6, resp.PageCount)
+			assert.Len(t, r, 7)
+			assert.EqualValues(t, 7, resp.PageCount)
 			assert.EqualValues(t, 1, resp.TotalPages)
-			assert.EqualValues(t, 6, resp.TotalRecordCount)
+			assert.EqualValues(t, 7, resp.TotalRecordCount)
 			// We returned everything, so we shouldnt have a next page info
 			assert.Nil(t, resp.Links.Next)
 			assert.Nil(t, resp.Links.Previous)
@@ -149,9 +149,10 @@ func TestIntegrationFirmwareGet(t *testing.T) {
 func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 	s := serverTest(t)
 
+	var inbandFalse bool
+	inbandTrue := true
 	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
-
 		testFirmware := fleetdbapi.ComponentFirmwareVersion{
 			UUID:          uuid.New(),
 			Vendor:        "dell",
@@ -162,6 +163,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 			Checksum:      "foobar",
 			UpstreamURL:   "https://vendor.com/firmwares/DSU_21.07.00/",
 			RepositoryURL: "http://example-firmware-bucket.s3.amazonaws.com/firmware/dell/DSU_21.07.00/",
+			InstallInband: &inbandFalse,
 		}
 
 		id, resp, err := s.Client.CreateServerComponentFirmware(ctx, testFirmware)
@@ -195,6 +197,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 				Checksum:      "foobar",
 				UpstreamURL:   "https://vendor.com/firmware-file",
 				RepositoryURL: "https://example-bucket.s3.awsamazon.com/foobar",
+				InstallInband: &inbandFalse,
 			},
 			true,
 			"400",
@@ -212,10 +215,28 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 				Checksum:      "foobar",
 				UpstreamURL:   "https://vendor.com/firmware-file",
 				RepositoryURL: "https://example-bucket.s3.awsamazon.com/foobar",
+				InstallInband: &inbandFalse,
 			},
 			true,
 			"400",
 			"Error:Field validation for 'Vendor' failed on the 'lowercase' tag",
+		},
+		{
+			"required installInband parameter",
+			&fleetdbapi.ComponentFirmwareVersion{
+				UUID:          uuid.New(),
+				Vendor:        "DELL",
+				Model:         []string{"r615"},
+				Filename:      "foobar",
+				Version:       "12345",
+				Component:     "bios",
+				Checksum:      "foobar",
+				UpstreamURL:   "https://vendor.com/firmware-file",
+				RepositoryURL: "https://example-bucket.s3.awsamazon.com/foobar",
+			},
+			true,
+			"400",
+			"Error:Field validation for 'InstallInband' failed on the 'required' tag",
 		},
 		{
 			"filename allowed to be mixed case",
@@ -229,6 +250,25 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 				Checksum:      "foobar",
 				UpstreamURL:   "https://vendor.com/firmware-file",
 				RepositoryURL: "https://example-bucket.s3.awsamazon.com/foobar",
+				InstallInband: &inbandFalse,
+			},
+			false,
+			"200",
+			"",
+		},
+		{
+			"install inband can be set to true",
+			&fleetdbapi.ComponentFirmwareVersion{
+				UUID:          uuid.New(),
+				Vendor:        "intel",
+				Model:         []string{"e751"},
+				Filename:      "fooBAR",
+				Version:       "001",
+				Component:     "nic",
+				Checksum:      "blah",
+				UpstreamURL:   "https://vendor.com/blob",
+				RepositoryURL: "https://example-bucket.s3.awsamazon.com/blob",
+				InstallInband: &inbandTrue,
 			},
 			false,
 			"200",
@@ -246,6 +286,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 				Checksum:      "foobar",
 				UpstreamURL:   "https://vendor.com/firmware-file",
 				RepositoryURL: "https://example-bucket.s3.awsamazon.com/foobar",
+				InstallInband: &inbandFalse,
 			},
 			true,
 			"400",
@@ -264,6 +305,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 				return
 			}
 
+			assert.Nil(t, err)
 			assert.Equal(t, tt.firmware.UUID.String(), fwUUID.String())
 		})
 	}
@@ -289,6 +331,7 @@ func TestIntegrationServerComponentFirmwareUpdate(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
+		inband := true
 		fw := fleetdbapi.ComponentFirmwareVersion{
 			UUID:          uuid.MustParse(dbtools.FixtureDellR640BMC.ID),
 			Vendor:        "dell",
@@ -299,6 +342,7 @@ func TestIntegrationServerComponentFirmwareUpdate(t *testing.T) {
 			Checksum:      "foobar",
 			UpstreamURL:   "https://vendor.com/firmware-file",
 			RepositoryURL: "https://example-firmware-bucket.s3.amazonaws.com/firmware/dell/r615/bios/filename.ext",
+			InstallInband: &inband,
 		}
 
 		resp, err := s.Client.UpdateServerComponentFirmware(ctx, uuid.MustParse(dbtools.FixtureDellR640BMC.ID), fw)

@@ -78,6 +78,7 @@ var (
 	FixtureFirmwareUUIDsSuperMicro     []string
 	FixtureFirmwareSetX11DPHT          *models.ComponentFirmwareSet
 	FixtureFirmwareSetX11DPHTAttribute *models.AttributesFirmwareSet
+	FixtureFirmwareInbandNIC           *models.ComponentFirmwareVersion
 
 	FixtureFirmwareUUIDsR6515        []string
 	FixtureFirmwareSetR6515          *models.ComponentFirmwareSet
@@ -144,6 +145,10 @@ func addFixtures(t *testing.T) error {
 	}
 
 	if err := setupFirmwareSetSupermicroX11DPHT(ctx, testDB); err != nil {
+		return err
+	}
+
+	if err := setupFirmwareInbandNIC(ctx, testDB); err != nil {
 		return err
 	}
 
@@ -513,6 +518,22 @@ func setupFirmwareSuperMicro(ctx context.Context, db *sqlx.DB) error {
 	FixtureFirmwareUUIDsSuperMicro = append(FixtureFirmwareUUIDsSuperMicro, FixtureSuperMicroX11DPHTBMC.ID)
 
 	return nil
+}
+
+func setupFirmwareInbandNIC(ctx context.Context, db *sqlx.DB) error {
+	FixtureFirmwareInbandNIC = &models.ComponentFirmwareVersion{
+		Vendor:        "Intel",
+		Model:         types.StringArray{"e810"},
+		Filename:      "blob.bin",
+		Version:       "0.00.7",
+		Component:     "nic",
+		Checksum:      "83d220484495e79a3c20e16c21a0d751a71519ac7058350d8a38e1f55efb0222",
+		UpstreamURL:   "https://vendor.com/firmwares/blob.bin",
+		RepositoryURL: "https://example-firmware-bucket.s3.amazonaws.com/firmware/intel/blob.bin",
+		InstallInband: null.BoolFrom(true),
+	}
+
+	return FixtureFirmwareInbandNIC.Insert(ctx, db, boil.Infer())
 }
 
 func setupFirmwareSetSupermicroX11DPHT(ctx context.Context, db *sqlx.DB) error {

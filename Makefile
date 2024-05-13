@@ -7,6 +7,7 @@ TEST_DB=${DB_STRING} dbname=fleetdb_test
 DOCKER_IMAGE := "ghcr.io/metal-toolbox/fleetdb"
 PROJECT_NAME := fleetdb
 REPO := "https://github.com/metal-toolbox/fleetdb.git"
+SQLBOILER := v4.15.0
 
 ## run all tests
 test: | unit-test integration-test
@@ -84,8 +85,12 @@ fresh-test: clean
 	@make docker-up
 	@make test
 
+## install sqlboiler
+install-sqlboiler:
+	go install github.com/volatiletech/sqlboiler/v4@${SQLBOILER}
+
 ## boil sql
-boil:
+boil: install-sqlboiler
 	make docker-up
 	make test-database
 	sqlboiler crdb --add-soft-deletes

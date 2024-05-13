@@ -78,10 +78,9 @@ func (c *Client) do(req *http.Request, result interface{}) error {
 	req.Header.Set("Authorization", fmt.Sprintf("bearer %s", c.authToken))
 	req.Header.Set("User-Agent", userAgentString())
 
-	if c.dumper != nil {
-		if err := c.dumpRequest(req); err != nil {
-			return err
-		}
+	// dump request if c.dumper is set
+	if err := c.dumpRequest(req); err != nil {
+		return err
 	}
 
 	resp, err := c.httpClient.Do(req)
@@ -89,10 +88,9 @@ func (c *Client) do(req *http.Request, result interface{}) error {
 		return err
 	}
 
-	if c.dumper != nil {
-		if err := c.dumpResponse(resp); err != nil {
-			return err
-		}
+	// dump response if c.dumper is set
+	if err := c.dumpResponse(resp); err != nil {
+		return err
 	}
 
 	if err := ensureValidServerResponse(resp); err != nil {

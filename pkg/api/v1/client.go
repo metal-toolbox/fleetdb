@@ -191,8 +191,12 @@ func (c *Client) SetDumper(w io.Writer) {
 	c.dumper = w
 }
 
-// dumpRequest writes outgoing client requests to dumper
+// if c.dumper is set, dumpRequest writes outgoing client requests to dumper
 func (c *Client) dumpRequest(req *http.Request) error {
+	if c.dumper == nil {
+		return nil
+	}
+
 	d, err := httputil.DumpRequestOut(req, true)
 	if err != nil {
 		return err
@@ -208,8 +212,12 @@ func (c *Client) dumpRequest(req *http.Request) error {
 	return nil
 }
 
-// dumpRequest writes incoming responses to dumper
+// if c.dumper is set, dumpRequest writes incoming responses to dumper
 func (c *Client) dumpResponse(resp *http.Response) error {
+	if c.dumper == nil {
+		return nil
+	}
+
 	d, err := httputil.DumpResponse(resp, true)
 	if err != nil {
 		return err

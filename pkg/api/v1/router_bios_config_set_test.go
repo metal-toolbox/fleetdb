@@ -173,7 +173,7 @@ func TestIntegrationServerBiosConfigSetGet(t *testing.T) {
 				assert.NotNil(t, resp)
 				assert.Contains(t, resp.Message, tc.msg)
 
-				var set *fleetdbapi.BiosConfigSet = resp.Record.(*fleetdbapi.BiosConfigSet)
+				var set = resp.Record.(*fleetdbapi.BiosConfigSet)
 
 				// Fixtures are stored as models.BiosConfigSet, while the API returns fleetdbapi.BiosConfigSet, so we must manually compare the values
 				assertEntireBiosConfigSetEqual(t,
@@ -631,7 +631,6 @@ func assertBiosConfigSetEqual(t *testing.T, expected *models.BiosConfigSet, actu
 
 	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
 	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
-
 }
 
 func assertBiosConfigComponentEqual(t *testing.T, expected *models.BiosConfigComponent, actual *fleetdbapi.BiosConfigComponent) {

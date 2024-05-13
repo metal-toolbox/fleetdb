@@ -42,7 +42,7 @@ func TestIntegrationSetInventory(t *testing.T) {
 			Vendor: "AwesomeCo",
 			Serial: "1234xyz",
 			Components: []*rivets.Component{
-				&rivets.Component{
+				{
 					Name:   common.SlugBIOS,
 					Serial: "0",
 					Firmware: &common.Firmware{

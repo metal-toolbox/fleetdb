@@ -2,8 +2,11 @@ package fleetdbapi
 
 import (
 	"context"
+	"io"
 	"net/http"
+	"net/http/httputil"
 	"net/url"
+	"os"
 	"strings"
 )
 
@@ -14,6 +17,8 @@ type Client struct {
 	url        string
 	authToken  string
 	httpClient Doer
+	// dumper writes http request, responses to the given writer for debugging.
+	dumper io.Writer
 }
 
 // Doer is an interface for an HTTP client that can make requests
@@ -69,6 +74,10 @@ func NewClient(url string, doerClient Doer) (*Client, error) {
 	if c.httpClient == nil {
 		// Use the default client as a fallback if one isn't passed
 		c.httpClient = http.DefaultClient
+	}
+
+	if os.Getenv("DEBUG_CLIENT") != "" {
+		c.dumper = os.Stdout
 	}
 
 	return c, nil
@@ -175,4 +184,43 @@ func (c *Client) delete(ctx context.Context, path string) (*ServerResponse, erro
 	var r ServerResponse
 
 	return &r, c.do(request, &r)
+}
+
+// SetDumper sets requests and responses to be written to the given writer (os.Stdout for example) to aid debugging.
+func (c *Client) SetDumper(w io.Writer) {
+	c.dumper = w
+}
+
+// dumpRequest writes outgoing client requests to dumper
+func (c *Client) dumpRequest(req *http.Request) error {
+	d, err := httputil.DumpRequestOut(req, true)
+	if err != nil {
+		return err
+	}
+
+	d = append(d, '\n')
+
+	_, err = c.dumper.Write(d)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// dumpRequest writes incoming responses to dumper
+func (c *Client) dumpResponse(resp *http.Response) error {
+	d, err := httputil.DumpResponse(resp, true)
+	if err != nil {
+		return err
+	}
+
+	d = append(d, '\n')
+
+	_, err = c.dumper.Write(d)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

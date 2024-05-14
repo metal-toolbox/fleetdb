@@ -530,7 +530,7 @@ func setupFirmwareInbandNIC(ctx context.Context, db *sqlx.DB) error {
 		Checksum:      "83d220484495e79a3c20e16c21a0d751a71519ac7058350d8a38e1f55efb0222",
 		UpstreamURL:   "https://vendor.com/firmwares/blob.bin",
 		RepositoryURL: "https://example-firmware-bucket.s3.amazonaws.com/firmware/intel/blob.bin",
-		InstallInband: null.BoolFrom(true),
+		InstallInband: true,
 	}
 
 	return FixtureFirmwareInbandNIC.Insert(ctx, db, boil.Infer())

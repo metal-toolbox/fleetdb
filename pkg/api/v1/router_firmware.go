@@ -2,7 +2,6 @@ package fleetdbapi
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
@@ -138,7 +137,7 @@ func (r *Router) serverComponentFirmwareUpdate(c *gin.Context) {
 	dbFirmware.Checksum = newValues.Checksum
 	dbFirmware.UpstreamURL = newValues.UpstreamURL
 	dbFirmware.RepositoryURL = newValues.RepositoryURL
-	dbFirmware.InstallInband = null.BoolFrom(installInband)
+	dbFirmware.InstallInband = installInband
 
 	cols := boil.Infer()
 

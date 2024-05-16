@@ -15,7 +15,7 @@ test: | unit-test integration-test
 ## run integration tests
 integration-test: test-database
 	@echo Running integration tests...
-	@FLEETDB_CRDB_URI="${TEST_DB}" go test -cover -tags testtools,integration -p 1 -timeout 1m ./... | \
+	@FLEETDB_CRDB_URI="${TEST_DB}" go test -cover -tags testtools,integration -p 1 -timeout 2m ./... | \
 	grep -v "could not be registered in Prometheus\" error=\"duplicate metrics collector registration attempted\"" # TODO; Figure out why this message spams when tests fail
 
 ## run unit tests

@@ -52,11 +52,23 @@ func firmwareFromJSON(byt []byte) (*common.Firmware, error) {
 	return fw, nil
 }
 
+type statusContainer struct {
+	Status *common.Status `json:"status,omitempty"`
+}
+
 func mustStatusJSON(st *common.Status) []byte {
 	if st == nil {
 		return nil
 	}
-	byt, err := json.Marshal(st)
+
+	// XXX: In order to remain backward-compatible with data collected with
+	// earlier versions of alloy, status is encoded as an array.
+	ary := []*statusContainer{
+		{
+			Status: st,
+		},
+	}
+	byt, err := json.Marshal(ary)
 	if err != nil {
 		panic("bad status payload")
 	}
@@ -67,10 +79,20 @@ func statusFromJSON(byt []byte) (*common.Status, error) {
 	if byt == nil {
 		return nil, nil
 	}
-	st := &common.Status{}
-	err := json.Unmarshal(byt, st)
+	dataAry := []*statusContainer{}
+	err := json.Unmarshal(byt, &dataAry)
 	if err != nil {
+		// skip malformed garbage
 		return nil, err
+	}
+
+	var st *common.Status
+	for _, o := range dataAry {
+		if o.Status != nil {
+			// take the first valid status
+			st = o.Status
+			break
+		}
 	}
 	return st, nil
 }

@@ -41,7 +41,7 @@ require (
 	go.hollow.sh/toolbox v0.6.3
 	go.infratographer.com/x v0.3.9
 	gocloud.dev v0.36.0
-	golang.org/x/exp v0.0.0-20240222234643-814bf88cf225
+	golang.org/x/exp v0.0.0-20240506185415-9bf2ced13842
 )
 
 require (

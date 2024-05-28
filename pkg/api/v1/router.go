@@ -1,10 +1,8 @@
 package fleetdbapi
 
 import (
-	"context"
 	"database/sql"
 	"fmt"
-	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -259,24 +257,4 @@ func (r *Router) loadComponentFirmwareVersionFromParams(c *gin.Context) (*models
 	}
 
 	return firmware, nil
-}
-
-// publish a CreateServer message to the event stream. if the publish fails...?
-//
-//nolint:wsl
-func (r *Router) publishCreateServerMessage(ctx context.Context, srv *models.Server) {
-	if r.EventStream == nil {
-		r.Logger.Error("Event publish skipped, eventStream not connected")
-		return
-	}
-	subject := strings.Join([]string{"server", "create"}, ".")
-	payload, err := NewCreateServerMessage(srv)
-	if err != nil {
-		r.Logger.With(zap.Error(err)).Error("unable to create a create-server message")
-		return
-	}
-	if err := r.EventStream.Publish(ctx, subject, payload); err != nil {
-		r.Logger.With(zap.Error(err)).Error("unable to publish create-server message")
-		return
-	}
 }

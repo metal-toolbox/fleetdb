@@ -112,9 +112,6 @@ func (r *Router) serverCreate(c *gin.Context) {
 		return
 	}
 
-	// publish event XXX: this should handle publish failures or otherwise take action if NATS is unavailable
-	r.publishCreateServerMessage(c.Request.Context(), dbSRV)
-
 	createdResponse(c, dbSRV.ID)
 }
 

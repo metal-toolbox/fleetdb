@@ -79,6 +79,7 @@ var (
 	FixtureFirmwareSetX11DPHT          *models.ComponentFirmwareSet
 	FixtureFirmwareSetX11DPHTAttribute *models.AttributesFirmwareSet
 	FixtureFirmwareInbandNIC           *models.ComponentFirmwareVersion
+	FixtureFirmwareOem                 *models.ComponentFirmwareVersion
 
 	FixtureFirmwareUUIDsR6515        []string
 	FixtureFirmwareSetR6515          *models.ComponentFirmwareSet

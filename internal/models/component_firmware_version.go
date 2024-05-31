@@ -37,6 +37,7 @@ type ComponentFirmwareVersion struct {
 	CreatedAt     null.Time         `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
 	UpdatedAt     null.Time         `boil:"updated_at" json:"updated_at,omitempty" toml:"updated_at" yaml:"updated_at,omitempty"`
 	InstallInband bool              `boil:"install_inband" json:"install_inband" toml:"install_inband" yaml:"install_inband"`
+	Oem           bool              `boil:"oem" json:"oem" toml:"oem" yaml:"oem"`
 
 	R *componentFirmwareVersionR `boil:"-" json:"-" toml:"-" yaml:"-"`
 	L componentFirmwareVersionL  `boil:"-" json:"-" toml:"-" yaml:"-"`
@@ -55,6 +56,7 @@ var ComponentFirmwareVersionColumns = struct {
 	CreatedAt     string
 	UpdatedAt     string
 	InstallInband string
+	Oem           string
 }{
 	ID:            "id",
 	Component:     "component",
@@ -68,6 +70,7 @@ var ComponentFirmwareVersionColumns = struct {
 	CreatedAt:     "created_at",
 	UpdatedAt:     "updated_at",
 	InstallInband: "install_inband",
+	Oem:           "oem",
 }
 
 var ComponentFirmwareVersionTableColumns = struct {
@@ -83,6 +86,7 @@ var ComponentFirmwareVersionTableColumns = struct {
 	CreatedAt     string
 	UpdatedAt     string
 	InstallInband string
+	Oem           string
 }{
 	ID:            "component_firmware_version.id",
 	Component:     "component_firmware_version.component",
@@ -96,6 +100,7 @@ var ComponentFirmwareVersionTableColumns = struct {
 	CreatedAt:     "component_firmware_version.created_at",
 	UpdatedAt:     "component_firmware_version.updated_at",
 	InstallInband: "component_firmware_version.install_inband",
+	Oem:           "component_firmware_version.oem",
 }
 
 // Generated where
@@ -143,6 +148,7 @@ var ComponentFirmwareVersionWhere = struct {
 	CreatedAt     whereHelpernull_Time
 	UpdatedAt     whereHelpernull_Time
 	InstallInband whereHelperbool
+	Oem           whereHelperbool
 }{
 	ID:            whereHelperstring{field: "\"component_firmware_version\".\"id\""},
 	Component:     whereHelperstring{field: "\"component_firmware_version\".\"component\""},
@@ -156,6 +162,7 @@ var ComponentFirmwareVersionWhere = struct {
 	CreatedAt:     whereHelpernull_Time{field: "\"component_firmware_version\".\"created_at\""},
 	UpdatedAt:     whereHelpernull_Time{field: "\"component_firmware_version\".\"updated_at\""},
 	InstallInband: whereHelperbool{field: "\"component_firmware_version\".\"install_inband\""},
+	Oem:           whereHelperbool{field: "\"component_firmware_version\".\"oem\""},
 }
 
 // ComponentFirmwareVersionRels is where relationship names are stored.
@@ -186,9 +193,9 @@ func (r *componentFirmwareVersionR) GetFirmwareComponentFirmwareSetMaps() Compon
 type componentFirmwareVersionL struct{}
 
 var (
-	componentFirmwareVersionAllColumns            = []string{"id", "component", "vendor", "model", "filename", "version", "checksum", "upstream_url", "repository_url", "created_at", "updated_at", "install_inband"}
+	componentFirmwareVersionAllColumns            = []string{"id", "component", "vendor", "model", "filename", "version", "checksum", "upstream_url", "repository_url", "created_at", "updated_at", "install_inband", "oem"}
 	componentFirmwareVersionColumnsWithoutDefault = []string{"component", "vendor", "model", "filename", "version", "checksum", "upstream_url", "repository_url"}
-	componentFirmwareVersionColumnsWithDefault    = []string{"id", "created_at", "updated_at", "install_inband"}
+	componentFirmwareVersionColumnsWithDefault    = []string{"id", "created_at", "updated_at", "install_inband", "oem"}
 	componentFirmwareVersionPrimaryKeyColumns     = []string{"id"}
 	componentFirmwareVersionGeneratedColumns      = []string{}
 )

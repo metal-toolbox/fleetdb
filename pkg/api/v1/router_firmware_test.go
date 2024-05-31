@@ -151,6 +151,7 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 
 	var inbandFalse bool
 	inbandTrue := true
+	oemTrue := true
 	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 		testFirmware := fleetdbapi.ComponentFirmwareVersion{
@@ -269,6 +270,25 @@ func TestIntegrationServerComponentFirmwareCreate(t *testing.T) {
 				UpstreamURL:   "https://vendor.com/blob",
 				RepositoryURL: "https://example-bucket.s3.awsamazon.com/blob",
 				InstallInband: &inbandTrue,
+			},
+			false,
+			"200",
+			"",
+		},
+		{
+			"oem can be set to true",
+			&fleetdbapi.ComponentFirmwareVersion{
+				UUID:          uuid.New(),
+				Vendor:        "intel",
+				Model:         []string{"e751"},
+				Filename:      "fooBAR",
+				Version:       "002",
+				Component:     "nic",
+				Checksum:      "blah",
+				UpstreamURL:   "https://vendor.com/blob",
+				RepositoryURL: "https://example-bucket.s3.awsamazon.com/blob",
+				InstallInband: &inbandTrue,
+				OEM:           &oemTrue,
 			},
 			false,
 			"200",

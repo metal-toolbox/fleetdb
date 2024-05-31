@@ -3,15 +3,7 @@
 ALTER TABLE public.component_firmware_version ADD COLUMN install_inband BOOL NOT NULL DEFAULT false;
 -- +goose StatementEnd
 
--- +goose StatementBegin
-ALTER TABLE public.component_firmware_version ADD COLUMN oem BOOL NOT NULL DEFAULT false;
--- +goose StatementEnd
-
 -- +goose Down
 -- +goose StatementBegin
 ALTER TABLE public.component_firmware_version DROP COLUMN install_inband;
--- +goose StatementEnd
-
--- +goose StatementBegin
-ALTER TABLE public.component_firmware_version DROP COLUMN oem;
 -- +goose StatementEnd

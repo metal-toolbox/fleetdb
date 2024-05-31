@@ -22,7 +22,7 @@ type ComponentFirmwareVersion struct {
 	// The client has to always explicitly set this to true or false
 	// for this to work with the validator, it needs to be a bool.
 	InstallInband *bool     `json:"install_inband" binding:"required"`
-	OEM           *bool     `json:"oem"`
+	OEM           *bool     `json:"oem" binding:"required"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }

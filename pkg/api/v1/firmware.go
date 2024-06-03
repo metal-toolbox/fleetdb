@@ -22,6 +22,7 @@ type ComponentFirmwareVersion struct {
 	// The client has to always explicitly set this to true or false
 	// for this to work with the validator, it needs to be a bool.
 	InstallInband *bool     `json:"install_inband" binding:"required"`
+	OEM           *bool     `json:"oem" binding:"required"`
 	CreatedAt     time.Time `json:"created_at"`
 	UpdatedAt     time.Time `json:"updated_at"`
 }
@@ -45,14 +46,19 @@ func (f *ComponentFirmwareVersion) fromDBModel(dbF *models.ComponentFirmwareVers
 	f.CreatedAt = dbF.CreatedAt.Time
 	f.UpdatedAt = dbF.UpdatedAt.Time
 	f.InstallInband = &dbF.InstallInband
+	f.OEM = &dbF.Oem
 
 	return nil
 }
 
 func (f *ComponentFirmwareVersion) toDBModel() (*models.ComponentFirmwareVersion, error) {
-	var installInband bool
+	var installInband, oem bool
 	if f.InstallInband != nil {
 		installInband = *f.InstallInband
+	}
+
+	if f.OEM != nil {
+		oem = *f.OEM
 	}
 
 	dbF := &models.ComponentFirmwareVersion{
@@ -65,6 +71,7 @@ func (f *ComponentFirmwareVersion) toDBModel() (*models.ComponentFirmwareVersion
 		UpstreamURL:   f.UpstreamURL,
 		RepositoryURL: f.RepositoryURL,
 		InstallInband: installInband,
+		Oem:           oem,
 	}
 
 	if f.UUID.String() != uuid.Nil.String() {

@@ -79,6 +79,7 @@ var (
 	FixtureFirmwareSetX11DPHT          *models.ComponentFirmwareSet
 	FixtureFirmwareSetX11DPHTAttribute *models.AttributesFirmwareSet
 	FixtureFirmwareInbandNIC           *models.ComponentFirmwareVersion
+	FixtureFirmwareOem                 *models.ComponentFirmwareVersion
 
 	FixtureFirmwareUUIDsR6515        []string
 	FixtureFirmwareSetR6515          *models.ComponentFirmwareSet
@@ -531,6 +532,7 @@ func setupFirmwareInbandNIC(ctx context.Context, db *sqlx.DB) error {
 		UpstreamURL:   "https://vendor.com/firmwares/blob.bin",
 		RepositoryURL: "https://example-firmware-bucket.s3.amazonaws.com/firmware/intel/blob.bin",
 		InstallInband: true,
+		Oem:           true,
 	}
 
 	return FixtureFirmwareInbandNIC.Insert(ctx, db, boil.Infer())

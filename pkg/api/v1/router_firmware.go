@@ -124,9 +124,13 @@ func (r *Router) serverComponentFirmwareUpdate(c *gin.Context) {
 		return
 	}
 
-	var installInband bool
+	var installInband, oem bool
 	if newValues.InstallInband != nil {
 		installInband = *newValues.InstallInband
+	}
+
+	if newValues.OEM != nil {
+		oem = *newValues.OEM
 	}
 
 	dbFirmware.Vendor = newValues.Vendor
@@ -138,6 +142,7 @@ func (r *Router) serverComponentFirmwareUpdate(c *gin.Context) {
 	dbFirmware.UpstreamURL = newValues.UpstreamURL
 	dbFirmware.RepositoryURL = newValues.RepositoryURL
 	dbFirmware.InstallInband = installInband
+	dbFirmware.Oem = oem
 
 	cols := boil.Infer()
 

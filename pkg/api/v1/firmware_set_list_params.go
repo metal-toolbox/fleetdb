@@ -12,6 +12,9 @@ import (
 // ComponentFirmwareSetListParams allows you to filter the results
 type ComponentFirmwareSetListParams struct {
 	Name                string `form:"name"`
+	Vendor              string `form:"vendor"`
+	Model               string `form:"model"`
+	Labels              string `form:"labels"`
 	Pagination          *PaginationParams
 	AttributeListParams []AttributeListParams
 }
@@ -23,6 +26,18 @@ func (p *ComponentFirmwareSetListParams) setQuery(q url.Values) {
 
 	if p.Name != "" {
 		q.Set("name", p.Name)
+	}
+
+	if p.Model != "" {
+		q.Set("model", p.Model)
+	}
+
+	if p.Vendor != "" {
+		q.Set("vendor", p.Vendor)
+	}
+
+	if p.Labels != "" {
+		q.Set("labels", p.Labels)
 	}
 
 	encodeAttributesListParams(p.AttributeListParams, "attr", q)

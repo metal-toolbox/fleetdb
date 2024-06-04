@@ -6,6 +6,7 @@ package dbtools
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"testing"
 	"time"
 
@@ -142,6 +143,14 @@ func addFixtures(t *testing.T) error {
 	}
 
 	if err := setupFirmwareSetR640(ctx, testDB); err != nil {
+		return err
+	}
+
+	if err := setupFirmwareSetR640WithLabels(ctx, testDB, "org", `"organization": "2a0834e9-4720-4193-93e4-24185ac4949c"`); err != nil {
+		return err
+	}
+
+	if err := setupFirmwareSetR640WithLabels(ctx, testDB, "project", `"project": "69096c3f-1f96-434c-bd61-b9aef0b5746b"`); err != nil {
 		return err
 	}
 
@@ -631,7 +640,7 @@ func setupFirmwareSetR640(ctx context.Context, db *sqlx.DB) error {
 	FixtureFirmwareSetR640Attribute = &models.AttributesFirmwareSet{
 		FirmwareSetID: null.StringFrom(FixtureFirmwareSetR640.ID),
 		Namespace:     "sh.hollow.firmware_set.labels",
-		Data:          types.JSON([]byte(`{"vendor": "dell", "model": "r640"}`)),
+		Data:          types.JSON([]byte(`{"vendor": "dell", "model": "r640", "default": "true"}`)),
 	}
 
 	if err := FixtureFirmwareSetR640.AddFirmwareSetAttributesFirmwareSets(ctx, db, true, FixtureFirmwareSetR640Attribute); err != nil {
@@ -647,6 +656,32 @@ func setupFirmwareSetR640(ctx context.Context, db *sqlx.DB) error {
 		if err := m.Insert(ctx, db, boil.Infer()); err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func setupFirmwareSetR640WithLabels(ctx context.Context, db *sqlx.DB, name, labels string) error {
+	fixtureFirmwareSetR640 := &models.ComponentFirmwareSet{Name: "r640-" + name}
+
+	if err := fixtureFirmwareSetR640.Insert(ctx, db, boil.Infer()); err != nil {
+		return err
+	}
+
+	data := `"vendor": "dell", "model": "r640"`
+	if labels != "" {
+		data += "," + labels
+	}
+
+	data = fmt.Sprintf("{%v}", data)
+	fixtureFirmwareSetR640Attribute := &models.AttributesFirmwareSet{
+		FirmwareSetID: null.StringFrom(fixtureFirmwareSetR640.ID),
+		Namespace:     "sh.hollow.firmware_set.labels",
+		Data:          types.JSON([]byte(data)),
+	}
+
+	if err := fixtureFirmwareSetR640.AddFirmwareSetAttributesFirmwareSets(ctx, db, true, fixtureFirmwareSetR640Attribute); err != nil {
+		return err
 	}
 
 	return nil

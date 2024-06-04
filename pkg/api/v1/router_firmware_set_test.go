@@ -580,7 +580,6 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 		expectedError                bool
 		errorMsg                     string
 	}{
-
 		{
 			"list firmware set by name - r640",
 			&fleetdbapi.ComponentFirmwareSetListParams{Name: "r640"},
@@ -611,7 +610,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 			},
 			nil,
 			nil,
-			3,
+			5,
 			2,
 			false,
 			"",
@@ -636,7 +635,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 			},
 			[]*models.AttributesFirmwareSet{dbtools.FixtureFirmwareSetR640Attribute},
 			[]string{"R640"},
-			1,
+			3,
 			1,
 			false,
 			"",
@@ -665,7 +664,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 				dbtools.FixtureFirmwareSetX11DPHTAttribute,
 			},
 			[]string{"R640", "X11DPH-T"},
-			2,
+			4,
 			1,
 			false,
 			"",
@@ -678,6 +677,54 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 			nil,
 			nil,
 			0,
+			1,
+			false,
+			"",
+		},
+		{
+			"list firmware set by labels params - default",
+			&fleetdbapi.ComponentFirmwareSetListParams{
+				Vendor: "dell",
+				Model:  "r640",
+				Labels: "",
+			},
+			[]*models.AttributesFirmwareSet{dbtools.FixtureFirmwareSetR640Attribute},
+			[]string{"R640"},
+			1,
+			1,
+			false,
+			"",
+		},
+		{
+			"list firmware set by vendor and model - organization only",
+			&fleetdbapi.ComponentFirmwareSetListParams{
+				Vendor: "dell",
+				Model:  "r640",
+				Labels: "organization=2a0834e9-4720-4193-93e4-24185ac4949c",
+			},
+			[]*models.AttributesFirmwareSet{
+				{Namespace: "sh.hollow.firmware_set.labels",
+					Data: []byte(`{"model":"r640","organization":"2a0834e9-4720-4193-93e4-24185ac4949c","vendor":"dell"}`),
+				}},
+			nil,
+			1,
+			1,
+			false,
+			"",
+		},
+		{
+			"list firmware set by vendor and model - project only",
+			&fleetdbapi.ComponentFirmwareSetListParams{
+				Vendor: "dell",
+				Model:  "r640",
+				Labels: "project=69096c3f-1f96-434c-bd61-b9aef0b5746b",
+			},
+			[]*models.AttributesFirmwareSet{
+				{Namespace: "sh.hollow.firmware_set.labels",
+					Data: []byte(`{"model":"r640","project":"69096c3f-1f96-434c-bd61-b9aef0b5746b","vendor":"dell"}`),
+				}},
+			nil,
+			1,
 			1,
 			false,
 			"",

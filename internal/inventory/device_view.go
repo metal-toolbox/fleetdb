@@ -13,6 +13,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
+	"github.com/metal-toolbox/fleetdb/internal/metrics"
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
@@ -153,6 +154,7 @@ func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecut
 	switch err {
 	case nil:
 	default:
+		metrics.DBError("fetching attributes")
 		return errors.Wrap(err, "fetching attributes")
 	}
 
@@ -190,6 +192,7 @@ func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecut
 	case sql.ErrNoRows:
 		// just skip it, status is optional
 	default:
+		metrics.DBError("fetch status VA")
 		return errors.Wrap(err, "fetching versioned attibutes")
 	}
 

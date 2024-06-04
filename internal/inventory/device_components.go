@@ -12,6 +12,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
+	"github.com/metal-toolbox/fleetdb/internal/metrics"
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
@@ -129,6 +130,7 @@ func retrieveComponentAttributes(ctx context.Context, exec boil.ContextExecutor,
 		return nil, nil
 	case nil:
 	default:
+		metrics.DBError("fetch component attributes")
 		return nil, err
 	}
 
@@ -151,6 +153,7 @@ func retrieveVersionedAttribute(ctx context.Context, exec boil.ContextExecutor,
 
 	fwr, err := models.VersionedAttributes(mods...).One(ctx, exec)
 	if err != nil {
+		metrics.DBError("fetch versioned attributes")
 		return nil, err
 	}
 	return fwr.Data, nil

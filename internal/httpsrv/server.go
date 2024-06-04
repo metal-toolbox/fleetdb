@@ -9,7 +9,6 @@ import (
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
-	ginprometheus "github.com/zsais/go-gin-prometheus"
 	"go.hollow.sh/toolbox/events"
 	"go.hollow.sh/toolbox/ginauth"
 	"go.hollow.sh/toolbox/ginjwt"
@@ -20,6 +19,7 @@ import (
 	"go.uber.org/zap/zapcore"
 	"gocloud.dev/secrets"
 
+	"github.com/metal-toolbox/fleetdb/internal/metrics"
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
@@ -66,7 +66,11 @@ func (s *Server) setup() *gin.Engine {
 		MaxAge:           corsMaxAge,
 	}))
 
-	p := ginprometheus.NewPrometheus("gin")
+	r.Use(func(c *gin.Context) {
+		start := time.Now()
+		c.Next() // call the rest of the handler chain
+		metrics.APICallEpilog(start, c.FullPath(), c.Writer.Status())
+	})
 
 	v1Rtr := fleetdbapi.Router{
 		DB:            s.DB,
@@ -76,18 +80,13 @@ func (s *Server) setup() *gin.Engine {
 		EventStream:   s.EventStream,
 	}
 
-	// Remove any params from the URL string to keep the number of labels down
-	p.ReqCntURLLabelMappingFn = func(c *gin.Context) string {
-		return c.FullPath()
-	}
-
-	p.Use(r)
-
 	r.Use(ginzap.GinzapWithConfig(s.Logger.With(zap.String("component", "httpsrv")), &ginzap.Config{
 		TimeFormat: time.RFC3339,
 		UTC:        true,
 		Context: ginzap.Fn(func(c *gin.Context) []zapcore.Field {
 			return []zapcore.Field{
+				zap.String("path", c.Request.URL.Path),
+				zap.String("query", c.Request.URL.RawQuery),
 				zap.String("jwt_subject", ginjwt.GetSubject(c)),
 				zap.String("jwt_user", ginjwt.GetUser(c)),
 			}

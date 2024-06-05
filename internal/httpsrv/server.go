@@ -9,6 +9,7 @@ import (
 	ginzap "github.com/gin-contrib/zap"
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"go.hollow.sh/toolbox/events"
 	"go.hollow.sh/toolbox/ginauth"
 	"go.hollow.sh/toolbox/ginjwt"
@@ -41,6 +42,12 @@ var (
 	corsMaxAge         = 12 * time.Hour
 	noOpAuthMiddleware = &ginauth.MultiTokenMiddleware{}
 )
+
+func getGinPrometheusAdapter(h http.Handler) gin.HandlerFunc {
+	return func(c *gin.Context) {
+		h.ServeHTTP(c.Writer, c.Request)
+	}
+}
 
 func (s *Server) setup() *gin.Engine {
 	var err error
@@ -117,6 +124,8 @@ func (s *Server) setup() *gin.Engine {
 	r.GET("/healthz", s.livenessCheck)
 	r.GET("/healthz/liveness", s.livenessCheck)
 	r.GET("/healthz/readiness", s.readinessCheck)
+
+	r.GET("/metrics", getGinPrometheusAdapter(promhttp.Handler()))
 
 	v1 := r.Group("/api/v1")
 	{

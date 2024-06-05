@@ -16,6 +16,7 @@ type ComponentFirmwareVersionListParams struct {
 	Version    string   `form:"version"`
 	Filename   string   `form:"filename"`
 	Checksum   string   `form:"checksum"`
+	Component  string   `form:"component"`
 	Pagination *PaginationParams
 }
 
@@ -44,6 +45,10 @@ func (p *ComponentFirmwareVersionListParams) setQuery(q url.Values) {
 
 	if p.Checksum != "" {
 		q.Set("checksum", p.Checksum)
+	}
+
+	if p.Component != "" {
+		q.Set("component", p.Component)
 	}
 
 	p.Pagination.setQuery(q)
@@ -75,6 +80,11 @@ func (p *ComponentFirmwareVersionListParams) queryMods() []qm.QueryMod {
 
 	if p.Checksum != "" {
 		m := models.ComponentFirmwareVersionWhere.Checksum.EQ(p.Checksum)
+		mods = append(mods, m)
+	}
+
+	if p.Component != "" {
+		m := models.ComponentFirmwareVersionWhere.Component.EQ(p.Component)
 		mods = append(mods, m)
 	}
 

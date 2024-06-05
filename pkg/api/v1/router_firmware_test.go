@@ -21,9 +21,10 @@ func TestIntegrationFirmwareList(t *testing.T) {
 		s.Client.SetToken(authToken)
 
 		params := fleetdbapi.ComponentFirmwareVersionListParams{
-			Vendor:  "",
-			Model:   nil,
-			Version: "",
+			Vendor:    "",
+			Model:     nil,
+			Version:   "",
+			Component: "",
 		}
 
 		r, resp, err := s.Client.ListServerComponentFirmware(ctx, &params)
@@ -78,6 +79,24 @@ func TestIntegrationFirmwareList(t *testing.T) {
 				Version: "2.6.6",
 			},
 			[]string{dbtools.FixtureDellR6515BIOS.ID},
+			false,
+			"",
+		},
+		{
+			"search by component",
+			&fleetdbapi.ComponentFirmwareVersionListParams{
+				Component: "bios",
+			},
+			[]string{dbtools.FixtureDellR6515BIOS.ID, dbtools.FixtureDellR640BIOS.ID},
+			false,
+			"",
+		},
+		{
+			"search by non-exist component",
+			&fleetdbapi.ComponentFirmwareVersionListParams{
+				Component: "non-exist component",
+			},
+			[]string{},
 			false,
 			"",
 		},

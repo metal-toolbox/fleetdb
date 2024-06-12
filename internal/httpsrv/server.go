@@ -102,6 +102,7 @@ func (s *Server) setup() *gin.Engine {
 			"/healthz",
 			"/healthz/liveness",
 			"/healthz/readiness",
+			"/metrics",
 		},
 	}))
 

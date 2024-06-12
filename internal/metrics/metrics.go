@@ -52,7 +52,7 @@ func init() {
 func APICallEpilog(start time.Time, endpoint string, responseCode int) {
 	code := strconv.Itoa(responseCode)
 	elapsed := time.Since(start).Seconds()
-	apiLatencySec.WithLabelValues(endpoint, code).Observe(elapsed)
+	apiLatencySec.WithLabelValues(code, endpoint).Observe(elapsed)
 }
 
 // DBError observes errors arising from an attempt to read or write data to the remote database

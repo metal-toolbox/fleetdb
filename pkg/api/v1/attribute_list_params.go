@@ -20,6 +20,8 @@ type AttributeListParams struct {
 	AttributeOperator OperatorLogicalType
 }
 
+const pairSize = 2
+
 func encodeAttributesListParams(alp []AttributeListParams, key string, q url.Values) {
 	for _, ap := range alp {
 		value := ap.Namespace
@@ -38,6 +40,34 @@ func encodeAttributesListParams(alp []AttributeListParams, key string, q url.Val
 
 		q.Add(key, value)
 	}
+}
+
+func appendToQueryFirmwareSetsParams(params []AttributeListParams, keys, op, value string) []AttributeListParams {
+	return append(params, AttributeListParams{
+		Namespace: FirmwareSetAttributeNS,
+		Keys:      []string{keys},
+		Operator:  OperatorComparitorType(op),
+		Value:     strings.ToLower(value),
+	})
+}
+
+// Function to parse labels parameter into a map.
+// TODO: may support or/and operators in the future.
+// TODO: may want to check SQL injection?
+func parseQueryFirmwareSetsLabels(labels string) map[string]string {
+	result := make(map[string]string)
+	pairs := strings.Split(labels, ",")
+
+	for _, pair := range pairs {
+		kv := strings.SplitN(pair, "=", pairSize)
+		if len(kv) == pairSize {
+			key := kv[0]
+			value := kv[1]
+			result[key] = value
+		}
+	}
+
+	return result
 }
 
 func parseQueryAttributesListParams(c *gin.Context, key string) []AttributeListParams {

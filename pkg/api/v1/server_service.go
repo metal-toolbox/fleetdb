@@ -61,6 +61,7 @@ type ClientInterface interface {
 	UpdateComponentFirmwareSetRequest(context.Context, ComponentFirmwareSetRequest) (*uuid.UUID, *ServerResponse, error)
 	GetServerComponentFirmwareSet(context.Context, uuid.UUID) (*ComponentFirmwareSet, *ServerResponse, error)
 	ListServerComponentFirmwareSet(context.Context, *ComponentFirmwareSetListParams) ([]ComponentFirmwareSet, *ServerResponse, error)
+	ListFirmwareSets(context.Context, *ComponentFirmwareSetListParams) ([]ComponentFirmwareSet, *ServerResponse, error)
 	DeleteServerComponentFirmwareSet(context.Context, uuid.UUID) (*ServerResponse, error)
 
 	GetCredential(context.Context, uuid.UUID, string) (*ServerCredential, *ServerResponse, error)
@@ -338,6 +339,12 @@ func (c *Client) GetServerComponentFirmwareSet(ctx context.Context, fwSetUUID uu
 }
 
 // ListServerComponentFirmwareSet will return all firmwares with optional params to filter the results
+// if AttributeListParams is defined then ignore the main struct fields (Vendor, Model, Labels)
+// otherwise do the selection based on the Vendor, Model, Labelswill
+// return all firmwares with optional params to filter the results
+// vendor and model should be non-empty. arbitraryLabels is formatted as k1=v1,k2=v2,etc.
+// To view the behavior of the default/latest label, please check
+// https://fleet-docs.pages.equinixmetal.net/procedures/firmware-install/#firmware-sets
 func (c *Client) ListServerComponentFirmwareSet(ctx context.Context, params *ComponentFirmwareSetListParams) ([]ComponentFirmwareSet, *ServerResponse, error) {
 	firmwareSets := &[]ComponentFirmwareSet{}
 	r := ServerResponse{Records: firmwareSets}

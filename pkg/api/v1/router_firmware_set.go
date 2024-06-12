@@ -20,6 +20,10 @@ var (
 	errComponentFirmwareSetRequest = errors.New("error in component firmware set request")
 	errComponentFirmwareSetMap     = errors.New("error mapping firmware in set")
 	errDBErr                       = errors.New("db error")
+	ErrFwSetByVendorModel          = errors.New("error identifying firmware set by server vendor, model")
+
+	// FleetDB attribute namespace for firmware set labels.
+	FirmwareSetAttributeNS = "sh.hollow.firmware_set.labels"
 )
 
 // Firmware sets group firmware versions
@@ -27,20 +31,51 @@ var (
 // - firmware sets can only reference to unique firmware versions based on the vendor, model, component attributes.
 
 func (r *Router) serverComponentFirmwareSetList(c *gin.Context) {
-	pager := parsePagination(c)
-
 	// unmarshal query parameters
 	var params ComponentFirmwareSetListParams
-	if err := c.ShouldBindQuery(&params); err != nil {
+	var err error
+	if err = c.ShouldBindQuery(&params); err != nil {
 		badRequestResponse(c, "invalid filter payload: ComponentFirmwareSetListParams{}", err)
 		return
 	}
 
 	// query parameters to query mods
 	params.AttributeListParams = parseQueryAttributesListParams(c, "attr")
+	if params.AttributeListParams, err = r.validateListParams(c, params); err != nil {
+		badRequestResponse(
+			c, "empty required attribute",
+			errors.Wrap(ErrFwSetByVendorModel, err.Error()),
+		)
+		return
+	}
+
 	mods := params.queryMods(models.TableNames.ComponentFirmwareSet)
 	mods = append(mods, qm.Load(models.ComponentFirmwareSetRels.FirmwareSetAttributesFirmwareSets))
+	r.selectFirmware(c, mods)
+}
 
+func (r *Router) validateListParams(c *gin.Context, params ComponentFirmwareSetListParams) ([]AttributeListParams, error) {
+	if len(params.AttributeListParams) != 0 {
+		return params.AttributeListParams, nil
+	}
+
+	if params.Vendor == "" && params.Model == "" && params.Labels == "" {
+		return params.AttributeListParams, nil
+	}
+
+	if params.Vendor == "" {
+		return nil, errors.Wrap(ErrFwSetByVendorModel, "vendor")
+	}
+
+	if params.Model == "" {
+		return nil, errors.Wrap(ErrFwSetByVendorModel, "model")
+	}
+
+	return r.serverComponentFirmwareSetsSelect(c, params.Vendor, params.Model, params.Labels)
+}
+
+func (r *Router) selectFirmware(c *gin.Context, mods []qm.QueryMod) {
+	pager := parsePagination(c)
 	// count rows
 	count, err := models.ComponentFirmwareSets(mods...).Count(c.Request.Context(), r.DB)
 	if err != nil {
@@ -86,6 +121,25 @@ func (r *Router) serverComponentFirmwareSetList(c *gin.Context) {
 	}
 
 	listResponse(c, firmwareSets, pd)
+}
+
+func (r *Router) serverComponentFirmwareSetsSelect(c *gin.Context, vendor, model, labels string) ([]AttributeListParams, error) {
+	listParams := make([]AttributeListParams, 0)
+
+	listParams = appendToQueryFirmwareSetsParams(listParams, "vendor", "eq", vendor)
+	listParams = appendToQueryFirmwareSetsParams(listParams, "model", "eq", model)
+
+	var additionalLabel bool
+	arbitraryLabels := parseQueryFirmwareSetsLabels(labels)
+	for k, v := range arbitraryLabels {
+		additionalLabel = true
+		listParams = appendToQueryFirmwareSetsParams(listParams, k, "eq", v)
+	}
+	if !additionalLabel {
+		listParams = appendToQueryFirmwareSetsParams(listParams, "default", "eq", "true")
+	}
+
+	return listParams, nil
 }
 
 func (r *Router) serverComponentFirmwareSetGet(c *gin.Context) {

@@ -1,5 +1,3 @@
-version: "3.9"
-
 services:
   fleetdb:
     image: ghcr.io/metal-toolbox/fleetdb:latest
@@ -29,7 +27,7 @@ services:
       - hollow
 
   crdb:
-    image: cockroachdb/cockroach:latest-v21.1
+    image: cockroachdb/cockroach:latest-v23.1
     volumes:
       - db:/cockroach/cockroach-data
     command: start-single-node --insecure

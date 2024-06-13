@@ -76,7 +76,7 @@ func (s *Server) setup() *gin.Engine {
 	r.Use(func(c *gin.Context) {
 		start := time.Now()
 		c.Next() // call the rest of the handler chain
-		metrics.APICallEpilog(start, c.FullPath(), c.Writer.Status())
+		metrics.APICallEpilog(start, c.FullPath(), c.Request.Method, c.Writer.Status())
 	})
 
 	v1Rtr := fleetdbapi.Router{

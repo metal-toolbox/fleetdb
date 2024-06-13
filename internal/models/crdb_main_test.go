@@ -81,7 +81,7 @@ func (c *crdbTester) setup() error {
 	}
 
 	if err = dumpCmd.Wait(); err != nil {
-		return errors.Wrap(err, "failed to wait for 'cockroach sql' command")
+		return errors.Wrap(err, "failed to wait for dump 'cockroach sql' command")
 	}
 
 	// After dumpCmd is done, close the write end of the pipe
@@ -90,7 +90,7 @@ func (c *crdbTester) setup() error {
 	}
 
 	if err = createCmd.Wait(); err != nil {
-		return errors.Wrap(err, "failed to wait for 'cockroach sql' command")
+		return errors.Wrap(err, "failed to wait for create 'cockroach sql' command")
 	}
 
 	return nil
@@ -195,6 +195,7 @@ func (f *showCreateFilter) Read(b []byte) (int, error) {
 		all = bytes.Replace(all, []byte("create_statement"), []byte{}, -1)
 		all = bytes.Replace(all, []byte("\"CREATE"), []byte("CREATE"), -1)
 		all = bytes.Replace(all, []byte(";\""), []byte(";"), -1)
+		all = bytes.Replace(all, []byte(`""`), []byte(`"`), -1)
 		f.buf = bytes.NewBuffer(all)
 	}
 

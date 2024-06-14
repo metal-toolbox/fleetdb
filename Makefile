@@ -1,5 +1,5 @@
 all: lint test
-PHONY: test coverage lint golint clean vendor local-dev-databases docker-up docker-down integration-test unit-test
+PHONY: test coverage lint golint clean vendor local-dev-databases docker-up docker-down integration-test unit-test install-sqlboiler install-crdb-driver 
 GOOS=linux
 DB_STRING=host=localhost port=26257 user=root sslmode=disable
 DEV_DB=${DB_STRING} dbname=fleetdb
@@ -8,6 +8,8 @@ DOCKER_IMAGE := "ghcr.io/metal-toolbox/fleetdb"
 PROJECT_NAME := fleetdb
 REPO := "https://github.com/metal-toolbox/fleetdb.git"
 SQLBOILER := v4.15.0
+DRIVER_MOD := "github.com/metal-toolbox/sqlboiler-crdb-fleetdb/v4"
+DRIVER_TAG := "v4.0.0" # this can be a tag or a short commit
 
 ## run all tests
 test: | unit-test integration-test
@@ -89,11 +91,12 @@ fresh-test: clean
 install-sqlboiler:
 	go install github.com/volatiletech/sqlboiler/v4@${SQLBOILER}
 
+install-crdb-driver:
+	go install ${DRIVER_MOD}@${DRIVER_TAG}
+
 ## boil sql
-boil: install-sqlboiler
-	make docker-up
-	make test-database
-	sqlboiler crdb --add-soft-deletes
+boil: install-sqlboiler install-crdb-driver docker-up test-database
+	sqlboiler crdb-fleetdb --add-soft-deletes
 
 ## log into database
 psql:

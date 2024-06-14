@@ -2,7 +2,7 @@ wipe = true
 pkgname = "models"
 output = "internal/models"
 
-[crdb]
+[crdb-fleetdb]
 dbname = "fleetdb_test"
 host = "localhost"
 port = 26257

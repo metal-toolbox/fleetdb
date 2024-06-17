@@ -3,6 +3,7 @@ package fleetdbapi
 import (
 	"context"
 	"database/sql"
+
 	"fmt"
 	"strings"
 
@@ -75,7 +76,12 @@ func (r *Router) validateListParams(c *gin.Context, params ComponentFirmwareSetL
 }
 
 func (r *Router) selectFirmware(c *gin.Context, mods []qm.QueryMod) {
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
+
 	// count rows
 	count, err := models.ComponentFirmwareSets(mods...).Count(c.Request.Context(), r.DB)
 	if err != nil {
@@ -83,9 +89,7 @@ func (r *Router) selectFirmware(c *gin.Context, mods []qm.QueryMod) {
 		return
 	}
 
-	// add pagination
 	pager.Preload = false
-	pager.OrderBy = models.ComponentFirmwareSetColumns.CreatedAt + " DESC"
 
 	// load firmware sets
 	dbFirmwareSets, err := models.ComponentFirmwareSets(mods...).All(c.Request.Context(), r.DB)
@@ -312,11 +316,10 @@ func (r *Router) firmwareSetCreateTx(ctx context.Context, dbFirmwareSet *models.
 		return err
 	}
 
-	// nolint:errcheck // TODO(joel): log error
-	defer tx.Rollback()
+	defer loggedRollback(r, tx)
 
 	// insert set
-	if err := dbFirmwareSet.Insert(ctx, tx, boil.Infer()); err != nil {
+	if err = dbFirmwareSet.Insert(ctx, tx, boil.Infer()); err != nil {
 		return err
 	}
 
@@ -335,13 +338,12 @@ func (r *Router) firmwareSetCreateTx(ctx context.Context, dbFirmwareSet *models.
 	for _, id := range firmwareUUIDs {
 		m := models.ComponentFirmwareSetMap{FirmwareSetID: dbFirmwareSet.ID, FirmwareID: id.String()}
 
-		err := m.Insert(ctx, tx, boil.Infer())
+		err = m.Insert(ctx, tx, boil.Infer())
 		if err != nil {
 			return err
 		}
 	}
 
-	// commit
 	return tx.Commit()
 }
 
@@ -497,8 +499,7 @@ func (r *Router) firmwareSetUpdateTx(ctx context.Context, fwSetUpdate *models.Co
 		return err
 	}
 
-	// nolint:errcheck // TODO(joel): log error
-	defer tx.Rollback()
+	defer loggedRollback(r, tx)
 
 	fwSetCurrent, err := models.FindComponentFirmwareSet(ctx, tx, fwSetUpdate.ID)
 	if err != nil {
@@ -531,7 +532,6 @@ func (r *Router) firmwareSetUpdateTx(ctx context.Context, fwSetUpdate *models.Co
 		}
 	}
 
-	// commit
 	return tx.Commit()
 }
 
@@ -688,8 +688,7 @@ func (r *Router) firmwareSetDeleteMappingTx(ctx context.Context, _ *models.Compo
 		return err
 	}
 
-	// nolint:errcheck // (joel) once a logger is made available, this tx rollback can be logged.
-	defer tx.Rollback()
+	defer loggedRollback(r, tx)
 
 	for _, mapping := range removeMappings {
 		if _, err := mapping.Delete(ctx, r.DB); err != nil {

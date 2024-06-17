@@ -10,7 +10,8 @@ import (
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
-// ServerListParams allows you to filter the results
+// ServerListParams allows you to filter the results.
+// Note: You must set PaginationParams.Preload to load Components, Attributes, and VersionedAttributes
 type ServerListParams struct {
 	FacilityCode                 string `form:"facility-code"`
 	ComponentListParams          []ServerComponentListParams

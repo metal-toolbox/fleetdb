@@ -47,12 +47,12 @@ func TestBiosConfigSetQuery(t *testing.T) {
 			Limit:   50,
 			Page:    4,
 			Cursor:  "cursor",
-			Preload: false,
+			Preload: true,
 			OrderBy: "nothing",
 		},
 	}
 
-	values, err := url.ParseQuery("params%5B0%5D%5Bset%5D%5Bcomponents%5D%5B0%5D%5Bname%5D=RTX&params%5B0%5D%5Blogical%5D=olt_or&params%5B0%5D%5Bcomparitor%5D=oct_like&params%5B1%5D%5Bset%5D%5Bcomponents%5D%5B0%5D%5Bsettings%5D%5B0%5D%5Bkey%5D=PCIE+Lanes&params%5B1%5D%5Bset%5D%5Bcomponents%5D%5B0%5D%5Bsettings%5D%5B0%5D%5Bvalue%5D=x16&params%5B1%5D%5Blogical%5D=olt_and&params%5B1%5D%5Bcomparitor%5D=oct_eq&pagination%5BLimit%5D=50&pagination%5BPage%5D=4&pagination%5BCursor%5D=cursor&pagination%5BOrderBy%5D=nothing")
+	values, err := url.ParseQuery("params%5B0%5D%5Bset%5D%5Bcomponents%5D%5B0%5D%5Bname%5D=RTX&params%5B0%5D%5Blogical%5D=olt_or&params%5B0%5D%5Bcomparitor%5D=oct_like&params%5B1%5D%5Bset%5D%5Bcomponents%5D%5B0%5D%5Bsettings%5D%5B0%5D%5Bkey%5D=PCIE+Lanes&params%5B1%5D%5Bset%5D%5Bcomponents%5D%5B0%5D%5Bsettings%5D%5B0%5D%5Bvalue%5D=x16&params%5B1%5D%5Blogical%5D=olt_and&params%5B1%5D%5Bcomparitor%5D=oct_eq&page%5BLimit%5D=50&page%5BPage%5D=4&page%5BPreload%5D=1&page%5BCursor%5D=cursor&page%5BOrderBy%5D=nothing")
 	require.NoError(t, err)
 
 	testCases := []struct {
@@ -111,7 +111,7 @@ func TestBiosConfigSetQueryMods(t *testing.T) {
 			Limit:   50,
 			Page:    4,
 			Cursor:  "cursor",
-			Preload: false,
+			Preload: true,
 			OrderBy: "nothing",
 		},
 	}

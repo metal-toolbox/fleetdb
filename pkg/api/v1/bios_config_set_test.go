@@ -150,7 +150,7 @@ func TestConfgSetList(t *testing.T) {
 				Limit:   50,
 				Page:    4,
 				Cursor:  "cursor",
-				Preload: false,
+				Preload: true,
 				OrderBy: "nothing",
 			},
 		}

@@ -1,11 +1,14 @@
 package fleetdbapi
 
 import (
+	"database/sql"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
+
+	"go.uber.org/zap"
 )
 
 var (
@@ -37,6 +40,13 @@ func (e ServerError) Error() string {
 	return fmt.Sprintf("hollow client received a server error - response code: %d, message: %s, details: %s", e.StatusCode, e.Message, e.ErrorMessage)
 }
 
+func loggedRollback(r *Router, tx *sql.Tx) {
+	err := tx.Rollback()
+	if err != nil {
+		r.Logger.Error("Failed transaction, attempting rollback", zap.Error(err))
+	}
+}
+
 func newClientError(msg string) *ClientError {
 	return &ClientError{
 		Message: msg,
@@ -57,7 +67,7 @@ func ensureValidServerResponse(resp *http.Response) error {
 		}
 
 		if err := json.Unmarshal(data, &se); err != nil {
-			se.ErrorMessage = "failed to decode response from server"
+			se.ErrorMessage = fmt.Sprintf("failed to decode response from server: %s", err.Error())
 		}
 
 		return se

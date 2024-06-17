@@ -28,12 +28,13 @@ type BiosConfigSetQueryParams struct {
 
 // BiosConfigSetListParams params is an array of potential expressions when querying.
 // Each one will have a Set. This Set will define values you want to search on, empty strings will be ignored.
-// The ComparitorOperator will define how you want to compare those values
-// All values within a single BiosConfigSetQueryParams item will be grouped together and "AND"'ed
-// The LogicalOperator will define how that BiosConfigSetQueryParams item will be grouped with other BiosConfigSetQueryParams items
+// The ComparitorOperator will define how you want to compare those values.
+// All values within a single BiosConfigSetQueryParams item will be grouped together and "AND"'ed.
+// The LogicalOperator will define how that BiosConfigSetQueryParams item will be grouped with other BiosConfigSetQueryParams items.
+// Note: You must set PaginationParams.Preload to load BiosConfigComponents and BiosConfigSettings.
 type BiosConfigSetListParams struct {
 	Params     []BiosConfigSetQueryParams `query:"params"`
-	Pagination PaginationParams           `query:"pagination"`
+	Pagination PaginationParams           `query:"page"`
 }
 
 // setQuery implements queryParams.

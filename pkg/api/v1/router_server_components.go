@@ -20,7 +20,11 @@ var (
 
 // serverComponentList returns a response with the list of components that matched the params.
 func (r *Router) serverComponentList(c *gin.Context) {
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
 
 	params, err := parseQueryServerComponentsListParams(c)
 	if err != nil {
@@ -69,7 +73,11 @@ func (r *Router) serverComponentGet(c *gin.Context) {
 		return
 	}
 
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
 
 	// - include Attributes, VersionedAttributes and ServerComponentyType relations
 	mods := []qm.QueryMod{
@@ -152,9 +160,7 @@ func (r *Router) serverComponentsCreate(c *gin.Context) {
 		return
 	}
 
-	// rollback is a no-op when the transaction is successful
-	// nolint:errcheck // TODO(joel): log gerror instead of ignoring
-	defer tx.Rollback()
+	defer loggedRollback(r, tx)
 
 	for _, srvComponent := range serverComponents {
 		dbSrvComponent := srvComponent.toDBModel(server.ID)
@@ -273,9 +279,7 @@ func (r *Router) serverComponentUpdate(c *gin.Context) {
 		return
 	}
 
-	// rollback is a no-op when the transaction is successful
-	// nolint:errcheck // TODO(joel): log gerror instead of ignoring
-	defer tx.Rollback()
+	defer loggedRollback(r, tx)
 
 	for _, srvComponent := range serverComponents {
 		// convert object to db model type and keep the received component UUID

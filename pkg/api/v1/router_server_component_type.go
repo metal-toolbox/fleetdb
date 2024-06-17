@@ -29,7 +29,11 @@ func (r *Router) serverComponentTypeCreate(c *gin.Context) {
 }
 
 func (r *Router) serverComponentTypeList(c *gin.Context) {
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
 
 	// dbFilter := &gormdb.ServerComponentTypeFilter{
 	// 	Name: c.Query("name"),

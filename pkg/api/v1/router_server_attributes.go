@@ -24,7 +24,11 @@ func (r *Router) serverAttributesList(c *gin.Context) {
 		return
 	}
 
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
 
 	dbAttrs, err := srv.Attributes().All(c.Request.Context(), r.DB)
 	if err != nil {
@@ -138,38 +142,35 @@ func (r *Router) serverAttributesUpdate(c *gin.Context) {
 		return
 	}
 
+	defer loggedRollback(r, tx)
+
 	rows, err := models.Attributes(qm.Where("namespace = ?", ns), qm.Where("server_id = ?", u)).UpdateAll(ctx, tx, models.M{"data": attr.Data})
 	if err != nil {
-		tx.Rollback() //nolint errcheck
 		dbErrorResponse(c, err)
 
 		return
 	}
 
 	if rows == 0 {
-		tx.Rollback() //nolint errcheck
-		dbErrorResponse(c, sql.ErrNoRows)
+		dbErrorResponse(c, errors.Join(err, sql.ErrNoRows))
 
 		return
 	}
 
 	rows, err = models.Servers(qm.Where("id = ?", u)).UpdateAll(ctx, tx, models.M{"updated_at": time.Now()})
 	if err != nil {
-		tx.Rollback() //nolint errcheck
 		dbErrorResponse(c, err)
 
 		return
 	}
 
 	if rows == 0 {
-		tx.Rollback() //nolint errcheck
-		dbErrorResponse(c, sql.ErrNoRows)
+		dbErrorResponse(c, errors.Join(err, sql.ErrNoRows))
 
 		return
 	}
 
 	if err := tx.Commit(); err != nil {
-		tx.Rollback() //nolint errcheck
 		dbErrorResponse(c, err)
 
 		return

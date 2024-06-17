@@ -68,7 +68,7 @@ func (s *ComponentFirmwareSet) fromDBModel(dbFS *models.ComponentFirmwareSet, fi
 	}
 
 	// relation attributes
-	if dbFS.R.FirmwareSetAttributesFirmwareSets != nil {
+	if dbFS.R != nil {
 		s.Attributes, err = convertFromDBModelAttributesFirmwareSet(dbFS.R.FirmwareSetAttributesFirmwareSets)
 		if err != nil {
 			return err

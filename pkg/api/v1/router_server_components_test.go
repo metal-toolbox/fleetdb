@@ -11,6 +11,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
+	"github.com/metal-toolbox/fleetdb/internal/models"
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
@@ -31,9 +32,9 @@ func zeroTimeValues(sc *fleetdbapi.ServerComponent) {
 	}
 }
 
-func componentByNameVendorModelSerial(name, vendor, model, serial string, sc fleetdbapi.ServerComponentSlice) *fleetdbapi.ServerComponent {
-	for _, c := range sc {
-		if c.Name == name && c.Vendor == vendor && c.Model == model && c.Serial == serial {
+func componentByNameVendorModelSerial(expected fleetdbapi.ServerComponent, actualSlice fleetdbapi.ServerComponentSlice) *fleetdbapi.ServerComponent {
+	for _, c := range actualSlice {
+		if c.Name == expected.Name && c.Vendor == expected.Vendor && c.Model == expected.Model && c.Serial == expected.Serial {
 			return &c
 		}
 	}
@@ -47,10 +48,10 @@ func TestIntegrationServerListComponents(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		attrs, _, err := s.Client.ListComponents(ctx, nil)
+		components, _, err := s.Client.ListComponents(ctx, nil)
 		if !expectError {
 			require.NoError(t, err)
-			assert.Len(t, attrs, 7)
+			assert.Len(t, components, 7)
 		}
 
 		return err
@@ -128,8 +129,9 @@ func TestIntegrationServerListComponents(t *testing.T) {
 			"pagination Limit, Offset",
 			&fleetdbapi.ServerComponentListParams{
 				Pagination: &fleetdbapi.PaginationParams{
-					Limit: 1,
-					Page:  2,
+					Limit:   1,
+					Page:    2,
+					OrderBy: models.ServerComponentTableColumns.CreatedAt + " DESC",
 				},
 			},
 			fleetdbapi.ServerComponentSlice{
@@ -172,10 +174,10 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 	realClientTests(t, func(ctx context.Context, authToken string, _ int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		attrs, _, err := s.Client.GetComponents(ctx, uuid.MustParse(dbtools.FixtureNemo.ID), nil)
+		components, _, err := s.Client.GetComponents(ctx, uuid.MustParse(dbtools.FixtureNemo.ID), nil)
 		if !expectError {
 			require.NoError(t, err)
-			assert.Len(t, attrs, 2)
+			assert.Len(t, components, 2)
 		}
 
 		return err
@@ -184,7 +186,13 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 	// init fixture data
 
 	// 1. get list of servers
-	servers, _, err := s.Client.List(context.Background(), nil)
+	listParams := &fleetdbapi.ServerListParams{
+		PaginationParams: &fleetdbapi.PaginationParams{
+			Preload: true,
+			OrderBy: models.ServerColumns.CreatedAt + " DESC",
+		},
+	}
+	servers, _, err := s.Client.List(context.Background(), listParams)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -283,10 +291,7 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 
 			assert.Equal(t, tt.expectedCount, len(got))
 			gotc := componentByNameVendorModelSerial(
-				tt.expectedInSlice.Name,
-				tt.expectedInSlice.Vendor,
-				tt.expectedInSlice.Model,
-				tt.expectedInSlice.Serial,
+				tt.expectedInSlice,
 				got,
 			)
 
@@ -468,7 +473,7 @@ func TestIntegrationServerCreateComponents(t *testing.T) {
 			assert.NotNil(t, res)
 			assert.Contains(t, res.Message, tt.responseMsg)
 
-			params := &fleetdbapi.ServerComponentListParams{Name: tt.components[0].Name}
+			params := &fleetdbapi.ServerComponentListParams{Name: tt.components[0].Name, Pagination: &fleetdbapi.PaginationParams{Preload: true}}
 
 			got, _, err := s.Client.ListComponents(context.TODO(), params)
 			if err != nil {
@@ -501,8 +506,15 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 		if !expectError {
 			var err error
 
+			// In order to get the components, we need to preload them
+			params := &fleetdbapi.ServerListParams{
+				PaginationParams: &fleetdbapi.PaginationParams{
+					Preload: true,
+				},
+			}
+
 			// 2. retrieve list of servers, expect the test db is populated with one or more test servers
-			servers, _, err = s.Client.List(context.Background(), nil)
+			servers, _, err = s.Client.List(context.Background(), params)
 			if err != nil {
 				t.Fatal(err)
 			}
@@ -516,6 +528,7 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 			require.NotNil(t, nemo, "couldn't find nemo")
 
 			// update serial attribute for update to work
+			require.NotZero(t, len(nemo.Components))
 			sc = fleetdbapi.ServerComponentSlice{nemo.Components[0]}
 			sc[0].Serial = "lala"
 		}
@@ -697,10 +710,11 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 				tt.components[0].Model = model
 
 				listParams = &fleetdbapi.ServerComponentListParams{
-					Name:   fixtureComponentName,
-					Serial: fixtureComponentSerial,
-					Vendor: fixtureComponentVendor,
-					Model:  model,
+					Name:       fixtureComponentName,
+					Serial:     fixtureComponentSerial,
+					Vendor:     fixtureComponentVendor,
+					Model:      model,
+					Pagination: &fleetdbapi.PaginationParams{Preload: true},
 				}
 			}
 
@@ -717,10 +731,11 @@ func TestIntegrationServerUpdateComponents(t *testing.T) {
 				tt.components[0].Model = model
 
 				listParams = &fleetdbapi.ServerComponentListParams{
-					Name:   fixtureComponentName,
-					Serial: fixtureComponentSerial,
-					Vendor: fixtureComponentVendor,
-					Model:  model,
+					Name:       fixtureComponentName,
+					Serial:     fixtureComponentSerial,
+					Vendor:     fixtureComponentVendor,
+					Model:      model,
+					Pagination: &fleetdbapi.PaginationParams{Preload: true},
 				}
 			}
 

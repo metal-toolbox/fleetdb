@@ -16,10 +16,14 @@ import (
 )
 
 func (r *Router) serverList(c *gin.Context) {
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
 
 	var params ServerListParams
-	if err := c.ShouldBindQuery(&params); err != nil {
+	if err = c.ShouldBindQuery(&params); err != nil {
 		badRequestResponse(c, "invalid filter", err)
 		return
 	}
@@ -184,7 +188,11 @@ func (r *Router) serverVersionedAttributesGet(c *gin.Context) {
 		return
 	}
 
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
 
 	ns := c.Param("namespace")
 
@@ -234,7 +242,11 @@ func (r *Router) serverVersionedAttributesList(c *gin.Context) {
 		return
 	}
 
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
 
 	dbVA, err := srv.VersionedAttributes(qm.OrderBy("created_at DESC")).All(c.Request.Context(), r.DB)
 	if err != nil {

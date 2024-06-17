@@ -103,7 +103,7 @@ func (r *Router) serverBiosConfigSetList(c *gin.Context) {
 		return
 	}
 
-	dbSets, err := r.eagerLoadAllBiosConfigSets(c.Request.Context(), mods)
+	dbSets, err := r.eagerLoadAllBiosConfigSets(c.Request.Context(), mods, params.Pagination.Preload)
 	if err != nil {
 		dbErrorResponse(c, err)
 		return
@@ -170,9 +170,7 @@ func (r *Router) updateBiosConfigSet(ctx context.Context, set *BiosConfigSet, ol
 		return "", errors.Wrap(err, "0")
 	}
 
-	// If tx committed, rollback wont do anything
-	// nolint:errcheck
-	defer tx.Rollback()
+	defer loggedRollback(r, tx)
 
 	dbSet := set.toDBModelBiosConfigSet()
 	dbSet.ID = set.ID
@@ -322,9 +320,7 @@ func (r *Router) insertBiosConfigSet(ctx context.Context, set *BiosConfigSet) (s
 		return "", err
 	}
 
-	// If tx committed, rollback wont do anything
-	// nolint:errcheck
-	defer tx.Rollback()
+	defer loggedRollback(r, tx)
 
 	dbSet := set.toDBModelBiosConfigSet()
 
@@ -374,21 +370,25 @@ func (r *Router) eagerLoadBiosConfigSet(ctx context.Context, mods []qm.QueryMod)
 	return dbSet, nil
 }
 
-func (r *Router) eagerLoadAllBiosConfigSets(ctx context.Context, mods []qm.QueryMod) ([]*models.BiosConfigSet, error) {
+func (r *Router) eagerLoadAllBiosConfigSets(ctx context.Context, mods []qm.QueryMod, preload bool) ([]*models.BiosConfigSet, error) {
 	// Eager load relations
-	mods = append(mods, qm.Load(models.BiosConfigSetRels.FKBiosConfigSetBiosConfigComponents))
+	if preload {
+		mods = append(mods, qm.Load(models.BiosConfigSetRels.FKBiosConfigSetBiosConfigComponents))
+	}
 
 	dbSets, err := models.BiosConfigSets(mods...).All(ctx, r.DB)
 	if err != nil {
 		return nil, err
 	}
 
-	for _, dbSet := range dbSets {
-		if dbSet.R != nil {
-			for i := range dbSet.R.FKBiosConfigSetBiosConfigComponents {
-				err := dbSet.R.FKBiosConfigSetBiosConfigComponents[i].L.LoadFKBiosConfigComponentBiosConfigSettings(ctx, r.DB, true, dbSet.R.FKBiosConfigSetBiosConfigComponents[i], nil)
-				if err != nil {
-					return nil, err
+	if preload {
+		for _, dbSet := range dbSets {
+			if dbSet.R != nil {
+				for i := range dbSet.R.FKBiosConfigSetBiosConfigComponents {
+					err := dbSet.R.FKBiosConfigSetBiosConfigComponents[i].L.LoadFKBiosConfigComponentBiosConfigSettings(ctx, r.DB, true, dbSet.R.FKBiosConfigSetBiosConfigComponents[i], nil)
+					if err != nil {
+						return nil, err
+					}
 				}
 			}
 		}

@@ -485,12 +485,14 @@ func TestIntegrationServerList(t *testing.T) {
 		t.Run(tt.testName, func(t *testing.T) {
 			servers, resp, err := s.Client.List(context.TODO(), tt.params)
 			if tt.expectError {
-				assert.NoError(t, err)
+				assert.Error(t, err)
 				return
 			}
 
 			var actual []string
 
+			assert.NoError(t, err)
+			assert.NotNil(t, resp)
 			assert.Equal(t, int64(len(servers)), resp.TotalRecordCount)
 
 			for _, srv := range servers {
@@ -573,12 +575,26 @@ func TestIntegrationServerGetDeleted(t *testing.T) {
 	})
 }
 
-func TestIntegrationServerListPreload(t *testing.T) {
+func TestIntegrationServerListNoPreload(t *testing.T) {
 	s := serverTest(t)
 	s.Client.SetToken(validToken(adminScopes))
 
 	// should only return nemo
 	r, _, err := s.Client.List(context.TODO(), &fleetdbapi.ServerListParams{FacilityCode: "Sydney"})
+
+	assert.NoError(t, err)
+	assert.Len(t, r, 1)
+	assert.Len(t, r[0].Attributes, 0)
+	assert.Len(t, r[0].VersionedAttributes, 0)
+	assert.Len(t, r[0].Components, 0)
+}
+
+func TestIntegrationServerListPreload(t *testing.T) {
+	s := serverTest(t)
+	s.Client.SetToken(validToken(adminScopes))
+
+	// should only return nemo
+	r, _, err := s.Client.List(context.TODO(), &fleetdbapi.ServerListParams{FacilityCode: "Sydney", PaginationParams: &fleetdbapi.PaginationParams{Preload: true}})
 
 	assert.NoError(t, err)
 	assert.Len(t, r, 1)

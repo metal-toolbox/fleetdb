@@ -57,12 +57,10 @@ func convertDBServerComponents(dbComponents models.ServerComponentSlice) ([]Serv
 // getServerComponents returns server components based on query parameters
 func (r *Router) getServerComponents(c *gin.Context, params []ServerComponentListParams, pagination PaginationParams) (models.ServerComponentSlice, int64, error) {
 	mods := []qm.QueryMod{}
-	// TODO(joel): is there a table name const we could use?
-	tableName := "server_components"
 
 	// for each parameter, setup the query modifiers
 	for _, param := range params {
-		mods = append(mods, param.queryMods(tableName))
+		mods = append(mods, param.queryMods(models.TableNames.ServerComponents))
 	}
 
 	count, err := models.ServerComponents(mods...).Count(c.Request.Context(), r.DB)

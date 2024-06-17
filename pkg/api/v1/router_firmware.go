@@ -9,10 +9,14 @@ import (
 )
 
 func (r *Router) serverComponentFirmwareList(c *gin.Context) {
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
 
 	var params ComponentFirmwareVersionListParams
-	if err := c.ShouldBindQuery(&params); err != nil {
+	if err = c.ShouldBindQuery(&params); err != nil {
 		badRequestResponse(c, "invalid filter payload: ComponentFirmwareVersionListParams{}", err)
 		return
 	}
@@ -26,9 +30,7 @@ func (r *Router) serverComponentFirmwareList(c *gin.Context) {
 	}
 
 	// add pagination
-	pager.Preload = false
-	pager.OrderBy = models.ComponentFirmwareVersionTableColumns.Vendor + " DESC"
-	mods = append(mods, pager.serverQueryMods()...)
+	mods = append(mods, pager.queryMods()...)
 
 	dbFirmwares, err := models.ComponentFirmwareVersions(mods...).All(c.Request.Context(), r.DB)
 	if err != nil {

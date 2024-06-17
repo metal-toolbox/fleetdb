@@ -403,7 +403,9 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 					ComparitorOperator: fleetdbapi.OperatorComparitorEqual,
 				},
 			},
-			Pagination: fleetdbapi.PaginationParams{},
+			Pagination: fleetdbapi.PaginationParams{
+				Preload: true,
+			},
 		}
 
 		_, err := s.Client.ListServerBiosConfigSet(realClientTestCtx, &testBiosConfigSetQueryParams)
@@ -446,7 +448,9 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 				ComparitorOperator: fleetdbapi.OperatorComparitorEqual,
 			},
 		},
-		Pagination: fleetdbapi.PaginationParams{},
+		Pagination: fleetdbapi.PaginationParams{
+			Preload: false,
+		},
 	}
 
 	// Get all 3
@@ -460,7 +464,9 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 				ComparitorOperator: fleetdbapi.OperatorComparitorLike,
 			},
 		},
-		Pagination: fleetdbapi.PaginationParams{},
+		Pagination: fleetdbapi.PaginationParams{
+			Preload: false,
+		},
 	}
 
 	// Get all but "List Test 3"
@@ -481,7 +487,9 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 				ComparitorOperator: fleetdbapi.OperatorComparitorNotEqual,
 			},
 		},
-		Pagination: fleetdbapi.PaginationParams{},
+		Pagination: fleetdbapi.PaginationParams{
+			Preload: false,
+		},
 	}
 
 	// Get all based on components "%Motherboard"
@@ -500,7 +508,9 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 				ComparitorOperator: fleetdbapi.OperatorComparitorLike,
 			},
 		},
-		Pagination: fleetdbapi.PaginationParams{},
+		Pagination: fleetdbapi.PaginationParams{
+			Preload: false,
+		},
 	}
 	// Get all but the 3rd based on components "SM Motherboard"
 	listTestParams4 := fleetdbapi.BiosConfigSetListParams{
@@ -524,7 +534,9 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 				ComparitorOperator: fleetdbapi.OperatorComparitorEqual,
 			},
 		},
-		Pagination: fleetdbapi.PaginationParams{},
+		Pagination: fleetdbapi.PaginationParams{
+			Preload: false,
+		},
 	}
 
 	var testCases = []struct {

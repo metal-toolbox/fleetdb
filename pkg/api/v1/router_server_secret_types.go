@@ -8,7 +8,11 @@ import (
 )
 
 func (r *Router) serverCredentialTypesList(c *gin.Context) {
-	pager := parsePagination(c)
+	pager, err := parsePagination(c)
+	if err != nil {
+		badRequestResponse(c, "invalid pagination params", err)
+		return
+	}
 
 	dbTypes, err := models.ServerCredentialTypes(pager.queryMods()...).All(c.Request.Context(), r.DB)
 	if err != nil {

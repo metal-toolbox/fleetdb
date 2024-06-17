@@ -6,8 +6,6 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
-
-	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
 var (
@@ -17,7 +15,9 @@ var (
 	DefaultPaginationSize = 100
 )
 
-// PaginationParams allow you to paginate the results
+// PaginationParams allow you to paginate the results.
+// Some tables can have multiple preloadable child tables. Set Preload to true to load them.
+// TODO; Preload should probably be moved over to the params of each individual endpoint. Example: ServerListParams.
 type PaginationParams struct {
 	Limit   int    `json:"limit,omitempty"`
 	Page    int    `json:"page,omitempty"`
@@ -32,27 +32,41 @@ type paginationData struct {
 	pager      PaginationParams
 }
 
-func parsePagination(c *gin.Context) PaginationParams {
+// TODO; Replace with a query parser like done here: bio_config_set_params.go:parseBiosConfigSetListParams()
+func parsePagination(c *gin.Context) (PaginationParams, error) {
 	// Initializing default
+	var err error
 	limit := DefaultPaginationSize
 	page := 1
 	query := c.Request.URL.Query()
+	preload := false
+	orderby := ""
 
 	for key, value := range query {
 		queryValue := value[len(value)-1]
 
 		switch key {
 		case "limit":
-			limit, _ = strconv.Atoi(queryValue)
+			limit, err = strconv.Atoi(queryValue)
 		case "page":
-			page, _ = strconv.Atoi(queryValue)
+			page, err = strconv.Atoi(queryValue)
+		case "preload":
+			preload, err = strconv.ParseBool(queryValue)
+		case "orderby":
+			orderby = queryValue
+		}
+
+		if err != nil {
+			return PaginationParams{}, err
 		}
 	}
 
 	return PaginationParams{
-		Limit: limit,
-		Page:  page,
-	}
+		Limit:   limit,
+		Page:    page,
+		Preload: preload,
+		OrderBy: orderby,
+	}, nil
 }
 
 // queryMods converts the list params into sql conditions that can be added to sql queries
@@ -69,7 +83,7 @@ func (p *PaginationParams) queryMods() []qm.QueryMod {
 		mods = append(mods, qm.Offset(p.offset()))
 	}
 
-	// match the old functionality for now...will handle order and load as params later
+	// TODO; match the old functionality for now, will handle order and load as params later
 	if p.OrderBy != "" {
 		mods = append(mods, qm.OrderBy(p.OrderBy))
 	}
@@ -79,22 +93,7 @@ func (p *PaginationParams) queryMods() []qm.QueryMod {
 
 // serverQueryMods queryMods converts the list params into sql conditions that can be added to sql queries
 func (p *PaginationParams) serverQueryMods() []qm.QueryMod {
-	if p == nil {
-		p = &PaginationParams{}
-	}
-
-	mods := []qm.QueryMod{}
-
-	mods = append(mods, qm.Limit(p.limitUsed()))
-
-	if p.Page != 0 {
-		mods = append(mods, qm.Offset(p.offset()))
-	}
-
-	// match the old functionality for now...will handle order and load as params later
-	if p.OrderBy != "" {
-		mods = append(mods, qm.OrderBy(p.OrderBy))
-	}
+	mods := p.queryMods()
 
 	if p.Preload {
 		preload := []qm.QueryMod{
@@ -111,19 +110,7 @@ func (p *PaginationParams) serverQueryMods() []qm.QueryMod {
 
 // serverComponentQueryMods converts the server component list params into sql conditions that can be added to sql queries
 func (p *PaginationParams) serverComponentsQueryMods() []qm.QueryMod {
-	if p == nil {
-		p = &PaginationParams{}
-	}
-
-	mods := []qm.QueryMod{}
-
-	mods = append(mods, qm.Limit(p.limitUsed()))
-
-	if p.Page != 0 {
-		mods = append(mods, qm.Offset(p.offset()))
-	}
-
-	mods = append(mods, qm.OrderBy(models.ServerComponentTableColumns.CreatedAt+" DESC"))
+	mods := p.queryMods()
 
 	preload := []qm.QueryMod{
 		qm.Load("Attributes"),
@@ -150,6 +137,14 @@ func (p *PaginationParams) setQuery(q url.Values) {
 
 	if p.Limit != 0 {
 		q.Set("limit", strconv.Itoa(p.Limit))
+	}
+
+	if p.Preload { // No need to send preload=false. It will default to that on the other side if its empty
+		q.Set("preload", "1") // strconv.ParseBool() will convert 1 to TRUE. No reason to send extra bytes when you dont have to.
+	}
+
+	if p.OrderBy != "" {
+		q.Set("orderby", p.OrderBy)
 	}
 }
 

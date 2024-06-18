@@ -119,7 +119,7 @@ func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmp *rivets.
 }
 
 func retrieveComponentAttributes(ctx context.Context, exec boil.ContextExecutor,
-	componentID, namespace string) (*rivets.ComponentAttributes, error) {
+	componentID, namespace string) ([]rivets.ComponentAttributes, error) {
 	ar, err := models.Attributes(
 		models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(componentID)),
 		models.AttributeWhere.Namespace.EQ(namespace),
@@ -213,7 +213,7 @@ func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 
 	for _, rec := range records {
 		// attributes/firmware/status might not be stored because it was missing in the original data.
-		attr, err := retrieveComponentAttributes(ctx, exec, rec.ID, getAttributeNamespace(inband))
+		attrs, err := retrieveComponentAttributes(ctx, exec, rec.ID, getAttributeNamespace(inband))
 		if err != nil {
 			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" attributes"+":"+err.Error())
 		}
@@ -231,16 +231,34 @@ func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 		default:
 			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" status"+":"+err.Error())
 		}
-		comp := &rivets.Component{
-			Name:       rec.Name.String,
-			Vendor:     rec.Vendor.String,
-			Model:      rec.Model.String,
-			Serial:     rec.Serial.String,
-			Firmware:   fw,
-			Status:     st,
-			Attributes: attr,
+
+		if len(attrs) == 0 {
+			comp := &rivets.Component{
+				Name:     rec.Name.String,
+				Vendor:   rec.Vendor.String,
+				Model:    rec.Model.String,
+				Serial:   rec.Serial.String,
+				Firmware: fw,
+				Status:   st,
+			}
+			comps = append(comps, comp)
+			continue
 		}
-		comps = append(comps, comp)
+
+		// Alternative:
+		// Changing rivets.Component to have []*ComponentAttributes instead of *ComponentAttributes
+		for _, attr := range attrs {
+			comp := &rivets.Component{
+				Name:       rec.Name.String,
+				Vendor:     rec.Vendor.String,
+				Model:      rec.Model.String,
+				Serial:     rec.Serial.String,
+				Firmware:   fw,
+				Status:     st,
+				Attributes: &attr,
+			}
+			comps = append(comps, comp)
+		}
 	}
 
 	return comps, nil

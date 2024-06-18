@@ -18,12 +18,12 @@ func mustAttributesJSON(ca *rivets.ComponentAttributes) []byte {
 	return byt
 }
 
-func componentAttributesFromJSON(byt []byte) (*rivets.ComponentAttributes, error) {
+func componentAttributesFromJSON(byt []byte) ([]rivets.ComponentAttributes, error) {
 	if byt == nil {
 		return nil, nil
 	}
-	ca := &rivets.ComponentAttributes{}
-	if err := json.Unmarshal(byt, ca); err != nil {
+	var ca []rivets.ComponentAttributes
+	if err := json.Unmarshal(byt, &ca); err != nil {
 		return nil, err
 	}
 	return ca, nil

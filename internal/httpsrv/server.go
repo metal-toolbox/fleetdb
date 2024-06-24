@@ -10,7 +10,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/jmoiron/sqlx"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
-	"go.hollow.sh/toolbox/events"
 	"go.hollow.sh/toolbox/ginauth"
 	"go.hollow.sh/toolbox/ginjwt"
 	"go.infratographer.com/x/versionx"
@@ -33,7 +32,6 @@ type Server struct {
 	OIDCEnabled   bool
 	AuthConfigs   []ginjwt.AuthConfig
 	SecretsKeeper *secrets.Keeper
-	EventStream   events.Stream
 }
 
 var (
@@ -84,7 +82,6 @@ func (s *Server) setup() *gin.Engine {
 		AuthMW:        authMW,
 		SecretsKeeper: s.SecretsKeeper,
 		Logger:        s.Logger,
-		EventStream:   s.EventStream,
 	}
 
 	r.Use(ginzap.GinzapWithConfig(s.Logger.With(zap.String("component", "httpsrv")), &ginzap.Config{

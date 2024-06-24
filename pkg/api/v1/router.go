@@ -9,7 +9,6 @@ import (
 	"github.com/jmoiron/sqlx"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"go.hollow.sh/toolbox/events"
 	"go.hollow.sh/toolbox/ginauth"
 	"go.uber.org/zap"
 	"gocloud.dev/secrets"
@@ -23,7 +22,6 @@ type Router struct {
 	DB            *sqlx.DB
 	SecretsKeeper *secrets.Keeper
 	Logger        *zap.Logger
-	EventStream   events.Stream
 }
 
 // Routes will add the routes for this API version to a router group

@@ -2,9 +2,11 @@ package fleetdbapi
 
 import (
 	"database/sql"
+	"fmt"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/lib/pq"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -12,6 +14,9 @@ import (
 
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
+
+// https://www.ibm.com/support/pages/ibm-content-collector-sqlstate-23505-returned-when-unique-value-constraint-violated-content-manager-repository
+const uniqueValueConstraintErrorCode = "23505"
 
 var (
 	errSrvComponentPayload = errors.New("error in server component payload")
@@ -186,7 +191,13 @@ func (r *Router) serverComponentsCreate(c *gin.Context) {
 		// insert component
 		err := dbSrvComponent.Insert(c.Request.Context(), tx, boil.Infer())
 		if err != nil {
-			dbErrorResponse(c, err)
+			if pgErr, ok := err.(*pq.Error); ok {
+				if pgErr.Code == uniqueValueConstraintErrorCode { // Unique violation error code in PostgreSQL
+					err = errors.Wrapf(err, "duplicate key value violates unique constraint %s: %s", pgErr.Constraint, pgErr.Detail)
+					r.Logger.Error(fmt.Sprintf("failed to create server components, err %v", err))
+				}
+			}
+			dbErrorResponse(c, errors.Wrap(err, "models: unable to insert into server_components"))
 			return
 		}
 

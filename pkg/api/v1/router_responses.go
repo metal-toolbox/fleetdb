@@ -2,7 +2,6 @@ package fleetdbapi
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"math"
 	"net/http"
@@ -11,7 +10,12 @@ import (
 	"strings"
 
 	"github.com/gin-gonic/gin"
+	"github.com/lib/pq"
+	"github.com/pkg/errors"
 )
+
+// https://www.postgresql.org/docs/current/errcodes-appendix.html
+const pgUniqueViolationErrorCode = "23505"
 
 var (
 	errBadRequest = errors.New("bad request")
@@ -118,9 +122,12 @@ func dbErrorResponse(c *gin.Context, err error) {
 }
 
 func dbErrorResponse2(c *gin.Context, message string, err error) {
-	if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
-		badRequestResponse(c, "", err)
-		return
+	if pgErr, ok := err.(*pq.Error); ok {
+		if pgErr.Code == pgUniqueViolationErrorCode { // Unique violation error code in PostgreSQL
+			err = errors.Wrapf(err, "duplicate key value violates unique constraint %s: %s", pgErr.Constraint, pgErr.Detail)
+			badRequestResponse(c, "", err)
+			return
+		}
 	}
 
 	if errors.Is(err, sql.ErrNoRows) {

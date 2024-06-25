@@ -22,9 +22,6 @@ import (
 	"github.com/volatiletech/strmangle"
 )
 
-// https://www.ibm.com/support/pages/ibm-content-collector-sqlstate-23505-returned-when-unique-value-constraint-violated-content-manager-repository
-const uniqueValueConstraintErrorCode = 23505
-
 // ServerComponent is an object representing the database table.
 type ServerComponent struct {
 	ID                    string      `boil:"id" json:"id" toml:"id" yaml:"id"`

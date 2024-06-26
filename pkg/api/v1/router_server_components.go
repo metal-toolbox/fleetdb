@@ -186,7 +186,7 @@ func (r *Router) serverComponentsCreate(c *gin.Context) {
 		// insert component
 		err := dbSrvComponent.Insert(c.Request.Context(), tx, boil.Infer())
 		if err != nil {
-			dbErrorResponse(c, err)
+			dbErrorResponse2(c, "models: unable to insert into server_components", err)
 			return
 		}
 

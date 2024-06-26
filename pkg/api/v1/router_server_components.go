@@ -319,7 +319,7 @@ func (r *Router) serverComponentUpdate(c *gin.Context) {
 		// update component
 		_, err = dbSrvComponent.Update(c.Request.Context(), tx, boil.Infer())
 		if err != nil {
-			dbErrorResponse(c, err)
+			dbErrorResponse2(c, "models: unable to update server_components", err)
 			return
 		}
 

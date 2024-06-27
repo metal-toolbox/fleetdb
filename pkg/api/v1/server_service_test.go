@@ -10,6 +10,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
+
 	rivets "github.com/metal-toolbox/rivets/types"
 )
 

@@ -18,7 +18,7 @@ jobs:
       - name: Setup Go
         uses: actions/setup-go@v4
         with:
-          go-version: '1.22.1'
+          go-version-file: go.mod
 
       - name: Install cockroach binary
         run: curl https://binaries.cockroachdb.com/cockroach-v21.1.21.linux-amd64.tgz | tar -xz && sudo cp -i cockroach-v21.1.21.linux-amd64/cockroach /usr/local/bin/
@@ -30,10 +30,11 @@ jobs:
         run: make test-database
 
       - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v3
+        uses: golangci/golangci-lint-action@v5
         with:
           version: v1.57.1
           args: --timeout=5m
+          skip-cache: true
 
       - name: Run go tests and generate coverage report
         run: FLEETDB_CRDB_URI="host=localhost port=26257 user=root sslmode=disable dbname=fleetdb_test" go test -race -coverprofile=coverage.txt -covermode=atomic -tags testtools -p 1 ./...

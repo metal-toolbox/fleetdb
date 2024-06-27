@@ -4,7 +4,7 @@ go 1.22
 
 require (
 	github.com/XSAM/otelsql v0.23.0 // indirect
-	github.com/cockroachdb/cockroach-go/v2 v2.3.6
+	github.com/cockroachdb/cockroach-go/v2 v2.3.8
 	github.com/friendsofgo/errors v0.9.2
 	github.com/gin-contrib/cors v1.5.0
 	github.com/gin-contrib/zap v1.1.0
@@ -75,8 +75,8 @@ require (
 	github.com/jackc/pgpassfile v1.0.0 // indirect
 	github.com/jackc/pgproto3/v2 v2.3.3 // indirect
 	github.com/jackc/pgservicefile v0.0.0-20231201235250-de7065d80cb9 // indirect
-	github.com/jackc/pgtype v1.14.2 // indirect
-	github.com/jackc/pgx/v4 v4.18.2 // indirect
+	github.com/jackc/pgtype v1.14.3 // indirect
+	github.com/jackc/pgx/v4 v4.18.3 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect
 	github.com/leodido/go-urn v1.4.0 // indirect

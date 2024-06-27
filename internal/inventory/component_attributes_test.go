@@ -20,18 +20,18 @@ type testContainer struct {
 func TestStatusFromJSON(t *testing.T) {
 	t.Run("cluttered array", func(t *testing.T) {
 		ary := []*testContainer{
-			&testContainer{
+			{
 				Clutter: &clutter{
 					Payload: "stuff",
 				},
 			},
-			&testContainer{
+			{
 				Status: &common.Status{
 					Health: "great",
 					State:  "awesome",
 				},
 			},
-			&testContainer{
+			{
 				Clutter: &clutter{},
 			},
 		}
@@ -44,7 +44,7 @@ func TestStatusFromJSON(t *testing.T) {
 	})
 	t.Run("serialized empty object returns empty object", func(t *testing.T) {
 		ary := []*testContainer{
-			&testContainer{
+			{
 				Status: &common.Status{},
 			},
 		}

@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"context"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
@@ -24,8 +23,7 @@ import (
 )
 
 var (
-	apiDefaultListen   = "0.0.0.0:8000"
-	natsConnectTimeout = 100 * time.Millisecond
+	apiDefaultListen = "0.0.0.0:8000"
 )
 
 // serveCmd represents the serve command

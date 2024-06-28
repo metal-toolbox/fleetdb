@@ -76,6 +76,10 @@ type ClientInterface interface {
 	GetServerInventory(context.Context, uuid.UUID, bool) (*rivets.Server, *ServerResponse, error)
 	SetServerInventory(context.Context, uuid.UUID, *rivets.Server, bool) (*ServerResponse, error)
 
+	GetEventByID(context.Context, uuid.UUID) (*Event, *ServerResponse, error)
+	GetServerEvents(context.Context, uuid.UUID) ([]*Event, *ServerResponse, error)
+	UpdateEvent(context.Context, *Event) (*ServerResponse, error)
+
 	CreateServerBiosConfigSet(context.Context, BiosConfigSet) (*uuid.UUID, *ServerResponse, error)
 	GetServerBiosConfigSet(context.Context, uuid.UUID) (*BiosConfigSet, *ServerResponse, error)
 	DeleteServerBiosConfigSet(context.Context, uuid.UUID) (*ServerResponse, error)
@@ -482,6 +486,39 @@ func (c *Client) SetServerInventory(ctx context.Context, srvID uuid.UUID,
 
 	path := fmt.Sprintf("%s/%s?mode=%s", inventoryEndpoint, srvID.String(), mode)
 	return c.put(ctx, path, srv)
+}
+
+// GetEventByID returns the details of the event with the given ID
+func (c *Client) GetEventByID(ctx context.Context, evtID uuid.UUID) (*Event, *ServerResponse, error) {
+	evt := &Event{}
+	r := &ServerResponse{Record: evt}
+	path := fmt.Sprintf("events/%s", evtID.String())
+
+	if err := c.get(ctx, path, r); err != nil {
+		return nil, nil, err
+	}
+
+	return evt, r, nil
+}
+
+// GetServerEvents returns the most recent events for the given server ID
+func (c *Client) GetServerEvents(ctx context.Context, srvID uuid.UUID,
+	params *PaginationParams) ([]*Event, *ServerResponse, error) {
+	evts := &[]*Event{}
+	r := &ServerResponse{Records: evts}
+	path := fmt.Sprintf("events/by-server/%s", srvID.String())
+
+	if err := c.list(ctx, path, params, r); err != nil {
+		return nil, nil, err
+	}
+
+	return *evts, r, nil
+}
+
+// UpdateEvent adds a new event to the event history
+func (c *Client) UpdateEvent(ctx context.Context, evt *Event) (*ServerResponse, error) {
+	path := fmt.Sprintf("events/%s", evt.EventID.String())
+	return c.put(ctx, path, evt)
 }
 
 // CreateServerBiosConfigSet will store the BiosConfigSet, and return the generated UUID of the BiosConfigSet

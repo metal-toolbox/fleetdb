@@ -12,6 +12,7 @@ import (
 
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/types"
@@ -96,6 +97,9 @@ var (
 	FixtureBiosConfigSet        *models.BiosConfigSet
 	FixtureBiosConfigComponents []*models.BiosConfigComponent
 	FixtureBiosConfigSettings   [][]*models.BiosConfigSetting
+
+	FixtureEventHistoryServer *models.Server
+	FixtureEventHistories     []*models.EventHistory
 )
 
 func addFixtures(t *testing.T) error {
@@ -167,6 +171,10 @@ func addFixtures(t *testing.T) error {
 	}
 
 	if err := setupInventoryFixture(ctx, testDB); err != nil {
+		return err
+	}
+
+	if err := setupEventHistoryFixtures(ctx, testDB); err != nil {
 		return err
 	}
 
@@ -713,6 +721,58 @@ func setupInventoryFixture(ctx context.Context, db *sqlx.DB) error {
 		return err
 	}
 
+	return nil
+}
+
+func setupEventHistoryFixtures(ctx context.Context, db *sqlx.DB) error {
+	FixtureEventHistoryServer = &models.Server{
+		Name:         null.StringFrom("event-history"),
+		FacilityCode: null.StringFrom("tf2"),
+	}
+
+	if err := FixtureEventHistoryServer.Insert(ctx, db, boil.Infer()); err != nil {
+		return errors.Wrap(err, "event history server fixture")
+	}
+
+	FixtureEventHistories = []*models.EventHistory{
+		{
+			EventID:      uuid.New().String(),
+			EventType:    "test event",
+			EventStart:   time.Now().Add(-5 * time.Hour),
+			EventEnd:     time.Now().Add(-4 * time.Hour),
+			TargetServer: FixtureEventHistoryServer.ID,
+			Parameters:   null.JSONFrom([]byte(`{"msg": "test event"}`)),
+			FinalState:   "succeeded",
+			FinalStatus:  null.JSONFrom([]byte(`{"status": "some status"}`)),
+		},
+		{
+			EventID:      uuid.New().String(),
+			EventType:    "test event",
+			EventStart:   time.Now().Add(-3 * time.Hour),
+			EventEnd:     time.Now().Add(-2 * time.Hour),
+			TargetServer: FixtureEventHistoryServer.ID,
+			Parameters:   null.JSONFrom([]byte(`{"msg": "test event"}`)),
+			FinalState:   "failed",
+			FinalStatus:  null.JSONFrom([]byte(`{"status": "bad status"}`)),
+		},
+		{
+			EventID:      uuid.New().String(),
+			EventType:    "test event",
+			EventStart:   time.Now().Add(-1 * time.Hour),
+			EventEnd:     time.Now().Add(-30 * time.Minute),
+			TargetServer: FixtureEventHistoryServer.ID,
+			Parameters:   null.JSONFrom([]byte(`{"msg": "test event"}`)),
+			FinalState:   "succeeded",
+			FinalStatus:  null.JSONFrom([]byte(`{"status": "some status"}`)),
+		},
+	}
+
+	for idx, evt := range FixtureEventHistories {
+		if err := evt.Insert(ctx, db, boil.Infer()); err != nil {
+			errStr := fmt.Sprintf("event history %d", idx)
+			return errors.Wrap(err, errStr)
+		}
+	}
 	return nil
 }
 

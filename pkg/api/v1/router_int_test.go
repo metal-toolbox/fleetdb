@@ -28,7 +28,7 @@ func serverTest(t *testing.T) *integrationServer {
 
 	db := dbtools.DatabaseTest(t)
 
-	l := zap.NewNop()
+	l, _ := zap.NewDevelopment()
 
 	hs := httpsrv.Server{
 		Logger:      l,

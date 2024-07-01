@@ -20,14 +20,14 @@ import (
 )
 
 type Event struct {
-	EventID     uuid.UUID       `json:"event_id"`
-	Type        string          `json:"event_type"`
-	Start       time.Time       `json:"event_start"`
-	End         time.Time       `json:"event_end"`
-	Target      uuid.UUID       `json:"target_server"`
-	Parameters  json.RawMessage `json:"parameters,omitempty"`
-	FinalState  string          `json:"final_state"`
-	FinalStatus json.RawMessage `json:"final_status,omitempty"`
+	EventID     uuid.UUID       `json:"event_id" binding:"required,uuid4_rfc4122"`
+	Type        string          `json:"event_type" binding:"required"`
+	Start       time.Time       `json:"event_start" binding:"required,ltfield=End"`
+	End         time.Time       `json:"event_end" binding:"required,gtfield=Start"`
+	Target      uuid.UUID       `json:"target_server" binding:"required,uuid4_rfc4122"`
+	Parameters  json.RawMessage `json:"parameters,omitempty" binding:"-"`
+	FinalState  string          `json:"final_state" binding:"required"`
+	FinalStatus json.RawMessage `json:"final_status,omitempty" binding:"-"`
 }
 
 func (r *Router) getEventByID(c *gin.Context) {
@@ -41,9 +41,9 @@ func (r *Router) getEventByID(c *gin.Context) {
 		models.EventHistoryWhere.EventID.EQ(evtID.String()),
 	).One(c.Request.Context(), r.DB)
 
-	switch err {
-	case nil:
-	case sql.ErrNoRows:
+	switch {
+	case err == nil:
+	case errors.Is(err, sql.ErrNoRows):
 		msg := fmt.Sprintf("no event for id %s", evtID.String())
 		notFoundResponse(c, msg)
 		return
@@ -129,12 +129,6 @@ func (r *Router) getServerEvents(c *gin.Context) {
 		qm.Offset(offset),
 	).All(c.Request.Context(), r.DB)
 
-	r.Logger.With(
-		zap.Error(err),
-		zap.Int("record_count", len(ehs)),
-		zap.String("server_id", srvID.String()),
-	).Debug("retrieved event history")
-
 	if err != nil {
 		metrics.DBError("event history by server")
 		r.Logger.With(
@@ -166,11 +160,6 @@ func (r *Router) getServerEvents(c *gin.Context) {
 
 		evts = append(evts, evt)
 	}
-
-	r.Logger.With(
-		zap.Int("event_count", len(evts)),
-		zap.String("server_id", srvID.String()),
-	).Debug("returning events")
 
 	pd := paginationData{
 		pageCount:  len(evts),
@@ -214,9 +203,9 @@ func (r *Router) updateEvent(c *gin.Context) {
 		models.EventHistoryWhere.EventID.EQ(evt.EventID.String()),
 	).One(ctx, r.DB)
 
-	switch err {
-	case sql.ErrNoRows:
-	case nil:
+	switch {
+	case errors.Is(err, sql.ErrNoRows):
+	case err == nil:
 		if equivalentEvents(evt, existing) {
 			createdResponse(c, existing.EventID)
 			return

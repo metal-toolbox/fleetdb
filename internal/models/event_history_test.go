@@ -197,7 +197,7 @@ func testEventHistoriesExists(t *testing.T) {
 		t.Error(err)
 	}
 
-	e, err := EventHistoryExists(ctx, tx, o.EventID)
+	e, err := EventHistoryExists(ctx, tx, o.EventID, o.EventType, o.TargetServer)
 	if err != nil {
 		t.Errorf("Unable to check if EventHistory exists: %s", err)
 	}
@@ -223,7 +223,7 @@ func testEventHistoriesFind(t *testing.T) {
 		t.Error(err)
 	}
 
-	eventHistoryFound, err := FindEventHistory(ctx, tx, o.EventID)
+	eventHistoryFound, err := FindEventHistory(ctx, tx, o.EventID, o.EventType, o.TargetServer)
 	if err != nil {
 		t.Error(err)
 	}
@@ -648,16 +648,12 @@ func testEventHistoryToOneSetOpServerUsingTargetServerServer(t *testing.T) {
 			t.Error("foreign key was wrong value", a.TargetServer)
 		}
 
-		zero := reflect.Zero(reflect.TypeOf(a.TargetServer))
-		reflect.Indirect(reflect.ValueOf(&a.TargetServer)).Set(zero)
-
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
+		if exists, err := EventHistoryExists(ctx, tx, a.EventID, a.EventType, a.TargetServer); err != nil {
+			t.Fatal(err)
+		} else if !exists {
+			t.Error("want 'a' to exist")
 		}
 
-		if a.TargetServer != x.ID {
-			t.Error("foreign key was wrong value", a.TargetServer, x.ID)
-		}
 	}
 }
 

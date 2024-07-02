@@ -151,7 +151,7 @@ var (
 	eventHistoryAllColumns            = []string{"event_id", "event_type", "event_start", "event_end", "target_server", "parameters", "final_state", "final_status"}
 	eventHistoryColumnsWithoutDefault = []string{"event_id", "event_type", "event_start", "event_end", "target_server", "final_state"}
 	eventHistoryColumnsWithDefault    = []string{"parameters", "final_status"}
-	eventHistoryPrimaryKeyColumns     = []string{"event_id"}
+	eventHistoryPrimaryKeyColumns     = []string{"event_id", "event_type", "target_server"}
 	eventHistoryGeneratedColumns      = []string{}
 )
 
@@ -581,7 +581,7 @@ func (o *EventHistory) SetTargetServerServer(ctx context.Context, exec boil.Cont
 		strmangle.SetParamNames("\"", "\"", 1, []string{"target_server"}),
 		strmangle.WhereClause("\"", "\"", 2, eventHistoryPrimaryKeyColumns),
 	)
-	values := []interface{}{related.ID, o.EventID}
+	values := []interface{}{related.ID, o.EventID, o.EventType, o.TargetServer}
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -625,7 +625,7 @@ func EventHistories(mods ...qm.QueryMod) eventHistoryQuery {
 
 // FindEventHistory retrieves a single record by ID with an executor.
 // If selectCols is empty Find will return all columns.
-func FindEventHistory(ctx context.Context, exec boil.ContextExecutor, eventID string, selectCols ...string) (*EventHistory, error) {
+func FindEventHistory(ctx context.Context, exec boil.ContextExecutor, eventID string, eventType string, targetServer string, selectCols ...string) (*EventHistory, error) {
 	eventHistoryObj := &EventHistory{}
 
 	sel := "*"
@@ -633,10 +633,10 @@ func FindEventHistory(ctx context.Context, exec boil.ContextExecutor, eventID st
 		sel = strings.Join(strmangle.IdentQuoteSlice(dialect.LQ, dialect.RQ, selectCols), ",")
 	}
 	query := fmt.Sprintf(
-		"select %s from \"event_history\" where \"event_id\"=$1", sel,
+		"select %s from \"event_history\" where \"event_id\"=$1 AND \"event_type\"=$2 AND \"target_server\"=$3", sel,
 	)
 
-	q := queries.Raw(query, eventID)
+	q := queries.Raw(query, eventID, eventType, targetServer)
 
 	err := q.Bind(ctx, exec, eventHistoryObj)
 	if err != nil {
@@ -872,7 +872,7 @@ func (o *EventHistory) Delete(ctx context.Context, exec boil.ContextExecutor) (i
 	}
 
 	args := queries.ValuesFromMapping(reflect.Indirect(reflect.ValueOf(o)), eventHistoryPrimaryKeyMapping)
-	sql := "DELETE FROM \"event_history\" WHERE \"event_id\"=$1"
+	sql := "DELETE FROM \"event_history\" WHERE \"event_id\"=$1 AND \"event_type\"=$2 AND \"target_server\"=$3"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
@@ -969,7 +969,7 @@ func (o EventHistorySlice) DeleteAll(ctx context.Context, exec boil.ContextExecu
 // Reload refetches the object from the database
 // using the primary keys with an executor.
 func (o *EventHistory) Reload(ctx context.Context, exec boil.ContextExecutor) error {
-	ret, err := FindEventHistory(ctx, exec, o.EventID)
+	ret, err := FindEventHistory(ctx, exec, o.EventID, o.EventType, o.TargetServer)
 	if err != nil {
 		return err
 	}
@@ -1008,16 +1008,16 @@ func (o *EventHistorySlice) ReloadAll(ctx context.Context, exec boil.ContextExec
 }
 
 // EventHistoryExists checks if the EventHistory row exists.
-func EventHistoryExists(ctx context.Context, exec boil.ContextExecutor, eventID string) (bool, error) {
+func EventHistoryExists(ctx context.Context, exec boil.ContextExecutor, eventID string, eventType string, targetServer string) (bool, error) {
 	var exists bool
-	sql := "select exists(select 1 from \"event_history\" where \"event_id\"=$1 limit 1)"
+	sql := "select exists(select 1 from \"event_history\" where \"event_id\"=$1 AND \"event_type\"=$2 AND \"target_server\"=$3 limit 1)"
 
 	if boil.IsDebug(ctx) {
 		writer := boil.DebugWriterFrom(ctx)
 		fmt.Fprintln(writer, sql)
-		fmt.Fprintln(writer, eventID)
+		fmt.Fprintln(writer, eventID, eventType, targetServer)
 	}
-	row := exec.QueryRowContext(ctx, sql, eventID)
+	row := exec.QueryRowContext(ctx, sql, eventID, eventType, targetServer)
 
 	err := row.Scan(&exists)
 	if err != nil {
@@ -1029,7 +1029,7 @@ func EventHistoryExists(ctx context.Context, exec boil.ContextExecutor, eventID 
 
 // Exists checks if the EventHistory row exists.
 func (o *EventHistory) Exists(ctx context.Context, exec boil.ContextExecutor) (bool, error) {
-	return EventHistoryExists(ctx, exec, o.EventID)
+	return EventHistoryExists(ctx, exec, o.EventID, o.EventType, o.TargetServer)
 }
 
 // Upsert attempts an insert using an executor, and does an update or ignore on conflict.

@@ -1223,7 +1223,7 @@ func (o *Server) AddTargetServerEventHistories(ctx context.Context, exec boil.Co
 				strmangle.SetParamNames("\"", "\"", 1, []string{"target_server"}),
 				strmangle.WhereClause("\"", "\"", 2, eventHistoryPrimaryKeyColumns),
 			)
-			values := []interface{}{o.ID, rel.EventID}
+			values := []interface{}{o.ID, rel.EventID, rel.EventType, rel.TargetServer}
 
 			if boil.IsDebug(ctx) {
 				writer := boil.DebugWriterFrom(ctx)

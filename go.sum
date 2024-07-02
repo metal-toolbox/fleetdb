@@ -560,6 +560,8 @@ github.com/metal-toolbox/rivets v1.0.3 h1:ZW9q8V3vz6VxAczC4eR1YJdl+kapHF3ebVc+4r
 github.com/metal-toolbox/rivets v1.0.3/go.mod h1:EMQJRT1mjIyFRXxvKNaBlz7Z4Sp88rTaGO8W18olN2I=
 github.com/metal-toolbox/rivets v1.0.6 h1:WUFC/Lay3qVOUiswI2Tadz5Zil9gZerupuIPzln9PcE=
 github.com/metal-toolbox/rivets v1.0.6/go.mod h1:JBbPEDevQkQmNHNGi4zalTjqTTMs0/0/xCtx1EKe10c=
+github.com/metal-toolbox/rivets v1.0.9 h1:zQxk5CWay3GCYvpIYemo6QYc0EdwlAw1LKpXMot5k00=
+github.com/metal-toolbox/rivets v1.0.9/go.mod h1:FZ47HrHgezYyY/H7z4Emw9JaGxeFmBJCXGKqy5YW6ag=
 github.com/mfridman/interpolate v0.0.2 h1:pnuTK7MQIxxFz1Gr+rjSIx9u7qVjf5VOoM/u6BbAxPY=
 github.com/mfridman/interpolate v0.0.2/go.mod h1:p+7uk6oE07mpE/Ik1b8EckO0O4ZXiGAfshKBWLUM9Xg=
 github.com/microsoft/go-mssqldb v0.17.0/go.mod h1:OkoNGhGEs8EZqchVTtochlXruEhEOaO4S0d2sB5aeGQ=

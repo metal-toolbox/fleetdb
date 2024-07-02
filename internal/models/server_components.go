@@ -1434,7 +1434,7 @@ func (o *ServerComponent) Insert(ctx context.Context, exec boil.ContextExecutor,
 	}
 
 	if err != nil {
-		return err
+		return errors.Wrap(err, "models: unable to insert into server_components")
 	}
 
 	if !cached {

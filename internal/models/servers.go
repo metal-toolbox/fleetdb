@@ -87,23 +87,26 @@ var ServerWhere = struct {
 
 // ServerRels is where relationship names are stored.
 var ServerRels = struct {
-	Attributes          string
-	ServerComponents    string
-	ServerCredentials   string
-	VersionedAttributes string
+	Attributes                 string
+	TargetServerEventHistories string
+	ServerComponents           string
+	ServerCredentials          string
+	VersionedAttributes        string
 }{
-	Attributes:          "Attributes",
-	ServerComponents:    "ServerComponents",
-	ServerCredentials:   "ServerCredentials",
-	VersionedAttributes: "VersionedAttributes",
+	Attributes:                 "Attributes",
+	TargetServerEventHistories: "TargetServerEventHistories",
+	ServerComponents:           "ServerComponents",
+	ServerCredentials:          "ServerCredentials",
+	VersionedAttributes:        "VersionedAttributes",
 }
 
 // serverR is where relationships are stored.
 type serverR struct {
-	Attributes          AttributeSlice          `boil:"Attributes" json:"Attributes" toml:"Attributes" yaml:"Attributes"`
-	ServerComponents    ServerComponentSlice    `boil:"ServerComponents" json:"ServerComponents" toml:"ServerComponents" yaml:"ServerComponents"`
-	ServerCredentials   ServerCredentialSlice   `boil:"ServerCredentials" json:"ServerCredentials" toml:"ServerCredentials" yaml:"ServerCredentials"`
-	VersionedAttributes VersionedAttributeSlice `boil:"VersionedAttributes" json:"VersionedAttributes" toml:"VersionedAttributes" yaml:"VersionedAttributes"`
+	Attributes                 AttributeSlice          `boil:"Attributes" json:"Attributes" toml:"Attributes" yaml:"Attributes"`
+	TargetServerEventHistories EventHistorySlice       `boil:"TargetServerEventHistories" json:"TargetServerEventHistories" toml:"TargetServerEventHistories" yaml:"TargetServerEventHistories"`
+	ServerComponents           ServerComponentSlice    `boil:"ServerComponents" json:"ServerComponents" toml:"ServerComponents" yaml:"ServerComponents"`
+	ServerCredentials          ServerCredentialSlice   `boil:"ServerCredentials" json:"ServerCredentials" toml:"ServerCredentials" yaml:"ServerCredentials"`
+	VersionedAttributes        VersionedAttributeSlice `boil:"VersionedAttributes" json:"VersionedAttributes" toml:"VersionedAttributes" yaml:"VersionedAttributes"`
 }
 
 // NewStruct creates a new relationship struct
@@ -116,6 +119,13 @@ func (r *serverR) GetAttributes() AttributeSlice {
 		return nil
 	}
 	return r.Attributes
+}
+
+func (r *serverR) GetTargetServerEventHistories() EventHistorySlice {
+	if r == nil {
+		return nil
+	}
+	return r.TargetServerEventHistories
 }
 
 func (r *serverR) GetServerComponents() ServerComponentSlice {
@@ -442,6 +452,20 @@ func (o *Server) Attributes(mods ...qm.QueryMod) attributeQuery {
 	return Attributes(queryMods...)
 }
 
+// TargetServerEventHistories retrieves all the event_history's EventHistories with an executor via target_server column.
+func (o *Server) TargetServerEventHistories(mods ...qm.QueryMod) eventHistoryQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"event_history\".\"target_server\"=?", o.ID),
+	)
+
+	return EventHistories(queryMods...)
+}
+
 // ServerComponents retrieves all the server_component's ServerComponents with an executor.
 func (o *Server) ServerComponents(mods ...qm.QueryMod) serverComponentQuery {
 	var queryMods []qm.QueryMod
@@ -590,6 +614,120 @@ func (serverL) LoadAttributes(ctx context.Context, e boil.ContextExecutor, singu
 					foreign.R = &attributeR{}
 				}
 				foreign.R.Server = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
+// LoadTargetServerEventHistories allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (serverL) LoadTargetServerEventHistories(ctx context.Context, e boil.ContextExecutor, singular bool, maybeServer interface{}, mods queries.Applicator) error {
+	var slice []*Server
+	var object *Server
+
+	if singular {
+		var ok bool
+		object, ok = maybeServer.(*Server)
+		if !ok {
+			object = new(Server)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeServer)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeServer))
+			}
+		}
+	} else {
+		s, ok := maybeServer.(*[]*Server)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeServer)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeServer))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &serverR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &serverR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`event_history`),
+		qm.WhereIn(`event_history.target_server in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load event_history")
+	}
+
+	var resultSlice []*EventHistory
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice event_history")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on event_history")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for event_history")
+	}
+
+	if len(eventHistoryAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.TargetServerEventHistories = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &eventHistoryR{}
+			}
+			foreign.R.TargetServerServer = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.TargetServer {
+				local.R.TargetServerEventHistories = append(local.R.TargetServerEventHistories, foreign)
+				if foreign.R == nil {
+					foreign.R = &eventHistoryR{}
+				}
+				foreign.R.TargetServerServer = local
 				break
 			}
 		}
@@ -1064,6 +1202,59 @@ func (o *Server) RemoveAttributes(ctx context.Context, exec boil.ContextExecutor
 		}
 	}
 
+	return nil
+}
+
+// AddTargetServerEventHistories adds the given related objects to the existing relationships
+// of the server, optionally inserting them as new records.
+// Appends related to o.R.TargetServerEventHistories.
+// Sets related.R.TargetServerServer appropriately.
+func (o *Server) AddTargetServerEventHistories(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*EventHistory) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.TargetServer = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"event_history\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"target_server"}),
+				strmangle.WhereClause("\"", "\"", 2, eventHistoryPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.EventID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.TargetServer = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &serverR{
+			TargetServerEventHistories: related,
+		}
+	} else {
+		o.R.TargetServerEventHistories = append(o.R.TargetServerEventHistories, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &eventHistoryR{
+				TargetServerServer: o,
+			}
+		} else {
+			rel.R.TargetServerServer = o
+		}
+	}
 	return nil
 }
 

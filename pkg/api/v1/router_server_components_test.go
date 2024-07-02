@@ -256,7 +256,7 @@ func TestIntegrationServerGetComponents(t *testing.T) {
 		{
 			"component Versioned Attributes is returned as expected",
 			servers[1].UUID,
-			3,
+			1,
 			fleetdbapi.ServerComponent{
 				ServerUUID:        servers[1].UUID,
 				Name:              "My Lucky Fin",

@@ -13,27 +13,24 @@ import (
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 )
 
-func TestGetEventByID(t *testing.T) {
+func TestGetHistoryByID(t *testing.T) {
 	s := serverTest(t)
 	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
 		s.Client.SetToken(authToken)
 
-		evtID := uuid.MustParse(dbtools.FixtureEventHistories[0].EventID)
-		evt, _, err := s.Client.GetEventByID(ctx, evtID)
+		evts, _, err := s.Client.GetHistoryByID(ctx, dbtools.FixtureEventHistoryRelatedID)
 		if !expectError {
-			// we should get back the fixture data for the inventory server
-			// we don't care about the name of the server
+			// we should get back the fixture data
 			require.NoError(t, err)
-			require.NotNil(t, evt)
-			require.Equal(t, dbtools.FixtureEventHistoryServer.ID, evt.Target.String())
-			require.Equal(t, "succeeded", evt.FinalState)
+			require.Len(t, evts, 3)
 		}
 		return err
 	})
 
 	// event id not found
 	bogus := uuid.New()
-	_, _, err := s.Client.GetEventByID(context.Background(), bogus)
+	_, _, err := s.Client.GetHistoryByID(context.Background(), bogus)
+	require.Error(t, err)
 	se := &fleetdbapi.ServerError{}
 	require.ErrorAs(t, err, se)
 	expStr := fmt.Sprintf("no event for id %s", bogus.String())
@@ -49,7 +46,7 @@ func TestGetServerEvents(t *testing.T) {
 		evts, _, err := s.Client.GetServerEvents(ctx, srvID, nil)
 		if !expErr {
 			require.NoError(t, err)
-			require.Equal(t, 3, len(evts))
+			require.Len(t, evts, 6)
 		}
 		return err
 	})
@@ -93,4 +90,18 @@ func TestUpdateEvent(t *testing.T) {
 	expStr := fmt.Sprintf("id in use: %s", evt.EventID.String())
 	require.Equal(t, 400, se.StatusCode)
 	require.Equal(t, expStr, se.Message)
+
+	// explicitly test adding 2 events with the same UUID and target with different types
+	// this is exactly the "composite condition" case from ConditionOrc
+	relatedEvt := &fleetdbapi.Event{
+		EventID:    evt.EventID,
+		Type:       "related type",
+		Start:      evt.Start,
+		End:        evt.End,
+		Target:     evt.Target,
+		FinalState: "succeeded",
+	}
+
+	_, err = s.Client.UpdateEvent(context.Background(), relatedEvt)
+	require.NoError(t, err)
 }

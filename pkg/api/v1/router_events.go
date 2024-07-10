@@ -30,24 +30,19 @@ type Event struct {
 	FinalStatus json.RawMessage `json:"final_status,omitempty" binding:"-"`
 }
 
-func (r *Router) getEventByID(c *gin.Context) {
+func (r *Router) getHistoryByConditionID(c *gin.Context) {
 	evtID, err := uuid.Parse(c.Param("evtID"))
 	if err != nil {
 		badRequestResponse(c, "failed to parse event id", err)
 		return
 	}
 
-	eh, err := models.EventHistories(
+	// we expect a small number of events with the same id, O(5-10)
+	ehs, err := models.EventHistories(
 		models.EventHistoryWhere.EventID.EQ(evtID.String()),
-	).One(c.Request.Context(), r.DB)
+	).All(c.Request.Context(), r.DB)
 
-	switch {
-	case err == nil:
-	case errors.Is(err, sql.ErrNoRows):
-		msg := fmt.Sprintf("no event for id %s", evtID.String())
-		notFoundResponse(c, msg)
-		return
-	default:
+	if err != nil {
 		metrics.DBError("fetching event history")
 		r.Logger.With(
 			zap.Error(err),
@@ -57,24 +52,38 @@ func (r *Router) getEventByID(c *gin.Context) {
 		return
 	}
 
-	evt := &Event{
-		EventID:    uuid.MustParse(eh.EventID),
-		Type:       eh.EventType,
-		Start:      eh.EventStart,
-		End:        eh.EventEnd,
-		Target:     uuid.MustParse(eh.TargetServer),
-		FinalState: eh.FinalState,
+	if len(ehs) == 0 {
+		msg := fmt.Sprintf("no event for id %s", evtID.String())
+		notFoundResponse(c, msg)
+		return
 	}
 
-	if eh.Parameters.Valid {
-		evt.Parameters = eh.Parameters.JSON
+	events := make([]*Event, 0, len(ehs))
+	for _, eh := range ehs {
+		evt := &Event{
+			EventID:    uuid.MustParse(eh.EventID),
+			Type:       eh.EventType,
+			Start:      eh.EventStart,
+			End:        eh.EventEnd,
+			Target:     uuid.MustParse(eh.TargetServer),
+			FinalState: eh.FinalState,
+		}
+
+		if eh.Parameters.Valid {
+			evt.Parameters = eh.Parameters.JSON
+		}
+
+		if eh.FinalStatus.Valid {
+			evt.FinalStatus = eh.FinalStatus.JSON
+		}
+		events = append(events, evt)
 	}
 
-	if eh.FinalStatus.Valid {
-		evt.FinalStatus = eh.FinalStatus.JSON
+	pd := paginationData{
+		pageCount: len(events),
 	}
 
-	itemResponse(c, evt)
+	listResponse(c, events, pd)
 }
 
 func (r *Router) getServerEvents(c *gin.Context) {
@@ -124,7 +133,7 @@ func (r *Router) getServerEvents(c *gin.Context) {
 
 	ehs, err := models.EventHistories(
 		models.EventHistoryWhere.TargetServer.EQ(srvID.String()),
-		qm.OrderBy("event_end DESC"),
+		qm.OrderBy("event_id, event_end DESC"),
 		qm.Limit(limit),
 		qm.Offset(offset),
 	).All(c.Request.Context(), r.DB)
@@ -201,6 +210,8 @@ func (r *Router) updateEvent(c *gin.Context) {
 	// shortcut if we've seen this event before already
 	existing, err := models.EventHistories(
 		models.EventHistoryWhere.EventID.EQ(evt.EventID.String()),
+		models.EventHistoryWhere.EventType.EQ(evt.Type),
+		models.EventHistoryWhere.TargetServer.EQ(evt.Target.String()),
 	).One(ctx, r.DB)
 
 	switch {

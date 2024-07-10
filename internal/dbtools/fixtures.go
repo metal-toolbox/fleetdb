@@ -98,8 +98,9 @@ var (
 	FixtureBiosConfigComponents []*models.BiosConfigComponent
 	FixtureBiosConfigSettings   [][]*models.BiosConfigSetting
 
-	FixtureEventHistoryServer *models.Server
-	FixtureEventHistories     []*models.EventHistory
+	FixtureEventHistoryServer    *models.Server
+	FixtureEventHistoryRelatedID uuid.UUID
+	FixtureEventHistories        []*models.EventHistory
 )
 
 func addFixtures(t *testing.T) error {
@@ -734,6 +735,8 @@ func setupEventHistoryFixtures(ctx context.Context, db *sqlx.DB) error {
 		return errors.Wrap(err, "event history server fixture")
 	}
 
+	FixtureEventHistoryRelatedID = uuid.New()
+
 	FixtureEventHistories = []*models.EventHistory{
 		{
 			EventID:      uuid.New().String(),
@@ -760,6 +763,36 @@ func setupEventHistoryFixtures(ctx context.Context, db *sqlx.DB) error {
 			EventType:    "test event",
 			EventStart:   time.Now().Add(-1 * time.Hour),
 			EventEnd:     time.Now().Add(-30 * time.Minute),
+			TargetServer: FixtureEventHistoryServer.ID,
+			Parameters:   null.JSONFrom([]byte(`{"msg": "test event"}`)),
+			FinalState:   "succeeded",
+			FinalStatus:  null.JSONFrom([]byte(`{"status": "some status"}`)),
+		},
+		{
+			EventID:      FixtureEventHistoryRelatedID.String(),
+			EventType:    "test event",
+			EventStart:   time.Now().Add(-1 * time.Hour),
+			EventEnd:     time.Now().Add(-50 * time.Minute),
+			TargetServer: FixtureEventHistoryServer.ID,
+			Parameters:   null.JSONFrom([]byte(`{"msg": "test event"}`)),
+			FinalState:   "succeeded",
+			FinalStatus:  null.JSONFrom([]byte(`{"status": "some status"}`)),
+		},
+		{
+			EventID:      FixtureEventHistoryRelatedID.String(),
+			EventType:    "test event 2",
+			EventStart:   time.Now().Add(-1 * time.Hour),
+			EventEnd:     time.Now().Add(-40 * time.Minute),
+			TargetServer: FixtureEventHistoryServer.ID,
+			Parameters:   null.JSONFrom([]byte(`{"msg": "test event"}`)),
+			FinalState:   "succeeded",
+			FinalStatus:  null.JSONFrom([]byte(`{"status": "some status"}`)),
+		},
+		{
+			EventID:      FixtureEventHistoryRelatedID.String(),
+			EventType:    "test event 3",
+			EventStart:   time.Now().Add(-1 * time.Hour),
+			EventEnd:     time.Now().Add(-50 * time.Minute),
 			TargetServer: FixtureEventHistoryServer.ID,
 			Parameters:   null.JSONFrom([]byte(`{"msg": "test event"}`)),
 			FinalState:   "succeeded",

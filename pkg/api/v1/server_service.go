@@ -76,7 +76,7 @@ type ClientInterface interface {
 	GetServerInventory(context.Context, uuid.UUID, bool) (*rivets.Server, *ServerResponse, error)
 	SetServerInventory(context.Context, uuid.UUID, *rivets.Server, bool) (*ServerResponse, error)
 
-	GetEventByID(context.Context, uuid.UUID) (*Event, *ServerResponse, error)
+	GetHistoryByID(context.Context, uuid.UUID) (*Event, *ServerResponse, error)
 	GetServerEvents(context.Context, uuid.UUID) ([]*Event, *ServerResponse, error)
 	UpdateEvent(context.Context, *Event) (*ServerResponse, error)
 
@@ -488,17 +488,17 @@ func (c *Client) SetServerInventory(ctx context.Context, srvID uuid.UUID,
 	return c.put(ctx, path, srv)
 }
 
-// GetEventByID returns the details of the event with the given ID
-func (c *Client) GetEventByID(ctx context.Context, evtID uuid.UUID) (*Event, *ServerResponse, error) {
-	evt := &Event{}
-	r := &ServerResponse{Record: evt}
+// GetHistoryByID returns the details of the event with the given ID
+func (c *Client) GetHistoryByID(ctx context.Context, evtID uuid.UUID) ([]*Event, *ServerResponse, error) {
+	evts := &[]*Event{}
+	r := &ServerResponse{Records: evts}
 	path := fmt.Sprintf("events/%s", evtID.String())
 
 	if err := c.get(ctx, path, r); err != nil {
 		return nil, nil, err
 	}
 
-	return evt, r, nil
+	return *evts, r, nil
 }
 
 // GetServerEvents returns the most recent events for the given server ID

@@ -147,9 +147,9 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 
 	srvEvents := rg.Group("/events")
 	{
-		srvEvents.GET("/:evtID", amw.AuthRequired(readScopes("events")), r.getHistoryByConditionID)
+		srvEvents.GET("/:evtID", amw.AuthRequired(readScopes("server")), r.getHistoryByConditionID)
 		srvEvents.GET("/by-server/:srvID", amw.AuthRequired(readScopes("server")), r.getServerEvents)
-		srvEvents.PUT("/:evtID", amw.AuthRequired(updateScopes("events")), r.updateEvent)
+		srvEvents.PUT("/:evtID", amw.AuthRequired(updateScopes("server")), r.updateEvent)
 	}
 
 	// /server-bios-config-sets

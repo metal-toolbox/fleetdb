@@ -288,10 +288,6 @@ func (r *Router) updateServerSkuTransaction(ctx context.Context, sku *models.Ser
 	return sku.ID, tx.Commit()
 }
 
-// TODO; ADD COMMENT TO PR
-// These functions are why I believe C Macros are a net benefit. Using generics wouldnt work without also using reflection to find the relation structs.
-// I could also be doing to much work, and maybe there is a simpler way of doing this?
-
 func (r *Router) updateServerSkuAuxDevices(ctx context.Context, tx *sql.Tx, sku *models.ServerSku, oldSku *models.ServerSku) error {
 	var oldAuxDevices []*models.ServerSkuAuxDevice
 	var auxDevices []*models.ServerSkuAuxDevice

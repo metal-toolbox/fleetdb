@@ -21,6 +21,7 @@ type ServerListParams struct {
 	PaginationParams             *PaginationParams
 }
 
+// setQuery implements the queryParams interface
 func (p *ServerListParams) setQuery(q url.Values) {
 	if p == nil {
 		return

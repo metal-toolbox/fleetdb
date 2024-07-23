@@ -8,6 +8,7 @@ DOCKER_IMAGE := "ghcr.io/metal-toolbox/fleetdb"
 PROJECT_NAME := fleetdb
 REPO := "https://github.com/metal-toolbox/fleetdb.git"
 SQLBOILER := v4.15.0
+SQLBOILER_DRIVER := v4.0.0
 
 ## run all tests
 test: | unit-test integration-test
@@ -73,7 +74,7 @@ dev-database: | vendor
 	@FLEETDB_CRDB_URI="${DEV_DB}" go run main.go migrate up
 
 ## setup test database
-test-database: | vendor
+test-database: | vendor docker-up
 	@cockroach sql --insecure -e "drop database if exists fleetdb_test"
 	@cockroach sql --insecure -e "create database fleetdb_test"
 	@FLEETDB_CRDB_URI="${TEST_DB}" go run main.go migrate up
@@ -88,12 +89,11 @@ fresh-test: clean
 ## install sqlboiler
 install-sqlboiler:
 	go install github.com/volatiletech/sqlboiler/v4@${SQLBOILER}
+	go install github.com/metal-toolbox/sqlboiler-crdb-fleetdb/v4@${SQLBOILER_DRIVER}
 
-## boil sql
-boil: install-sqlboiler
-	make docker-up
-	make test-database
-	sqlboiler crdb --add-soft-deletes
+## boil sql, if you get this error (server closed the connection), try again.
+boil: install-sqlboiler test-database
+	sqlboiler crdb-fleetdb --add-soft-deletes
 
 ## log into database
 psql:

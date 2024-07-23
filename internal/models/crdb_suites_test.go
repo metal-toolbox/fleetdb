@@ -22,6 +22,11 @@ func TestUpsert(t *testing.T) {
 	t.Run("ServerComponents", testServerComponentsUpsert)
 	t.Run("ServerCredentialTypes", testServerCredentialTypesUpsert)
 	t.Run("ServerCredentials", testServerCredentialsUpsert)
+	t.Run("ServerSkus", testServerSkusUpsert)
+	t.Run("ServerSkuAuxDevices", testServerSkuAuxDevicesUpsert)
+	t.Run("ServerSkuDisks", testServerSkuDisksUpsert)
+	t.Run("ServerSkuMemories", testServerSkuMemoriesUpsert)
+	t.Run("ServerSkuNics", testServerSkuNicsUpsert)
 	t.Run("Servers", testServersUpsert)
 	t.Run("VersionedAttributes", testVersionedAttributesUpsert)
 }

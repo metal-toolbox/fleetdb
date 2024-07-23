@@ -3,6 +3,7 @@ package fleetdbapi
 import (
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
@@ -37,7 +38,20 @@ const (
 )
 
 // appendOperatorQueryMod is a helper function to build qm.QueryMods.
-func appendOperatorQueryMod(mods []qm.QueryMod, comparitor OperatorComparitorType, name, value string) []qm.QueryMod {
+func appendOperatorQueryMod[T []int64 | string](mods []qm.QueryMod, comparitor OperatorComparitorType, name string, v T) []qm.QueryMod {
+	var value string
+	if s, ok := any(v).(string); ok {
+		value = s
+	} else if i, ok := any(v).([]int64); ok {
+		// This is a work around so ints as params be ignored by default (empty list). Array with 1 item is something to use. With strings i can use empty string. I cant use -1 for ints, might be something in the future that uses negatives.
+		// I think we should also have strings be arrays. So we can query on empty strings, and it makes creating queries much simple when searching for multiple terms.
+		if len(i) > 0 {
+			value = strconv.FormatInt(i[0], 10)
+		} else {
+			value = ""
+		}
+	}
+
 	if value != "" {
 		switch comparitor {
 		case OperatorComparitorLike:
@@ -49,6 +63,12 @@ func appendOperatorQueryMod(mods []qm.QueryMod, comparitor OperatorComparitorTyp
 			mods = append(mods, mod)
 		case OperatorComparitorNotEqual:
 			mod := qm.Where(fmt.Sprintf("%s != ?", name), value)
+			mods = append(mods, mod)
+		case OperatorComparitorGreaterThan:
+			mod := qm.Where(fmt.Sprintf("%s > ?", name), value)
+			mods = append(mods, mod)
+		case OperatorComparitorLessThan:
+			mod := qm.Where(fmt.Sprintf("%s < ?", name), value)
 			mods = append(mods, mod)
 		case OperatorComparitorEqual:
 			fallthrough

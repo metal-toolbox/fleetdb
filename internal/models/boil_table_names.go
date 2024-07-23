@@ -20,6 +20,11 @@ var TableNames = struct {
 	ServerComponents         string
 	ServerCredentialTypes    string
 	ServerCredentials        string
+	ServerSku                string
+	ServerSkuAuxDevice       string
+	ServerSkuDisk            string
+	ServerSkuMemory          string
+	ServerSkuNic             string
 	Servers                  string
 	VersionedAttributes      string
 }{
@@ -39,6 +44,11 @@ var TableNames = struct {
 	ServerComponents:         "server_components",
 	ServerCredentialTypes:    "server_credential_types",
 	ServerCredentials:        "server_credentials",
+	ServerSku:                "server_sku",
+	ServerSkuAuxDevice:       "server_sku_aux_device",
+	ServerSkuDisk:            "server_sku_disk",
+	ServerSkuMemory:          "server_sku_memory",
+	ServerSkuNic:             "server_sku_nic",
 	Servers:                  "servers",
 	VersionedAttributes:      "versioned_attributes",
 }

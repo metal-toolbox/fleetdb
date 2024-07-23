@@ -17,7 +17,7 @@ type BiosConfigSet struct {
 	UpdatedAt  time.Time             `json:"updated_at"`
 }
 
-// toDBModelBiosConfigSet converts a BiosConfigSet into a models.BiosConfigSet (created by sqlboiler)
+// toDBModelBiosConfigSet converts a BiosConfigSet into a models.BiosConfigSet
 func (cs *BiosConfigSet) toDBModelBiosConfigSet() *models.BiosConfigSet {
 	dbcs := &models.BiosConfigSet{
 		Name:    cs.Name,
@@ -28,8 +28,23 @@ func (cs *BiosConfigSet) toDBModelBiosConfigSet() *models.BiosConfigSet {
 	return dbcs
 }
 
-// fromDBModelBiosConfigSet converts a models.BiosConfigSet (created by sqlboiler) into a BiosConfigSet
-func (cs *BiosConfigSet) fromDBModelBiosConfigSet(set *models.BiosConfigSet) error {
+// toDBModelBiosConfigSetDeep converts a BiosConfigSet into a models.BiosConfigSet. It also includes all relations, doing a deep copy
+func (cs *BiosConfigSet) toDBModelBiosConfigSetDeep() *models.BiosConfigSet {
+	dbcs := cs.toDBModelBiosConfigSet()
+
+	if len(cs.Components) > 0 {
+		dbcs.R = dbcs.R.NewStruct()
+
+		for _, component := range cs.Components {
+			dbcs.R.FKBiosConfigSetBiosConfigComponents = append(dbcs.R.FKBiosConfigSetBiosConfigComponents, component.toDBModelBiosConfigComponentDeep(dbcs))
+		}
+	}
+
+	return dbcs
+}
+
+// fromDBModelBiosConfigSet converts a models.BiosConfigSet into a BiosConfigSet
+func (cs *BiosConfigSet) fromDBModelBiosConfigSet(set *models.BiosConfigSet) {
 	cs.ID = set.ID
 	cs.Name = set.Name
 	cs.Version = set.Version
@@ -42,6 +57,4 @@ func (cs *BiosConfigSet) fromDBModelBiosConfigSet(set *models.BiosConfigSet) err
 			cs.Components[i].fromDBModelBiosConfigComponent(dbComponent)
 		}
 	}
-
-	return nil
 }

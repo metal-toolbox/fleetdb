@@ -67,6 +67,13 @@ docker-down:
 docker-clean:
 	@docker-compose -f quickstart.yml down --volumes
 
+## start if not started, and wait for database to be live
+docker-up-and-wait:
+	@cockroach sql --insecure -e "select 1" > /dev/null 2>&1 || (echo "Attempting to start server..." && docker-compose -f quickstart.yml up -d crdb)
+	@for i in 5 4 3 2 1; do \
+		cockroach sql --insecure -e "select 1" > /dev/null 2>&1 && break || (echo "Waiting for cockroach server to be live. $$i retries remaining..." && sleep 1); \
+	done
+
 ## setup devel database
 dev-database: | vendor
 	@cockroach sql --insecure -e "drop database if exists fleetdb"
@@ -74,7 +81,7 @@ dev-database: | vendor
 	@FLEETDB_CRDB_URI="${DEV_DB}" go run main.go migrate up
 
 ## setup test database
-test-database: | vendor docker-up
+test-database: | vendor docker-up-and-wait
 	@cockroach sql --insecure -e "drop database if exists fleetdb_test"
 	@cockroach sql --insecure -e "create database fleetdb_test"
 	@FLEETDB_CRDB_URI="${TEST_DB}" go run main.go migrate up
@@ -88,12 +95,12 @@ fresh-test: clean
 
 ## install sqlboiler
 install-sqlboiler:
-	go install github.com/volatiletech/sqlboiler/v4@${SQLBOILER}
-	go install github.com/metal-toolbox/sqlboiler-crdb-fleetdb/v4@${SQLBOILER_DRIVER}
+	@go install github.com/volatiletech/sqlboiler/v4@${SQLBOILER}
+	@go install github.com/metal-toolbox/sqlboiler-crdb-fleetdb/v4@${SQLBOILER_DRIVER}
 
-## boil sql, if you get this error (server closed the connection), try again.
+## boil sql
 boil: install-sqlboiler test-database
-	sqlboiler crdb-fleetdb --add-soft-deletes
+	@sqlboiler crdb-fleetdb --add-soft-deletes
 
 ## log into database
 psql:

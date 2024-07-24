@@ -89,6 +89,7 @@ func initLogger() *zap.SugaredLogger {
 	}
 
 	log := zap.Must(logCfg.Build())
+	_ = zap.ReplaceGlobals(log) // make the logger accessible globally by zap.L() (sugared with zap.S())
 	return log.Sugar()
 }
 

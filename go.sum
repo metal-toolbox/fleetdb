@@ -509,6 +509,8 @@ github.com/mattn/go-sqlite3 v1.14.22/go.mod h1:Uh1q+B4BYcTPb+yiD3kU8Ct7aC0hY9fxU
 github.com/matttproud/golang_protobuf_extensions v1.0.1/go.mod h1:D8He9yQNgCq6Z5Ld7szi9bcBfOoFv/3dc6xSMkL2PC0=
 github.com/metal-toolbox/rivets v1.0.9 h1:zQxk5CWay3GCYvpIYemo6QYc0EdwlAw1LKpXMot5k00=
 github.com/metal-toolbox/rivets v1.0.9/go.mod h1:FZ47HrHgezYyY/H7z4Emw9JaGxeFmBJCXGKqy5YW6ag=
+github.com/metal-toolbox/rivets v1.2.0 h1:QhN3tWH7NqKDqwRDYylxukw0mNQ/FkyvBYkwS0CJULE=
+github.com/metal-toolbox/rivets v1.2.0/go.mod h1:i78a1x0w2uNyMlvUgyO6ST552u9wV2Xa4+A73oA4WJY=
 github.com/mfridman/interpolate v0.0.2 h1:pnuTK7MQIxxFz1Gr+rjSIx9u7qVjf5VOoM/u6BbAxPY=
 github.com/mfridman/interpolate v0.0.2/go.mod h1:p+7uk6oE07mpE/Ik1b8EckO0O4ZXiGAfshKBWLUM9Xg=
 github.com/microsoft/go-mssqldb v0.17.0/go.mod h1:OkoNGhGEs8EZqchVTtochlXruEhEOaO4S0d2sB5aeGQ=

@@ -4,6 +4,7 @@ package inventory
 
 import (
 	"context"
+	"encoding/json"
 	"testing"
 
 	"github.com/bmc-toolbox/common"
@@ -275,6 +276,72 @@ func TestComposeComponentRecords(t *testing.T) {
 		// validate that we can get all the component data we expect
 		comps, err := componentsFromDatabase(context.TODO(), db, inband, srvUUID.String())
 		require.NoError(t, err)
+		require.Len(t, comps, 1)
+	})
+	t.Run("nonconforming existing data", func(t *testing.T) {
+		// write an attribute record that doesn't have rivets.ComponentAttribute as a basis
+		srvUUID := mustCreateServerRecord(t, db, "bad-attribute-json")
+
+		var inband bool
+		attributeNS := getAttributeNamespace(inband)
+
+		slug := common.SlugBIOS
+
+		orig := &rivets.Component{
+			// this can be any real slug, but *must* be a real slug, otherwise
+			// we will panic on the slug -> type-id lookup.
+			Name:   slug,
+			Vendor: "the-vendor",
+			Serial: "some-serial-number",
+			Firmware: &common.Firmware{
+				Installed: "old-version",
+			},
+			Status: &common.Status{
+				State:  "OK",
+				Health: "decent",
+			},
+		}
+
+		tx := db.MustBegin()
+		err := composeRecords(context.TODO(), tx, orig, inband, srvUUID.String())
+		require.NoError(t, err)
+		_ = tx.Commit()
+
+		// add the crazy attribute record
+		compRecs, err := models.ServerComponents(
+			models.ServerComponentWhere.Name.EQ(null.StringFrom(slug)),
+			models.ServerComponentWhere.ServerID.EQ(srvUUID.String()),
+		).All(context.TODO(), db)
+
+		require.NoError(t, err)
+		require.Len(t, compRecs, 1)
+		// get id and inject attributes
+		compID := compRecs[0].ID
+		badData := []map[string]string{
+			{
+				"msg": "this is not a rivets component attributes structure",
+			},
+			{
+				"msg": "this is also not a rivets component attributes structure",
+			},
+		}
+		payload, err := json.Marshal(badData)
+		require.NoError(t, err)
+
+		err = updateAnyAttribute(context.TODO(), db, false, compID, attributeNS, payload)
+		require.NoError(t, err)
+
+		// be pedantic and validate that there is an attribute record
+		attrs, err := models.Attributes(
+			models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(compID)),
+			models.AttributeWhere.Namespace.EQ(attributeNS),
+		).All(context.TODO(), db)
+		require.NoError(t, err)
+		require.Len(t, attrs, 1)
+
+		// now ask for this component via the API
+		comps, err := componentsFromDatabase(context.TODO(), db, inband, srvUUID.String())
+		require.NoError(t, err, "received error with type %T", err)
 		require.Len(t, comps, 1)
 	})
 }

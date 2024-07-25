@@ -3,6 +3,7 @@ package inventory
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 
 	"github.com/bmc-toolbox/common"
 	rivets "github.com/metal-toolbox/rivets/types"
@@ -10,6 +11,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"go.uber.org/zap"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/metrics"
@@ -211,10 +213,21 @@ func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 
 	var comps []*rivets.Component
 
+	var ute *json.UnmarshalTypeError
 	for _, rec := range records {
 		// attributes/firmware/status might not be stored because it was missing in the original data.
 		attr, err := retrieveComponentAttributes(ctx, exec, rec.ID, getAttributeNamespace(inband))
-		if err != nil {
+		switch {
+		case err == nil, errors.Is(err, sql.ErrNoRows):
+		case errors.As(err, &ute):
+			// attributes are a bit of the wild-west. if the JSON we stored doesn't deserialize
+			// cleanly into an attributes structure, just complain about it but don't stop.
+			zap.L().With(
+				zap.String("server.id", deviceID),
+				zap.String("component.id", rec.ID),
+				zap.String("component.type", rec.Name.String),
+			).Warn("bad json attributes")
+		default:
 			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" attributes"+":"+err.Error())
 		}
 

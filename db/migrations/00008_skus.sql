@@ -21,6 +21,8 @@ CREATE TABLE public.server_sku (
 CREATE TABLE public.server_sku_disk (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     sku_id UUID NOT NULL REFERENCES public.server_sku(id) ON DELETE CASCADE,
+    vendor STRING NOT NULL,
+    model STRING NOT NULL,
     bytes BIGINT NOT NULL,
     protocol STRING NOT NULL, -- SATA vs NVMe vs PCIE
     count INTEGER NOT NULL,
@@ -31,6 +33,8 @@ CREATE TABLE public.server_sku_disk (
 CREATE TABLE public.server_sku_memory (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     sku_id UUID NOT NULL REFERENCES public.server_sku(id) ON DELETE CASCADE,
+    vendor STRING NOT NULL,
+    model STRING NOT NULL,
     bytes BIGINT NOT NULL,
     count INTEGER NOT NULL,
     created_at TIMESTAMPTZ NULL,
@@ -40,6 +44,8 @@ CREATE TABLE public.server_sku_memory (
 CREATE TABLE public.server_sku_nic (
     id UUID NOT NULL PRIMARY KEY DEFAULT gen_random_uuid(),
     sku_id UUID NOT NULL REFERENCES public.server_sku(id) ON DELETE CASCADE,
+    vendor STRING NOT NULL,
+    model STRING NOT NULL,
     port_bandwidth BIGINT NOT NULL,
     port_count INTEGER NOT NULL,
     count INTEGER NOT NULL,

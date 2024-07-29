@@ -1,37 +1,31 @@
 package fleetdbapi
 
 import (
-	"time"
-
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
 // ServerSku represents a SKU for a Server
 type ServerSku struct {
-	ID               string               `json:"id"`
-	Name             string               `json:"name" binding:"required"`
-	Version          string               `json:"version" binding:"required"`
-	Vendor           string               `json:"vendor" binding:"required"`
-	Chassis          string               `json:"chassis" binding:"required"`
-	BMCModel         string               `json:"bmc_model" binding:"required"`
-	MotherboardModel string               `json:"motherboard_model" binding:"required"`
-	CPUVendor        string               `json:"cpu_vendor" binding:"required"`
-	CPUModel         string               `json:"cpu_model" binding:"required"`
-	CPUCores         int64                `json:"cpu_cores" binding:"required"`
-	CPUHertz         int64                `json:"cpu_hertz" binding:"required"`
-	CPUCount         int64                `json:"cpu_count" binding:"required"`
-	AuxDevices       []ServerSkuAuxDevice `json:"aux_devices" binding:"required"`
-	Disks            []ServerSkuDisk      `json:"disks" binding:"required"`
-	Memory           []ServerSkuMemory    `json:"memory" binding:"required"`
-	Nics             []ServerSkuNic       `json:"nics" binding:"required"`
-	CreatedAt        time.Time            `json:"created_at,omitempty"`
-	UpdatedAt        time.Time            `json:"updated_at,omitempty"`
+	Name             string      `json:"name" binding:"required"`
+	Version          string      `json:"version" binding:"required"`
+	Vendor           string      `json:"vendor" binding:"required"`
+	Chassis          string      `json:"chassis" binding:"required"`
+	BMCModel         string      `json:"bmc_model" binding:"required"`
+	MotherboardModel string      `json:"motherboard_model" binding:"required"`
+	CPUVendor        string      `json:"cpu_vendor" binding:"required"`
+	CPUModel         string      `json:"cpu_model" binding:"required"`
+	CPUCores         int64       `json:"cpu_cores" binding:"required"`
+	CPUHertz         int64       `json:"cpu_hertz" binding:"required"`
+	CPUCount         int64       `json:"cpu_count" binding:"required"`
+	AuxDevices       []AuxDevice `json:"aux_devices" binding:"required"`
+	Disks            []Disk      `json:"disks" binding:"required"`
+	Memory           []Memory    `json:"memory" binding:"required"`
+	Nics             []Nic       `json:"nics" binding:"required"`
 }
 
 // toDBModelServerSku converts a ServerSku into a models.ServerSku
 func (sku *ServerSku) toDBModelServerSku() *models.ServerSku {
 	model := &models.ServerSku{
-		ID:               sku.ID,
 		Name:             sku.Name,
 		Version:          sku.Version,
 		Vendor:           sku.Vendor,
@@ -77,7 +71,6 @@ func (sku *ServerSku) toDBModelServerSkuDeep() *models.ServerSku {
 
 // fromDBModelServerSku converts a models.ServerSku into a ServerSku
 func (sku *ServerSku) fromDBModelServerSku(model *models.ServerSku) {
-	sku.ID = model.ID
 	sku.Name = model.Name
 	sku.Version = model.Version
 	sku.Vendor = model.Vendor
@@ -89,13 +82,11 @@ func (sku *ServerSku) fromDBModelServerSku(model *models.ServerSku) {
 	sku.CPUCores = model.CPUCores
 	sku.CPUHertz = model.CPUHertz
 	sku.CPUCount = model.CPUCount
-	sku.CreatedAt = model.CreatedAt.Time
-	sku.UpdatedAt = model.UpdatedAt.Time
 
 	if model.R != nil {
 		diskCount := len(model.R.SkuServerSkuDisks)
 		if diskCount > 0 {
-			sku.Disks = make([]ServerSkuDisk, diskCount)
+			sku.Disks = make([]Disk, diskCount)
 			for i, disk := range model.R.SkuServerSkuDisks {
 				sku.Disks[i].fromDBModelServerSkuDisk(disk)
 			}
@@ -103,7 +94,7 @@ func (sku *ServerSku) fromDBModelServerSku(model *models.ServerSku) {
 
 		memoryCount := len(model.R.SkuServerSkuMemories)
 		if memoryCount > 0 {
-			sku.Memory = make([]ServerSkuMemory, memoryCount)
+			sku.Memory = make([]Memory, memoryCount)
 			for i, memory := range model.R.SkuServerSkuMemories {
 				sku.Memory[i].fromDBModelServerSkuMemory(memory)
 			}
@@ -111,7 +102,7 @@ func (sku *ServerSku) fromDBModelServerSku(model *models.ServerSku) {
 
 		nicCount := len(model.R.SkuServerSkuNics)
 		if nicCount > 0 {
-			sku.Nics = make([]ServerSkuNic, nicCount)
+			sku.Nics = make([]Nic, nicCount)
 			for i, nic := range model.R.SkuServerSkuNics {
 				sku.Nics[i].fromDBModelServerSkuNic(nic)
 			}
@@ -119,7 +110,7 @@ func (sku *ServerSku) fromDBModelServerSku(model *models.ServerSku) {
 
 		auxDeviceCount := len(model.R.SkuServerSkuAuxDevices)
 		if auxDeviceCount > 0 {
-			sku.AuxDevices = make([]ServerSkuAuxDevice, auxDeviceCount)
+			sku.AuxDevices = make([]AuxDevice, auxDeviceCount)
 			for i, auxDevice := range model.R.SkuServerSkuAuxDevices {
 				sku.AuxDevices[i].fromDBModelServerSkuAuxDevice(auxDevice)
 			}

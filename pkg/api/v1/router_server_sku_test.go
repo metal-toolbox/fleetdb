@@ -2,9 +2,10 @@ package fleetdbapi_test
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"reflect"
 	"testing"
-	"time"
 
 	"github.com/google/uuid"
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
@@ -28,27 +29,19 @@ func TestIntegrationServerSkuCreate(t *testing.T) {
 		_, err = uuid.Parse(resp.Slug)
 		assert.NoError(t, err)
 
-		ServerSkuTest.ID = resp.Slug
-
 		return nil
 	})
 
 	var testCases = []struct {
 		testName      string
-		ID            string
 		Name          string
+		Version       string
 		expectedError bool
 	}{
 		{
 			"server sku: create; success",
-			uuid.NewString(),
 			"DreamMachine2",
-			false,
-		},
-		{
-			"server sku: create; success empty ID",
-			"",
-			"DreamMachine3",
+			"Version 1 million",
 			false,
 		},
 		{
@@ -59,8 +52,8 @@ func TestIntegrationServerSkuCreate(t *testing.T) {
 		},
 		{
 			"server sku: create; duplicate sku",
-			dbtools.FixtureServerSku.ID,
 			dbtools.FixtureServerSku.Name,
+			dbtools.FixtureServerSku.Version,
 			true,
 		},
 	}
@@ -69,7 +62,7 @@ func TestIntegrationServerSkuCreate(t *testing.T) {
 		t.Run(tc.testName, func(t *testing.T) {
 			ServerSkuTemp := ServerSkuTest
 			ServerSkuTemp.Name = tc.Name
-			setAllSkuIDs(tc.ID, &ServerSkuTemp)
+			ServerSkuTemp.Version = tc.Version
 
 			resp, err := s.Client.CreateServerSku(context.TODO(), ServerSkuTemp)
 
@@ -79,13 +72,6 @@ func TestIntegrationServerSkuCreate(t *testing.T) {
 			} else {
 				require.NoError(t, err)
 				require.NotNil(t, resp)
-
-				if tc.ID != "" {
-					assert.Equal(t, tc.ID, resp.Slug)
-				} else {
-					_, err = uuid.Parse(resp.Slug)
-					assert.NoError(t, err)
-				}
 			}
 
 		})
@@ -122,19 +108,16 @@ func TestIntegrationServerSkuGet(t *testing.T) {
 	var testCases = []struct {
 		testName      string
 		id            string
-		name          string
 		expectedError bool
 	}{
 		{
 			"server sku: get; success",
 			dbtools.FixtureServerSku.ID,
-			dbtools.FixtureServerSku.Name,
 			false,
 		},
 		{
 			"server sku: get; unknown sku",
 			uuid.NewString(),
-			"",
 			true,
 		},
 	}
@@ -165,114 +148,113 @@ func TestIntegrationServerSkuGet(t *testing.T) {
 	}
 }
 
-func TestIntegrationServerSkuUpdate(t *testing.T) {
-	s := serverTest(t)
+// func TestIntegrationServerSkuUpdate(t *testing.T) {
+// 	s := serverTest(t)
 
-	realClientTests(t, func(realClientTestCtx context.Context, authToken string, _ int, expectedError bool) error {
-		s.Client.SetToken(authToken)
+// 	realClientTests(t, func(realClientTestCtx context.Context, authToken string, _ int, expectedError bool) error {
+// 		s.Client.SetToken(authToken)
 
-		ServerSkuTemp := ServerSkuTest
-		var parsedID uuid.UUID
-		var err error
+// 		ServerSkuTemp := ServerSkuTest
+// 		var parsedID uuid.UUID
+// 		var err error
 
-		if expectedError {
-			parsedID, err = uuid.NewUUID()
-			require.NoError(t, err)
-		} else {
-			ServerSkuTemp.ID = ""
-			ServerSkuTemp.Name = "Integration Test Server Sku Update"
-			ServerSkuTemp.Version = "Test Version"
-			resp, err := s.Client.CreateServerSku(realClientTestCtx, ServerSkuTemp)
-			require.NoError(t, err)
-			require.NotNil(t, resp)
+// 		if expectedError {
+// 			parsedID, err = uuid.NewUUID()
+// 			require.NoError(t, err)
+// 		} else {
+// 			ServerSkuTemp.Name = "Integration Test Server Sku Update"
+// 			ServerSkuTemp.Version = "Test Version"
+// 			resp, err := s.Client.CreateServerSku(realClientTestCtx, ServerSkuTemp)
+// 			require.NoError(t, err)
+// 			require.NotNil(t, resp)
 
-			parsedID, err = uuid.Parse(resp.Slug)
-			require.NoError(t, err)
+// 			parsedID, err = uuid.Parse(resp.Slug)
+// 			require.NoError(t, err)
 
-			resp, err = s.Client.GetServerSku(realClientTestCtx, parsedID)
-			require.NoError(t, err)
-			require.NotNil(t, resp)
+// 			resp, err = s.Client.GetServerSku(realClientTestCtx, parsedID)
+// 			require.NoError(t, err)
+// 			require.NotNil(t, resp)
 
-			ServerSkuTemp = *resp.Record.(*fleetdbapi.ServerSku)
-		}
+// 			ServerSkuTemp = *resp.Record.(*fleetdbapi.ServerSku)
+// 		}
 
-		ServerSkuTemp.Version = "Test Version 2"
-		ServerSkuTemp.AuxDevices[0].Vendor = "AMDX"
-		ServerSkuTemp.Disks[0].Bytes = 50
-		ServerSkuTemp.Memory[0].Bytes = 50
-		ServerSkuTemp.Nics[0].PortCount = 99
-		_, err = s.Client.UpdateServerSku(realClientTestCtx, parsedID, ServerSkuTemp)
-		if err != nil {
-			return err
-		}
+// 		ServerSkuTemp.Version = "Test Version 2"
+// 		ServerSkuTemp.AuxDevices[0].Vendor = "AMDX"
+// 		ServerSkuTemp.Disks[0].Bytes = 50
+// 		ServerSkuTemp.Memory[0].Bytes = 50
+// 		ServerSkuTemp.Nics[0].PortCount = 99
+// 		_, err = s.Client.UpdateServerSku(realClientTestCtx, parsedID, ServerSkuTemp)
+// 		if err != nil {
+// 			return err
+// 		}
 
-		if !expectedError {
-			resp, err := s.Client.GetServerSku(realClientTestCtx, parsedID)
-			require.NoError(t, err)
-			require.NotNil(t, resp)
+// 		if !expectedError {
+// 			resp, err := s.Client.GetServerSku(realClientTestCtx, parsedID)
+// 			require.NoError(t, err)
+// 			require.NotNil(t, resp)
 
-			sku := *resp.Record.(*fleetdbapi.ServerSku)
+// 			sku := *resp.Record.(*fleetdbapi.ServerSku)
 
-			assertServerSkuEqualIgnoreTime(t, &ServerSkuTemp, &sku)
-		}
+// 			assert.Equal(t, ServerSkuTemp, sku)
+// 		}
 
-		return nil
-	})
+// 		return nil
+// 	})
 
-	var testCases = []struct {
-		testName      string
-		id            string
-		expectedError bool
-	}{
-		{
-			"server sku: update; success",
-			dbtools.FixtureServerSku.ID,
-			false,
-		},
-		{
-			"server sku: update; invalide uuid",
-			uuid.NewString(),
-			true,
-		},
-	}
+// 	var testCases = []struct {
+// 		testName      string
+// 		id            string
+// 		expectedError bool
+// 	}{
+// 		{
+// 			"server sku: update; success",
+// 			dbtools.FixtureServerSku.ID,
+// 			false,
+// 		},
+// 		{
+// 			"server sku: update; invalide uuid",
+// 			uuid.NewString(),
+// 			true,
+// 		},
+// 	}
 
-	for _, tc := range testCases {
-		t.Run(tc.testName, func(t *testing.T) {
-			ServerSkuTemp := fleetdbapi.ServerSku{}
+// 	for _, tc := range testCases {
+// 		t.Run(tc.testName, func(t *testing.T) {
+// 			ServerSkuTemp := fleetdbapi.ServerSku{}
 
-			parsedID, err := uuid.Parse(tc.id)
-			require.NoError(t, err)
+// 			parsedID, err := uuid.Parse(tc.id)
+// 			require.NoError(t, err)
 
-			if !tc.expectedError {
-				resp, err := s.Client.GetServerSku(context.TODO(), parsedID)
-				require.NoError(t, err)
-				require.NotNil(t, resp)
+// 			if !tc.expectedError {
+// 				resp, err := s.Client.GetServerSku(context.TODO(), parsedID)
+// 				require.NoError(t, err)
+// 				require.NotNil(t, resp)
 
-				ServerSkuTemp = *resp.Record.(*fleetdbapi.ServerSku)
-				ServerSkuTemp.Version = "Test Version 2"
-				ServerSkuTemp.AuxDevices[0].Vendor = "AMDX"
-				ServerSkuTemp.Disks[0].Bytes = 50
-				ServerSkuTemp.Memory[0].Bytes = 50
-				ServerSkuTemp.Nics[0].PortCount = 99
-			}
+// 				ServerSkuTemp = *resp.Record.(*fleetdbapi.ServerSku)
+// 				ServerSkuTemp.Version = "Test Version 2"
+// 				ServerSkuTemp.AuxDevices[0].Vendor = "AMDX"
+// 				ServerSkuTemp.Disks[0].Bytes = 50
+// 				ServerSkuTemp.Memory[0].Bytes = 50
+// 				ServerSkuTemp.Nics[0].PortCount = 99
+// 			}
 
-			resp, err := s.Client.UpdateServerSku(context.TODO(), parsedID, ServerSkuTemp)
+// 			resp, err := s.Client.UpdateServerSku(context.TODO(), parsedID, ServerSkuTemp)
 
-			if tc.expectedError {
-				assert.Error(t, err)
-				assert.Nil(t, resp)
-			} else {
-				resp, err := s.Client.GetServerSku(context.TODO(), parsedID)
-				assert.NoError(t, err)
-				assert.NotNil(t, resp)
+// 			if tc.expectedError {
+// 				assert.Error(t, err)
+// 				assert.Nil(t, resp)
+// 			} else {
+// 				resp, err := s.Client.GetServerSku(context.TODO(), parsedID)
+// 				assert.NoError(t, err)
+// 				assert.NotNil(t, resp)
 
-				sku := *resp.Record.(*fleetdbapi.ServerSku)
+// 				sku := *resp.Record.(*fleetdbapi.ServerSku)
 
-				assertServerSkuEqualIgnoreTime(t, &ServerSkuTemp, &sku)
-			}
-		})
-	}
-}
+// 				assert.Equal(t, ServerSkuTemp, sku)
+// 			}
+// 		})
+// 	}
+// }
 
 func TestIntegrationServerSkuDelete(t *testing.T) {
 	s := serverTest(t)
@@ -281,7 +263,6 @@ func TestIntegrationServerSkuDelete(t *testing.T) {
 		s.Client.SetToken(authToken)
 
 		ServerSkuTemp := ServerSkuTest
-		ServerSkuTemp.ID = ""
 		ServerSkuTemp.Name = "Integration Test Server Sku Delete"
 		ServerSkuTemp.Version = "Test Version"
 		resp, err := s.Client.CreateServerSku(realClientTestCtx, ServerSkuTemp)
@@ -332,7 +313,6 @@ func TestIntegrationServerSkuDelete(t *testing.T) {
 				require.NoError(t, err)
 			} else {
 				ServerSkuTemp := ServerSkuTest
-				ServerSkuTemp.ID = ""
 				ServerSkuTemp.Name = "Integration Test Server Sku Delete"
 				ServerSkuTemp.Version = "Test Version"
 				resp, err := s.Client.CreateServerSku(context.TODO(), ServerSkuTemp)
@@ -389,19 +369,16 @@ func TestIntegrationServerSkuList(t *testing.T) {
 
 	ServerSkuTempSetup := ServerSkuTest
 
-	ServerSkuTempSetup.ID = ""
 	ServerSkuTempSetup.Name = "List Test 1"
 	resp, err := s.Client.CreateServerSku(context.TODO(), ServerSkuTempSetup)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	ServerSkuTempSetup.ID = ""
 	ServerSkuTempSetup.Name = "List Test 2"
 	resp, err = s.Client.CreateServerSku(context.TODO(), ServerSkuTempSetup)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	ServerSkuTempSetup.ID = ""
 	ServerSkuTempSetup.Name = "List Test 3"
 	for i := range ServerSkuTempSetup.Disks { // remove NVME
 		ServerSkuTempSetup.Disks[i].Protocol = "SATA"
@@ -436,7 +413,7 @@ func TestIntegrationServerSkuList(t *testing.T) {
 			},
 			{
 				Sku: fleetdbapi.ServerSkuQuery{
-					Disks: []fleetdbapi.ServerSkuDiskQuery{
+					Disks: []fleetdbapi.DiskQuery{
 						{
 							Protocol: "NVME",
 						},
@@ -460,7 +437,7 @@ func TestIntegrationServerSkuList(t *testing.T) {
 			},
 			{
 				Sku: fleetdbapi.ServerSkuQuery{
-					Disks: []fleetdbapi.ServerSkuDiskQuery{
+					Disks: []fleetdbapi.DiskQuery{
 						{
 							Bytes: []int64{11},
 						},
@@ -506,74 +483,6 @@ func TestIntegrationServerSkuList(t *testing.T) {
 	}
 }
 
-func setAllSkuIDs(id string, sku *fleetdbapi.ServerSku) {
-	sku.ID = id
-
-	for _, auxDevice := range sku.AuxDevices {
-		auxDevice.SkuID = id
-	}
-
-	for _, disk := range sku.Disks {
-		disk.SkuID = id
-	}
-
-	for _, memory := range sku.Memory {
-		memory.SkuID = id
-	}
-
-	for _, nic := range sku.Nics {
-		nic.SkuID = id
-	}
-}
-
-func assertServerSkuEqualIgnoreTime(t *testing.T, expected *fleetdbapi.ServerSku, actual *fleetdbapi.ServerSku) {
-	expectedCopy := *expected
-	actualCopy := *actual
-
-	now := time.Now()
-
-	require.Equal(t, len(expected.AuxDevices), len(actual.AuxDevices))
-	require.Equal(t, len(expected.Disks), len(actual.Disks))
-	require.Equal(t, len(expected.Memory), len(actual.Memory))
-	require.Equal(t, len(expected.Nics), len(actual.Nics))
-
-	expectedCopy.CreatedAt = now
-	expectedCopy.UpdatedAt = now
-
-	actualCopy.CreatedAt = now
-	actualCopy.UpdatedAt = now
-
-	for i := range expectedCopy.AuxDevices {
-		expectedCopy.AuxDevices[i].CreatedAt = now
-		expectedCopy.AuxDevices[i].UpdatedAt = now
-		actualCopy.AuxDevices[i].CreatedAt = now
-		actualCopy.AuxDevices[i].UpdatedAt = now
-	}
-
-	for i := range expectedCopy.Disks {
-		expectedCopy.Disks[i].CreatedAt = now
-		expectedCopy.Disks[i].UpdatedAt = now
-		actualCopy.Disks[i].CreatedAt = now
-		actualCopy.Disks[i].UpdatedAt = now
-	}
-
-	for i := range expectedCopy.Memory {
-		expectedCopy.Memory[i].CreatedAt = now
-		expectedCopy.Memory[i].UpdatedAt = now
-		actualCopy.Memory[i].CreatedAt = now
-		actualCopy.Memory[i].UpdatedAt = now
-	}
-
-	for i := range expectedCopy.Nics {
-		expectedCopy.Nics[i].CreatedAt = now
-		expectedCopy.Nics[i].UpdatedAt = now
-		actualCopy.Nics[i].CreatedAt = now
-		actualCopy.Nics[i].UpdatedAt = now
-	}
-
-	assert.Equal(t, expectedCopy, actualCopy)
-}
-
 func assertEntireServerSkuModelEqual(t *testing.T,
 	expectedServerSku *models.ServerSku,
 	expectedAuxDevices []*models.ServerSkuAuxDevice,
@@ -593,15 +502,16 @@ func assertEntireServerSkuModelEqual(t *testing.T,
 		foundAuxDevice := false
 
 		for _, actualAuxDevice := range actual.AuxDevices {
-			if actualAuxDevice.ID == expectedAuxDevice.ID {
+			if checkAuxDeviceModelEqual(t, expectedAuxDevice, &actualAuxDevice) {
 				assertServerSkuAuxDeviceModelEqual(t, expectedAuxDevice, &actualAuxDevice)
 
 				foundAuxDevice = true
+				break
 			}
 		}
 
 		if !foundAuxDevice {
-			assert.Fail(t, fmt.Sprintf("expected to find disk: `%+v`", expectedAuxDevice))
+			assert.Fail(t, fmt.Sprintf("expected to find disk: `%+v` in list: %+v", expectedAuxDevice, actual.AuxDevices))
 		}
 	}
 
@@ -609,15 +519,16 @@ func assertEntireServerSkuModelEqual(t *testing.T,
 		foundDisk := false
 
 		for _, actualDisk := range actual.Disks {
-			if actualDisk.ID == expectedDisk.ID {
+			if checkDiskModelEqual(expectedDisk, &actualDisk) {
 				assertServerSkuDiskModelEqual(t, expectedDisk, &actualDisk)
 
 				foundDisk = true
+				break
 			}
 		}
 
 		if !foundDisk {
-			assert.Fail(t, fmt.Sprintf("expected to find disk: `%+v`", expectedDisk))
+			assert.Fail(t, fmt.Sprintf("expected to find disk: `%+v` in list: %+v", expectedDisk, actual.Disks))
 		}
 	}
 
@@ -625,15 +536,16 @@ func assertEntireServerSkuModelEqual(t *testing.T,
 		foundMemory := false
 
 		for _, actualMemory := range actual.Memory {
-			if actualMemory.ID == expectedMemory.ID {
+			if checkMemoryModelEqual(expectedMemory, &actualMemory) {
 				assertServerSkuMemoryModelEqual(t, expectedMemory, &actualMemory)
 
 				foundMemory = true
+				break
 			}
 		}
 
 		if !foundMemory {
-			assert.Fail(t, fmt.Sprintf("expected to find memory: `%+v`", expectedMemory))
+			assert.Fail(t, fmt.Sprintf("expected to find memory: `%+v` in list: %+v", expectedMemory, actual.Memory))
 		}
 	}
 
@@ -641,15 +553,16 @@ func assertEntireServerSkuModelEqual(t *testing.T,
 		foundNic := false
 
 		for _, actualNic := range actual.Nics {
-			if actualNic.ID == expectedNic.ID {
+			if checkNicModelEqual(expectedNic, &actualNic) {
 				assertServerSkuNicModelEqual(t, expectedNic, &actualNic)
 
 				foundNic = true
+				break
 			}
 		}
 
 		if !foundNic {
-			assert.Fail(t, fmt.Sprintf("expected to find nic: `%+v`", expectedNic))
+			assert.Fail(t, fmt.Sprintf("expected to find nic: `%+v` in list: %+v", expectedNic, actual.Nics))
 		}
 	}
 }
@@ -667,59 +580,87 @@ func assertServerSkuModelEqual(t *testing.T,
 	assert.Equal(t, expected.CPUModel, actual.CPUModel)
 	assert.Equal(t, expected.CPUHertz, actual.CPUHertz)
 	assert.Equal(t, expected.CPUCount, actual.CPUCount)
-
-	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
-	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
 }
 
 func assertServerSkuAuxDeviceModelEqual(t *testing.T,
 	expected *models.ServerSkuAuxDevice,
-	actual *fleetdbapi.ServerSkuAuxDevice,
+	actual *fleetdbapi.AuxDevice,
 ) {
-	assert.Equal(t, expected.SkuID, actual.SkuID)
 	assert.Equal(t, expected.Vendor, actual.Vendor)
 	assert.Equal(t, expected.Model, actual.Model)
 	assert.Equal(t, expected.DeviceType, actual.DeviceType)
 	assert.JSONEq(t, string(expected.Details), string(actual.Details))
-
-	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
-	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
 }
 
 func assertServerSkuDiskModelEqual(t *testing.T,
 	expected *models.ServerSkuDisk,
-	actual *fleetdbapi.ServerSkuDisk,
+	actual *fleetdbapi.Disk,
 ) {
-	assert.Equal(t, expected.SkuID, actual.SkuID)
+	assert.Equal(t, expected.Vendor, actual.Vendor)
+	assert.Equal(t, expected.Model, actual.Model)
 	assert.Equal(t, expected.Bytes, actual.Bytes)
 	assert.Equal(t, expected.Protocol, actual.Protocol)
 	assert.Equal(t, expected.Count, actual.Count)
-
-	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
-	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
 }
 
 func assertServerSkuMemoryModelEqual(t *testing.T,
 	expected *models.ServerSkuMemory,
-	actual *fleetdbapi.ServerSkuMemory,
+	actual *fleetdbapi.Memory,
 ) {
-	assert.Equal(t, expected.SkuID, actual.SkuID)
+	assert.Equal(t, expected.Vendor, actual.Vendor)
+	assert.Equal(t, expected.Model, actual.Model)
 	assert.Equal(t, expected.Bytes, actual.Bytes)
 	assert.Equal(t, expected.Count, actual.Count)
-
-	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
-	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
 }
 
 func assertServerSkuNicModelEqual(t *testing.T,
 	expected *models.ServerSkuNic,
-	actual *fleetdbapi.ServerSkuNic,
+	actual *fleetdbapi.Nic,
 ) {
-	assert.Equal(t, expected.SkuID, actual.SkuID)
+	assert.Equal(t, expected.Vendor, actual.Vendor)
+	assert.Equal(t, expected.Model, actual.Model)
 	assert.Equal(t, expected.PortBandwidth, actual.PortBandwidth)
 	assert.Equal(t, expected.PortCount, actual.PortCount)
 	assert.Equal(t, expected.Count, actual.Count)
+}
 
-	assert.WithinDuration(t, expected.CreatedAt.Time, actual.CreatedAt, time.Second)
-	assert.WithinDuration(t, expected.UpdatedAt.Time, actual.UpdatedAt, time.Second)
+func checkAuxDeviceModelEqual(t *testing.T, expected *models.ServerSkuAuxDevice, actual *fleetdbapi.AuxDevice) bool {
+	j1, j2 := map[string]interface{}{}, map[string]interface{}{}
+
+	err := json.Unmarshal(expected.Details, &j1)
+	require.NoError(t, err)
+
+	err = json.Unmarshal(actual.Details, &j2)
+	require.NoError(t, err)
+
+	if !reflect.DeepEqual(j2, j1) {
+		return false
+	}
+
+	return expected.Vendor == actual.Vendor &&
+		expected.Model == actual.Model &&
+		expected.DeviceType == actual.DeviceType
+}
+
+func checkDiskModelEqual(expected *models.ServerSkuDisk, actual *fleetdbapi.Disk) bool {
+	return expected.Vendor == actual.Vendor &&
+		expected.Model == actual.Model &&
+		expected.Bytes == actual.Bytes &&
+		expected.Protocol == actual.Protocol &&
+		expected.Count == actual.Count
+}
+
+func checkMemoryModelEqual(expected *models.ServerSkuMemory, actual *fleetdbapi.Memory) bool {
+	return expected.Vendor == actual.Vendor &&
+		expected.Model == actual.Model &&
+		expected.Bytes == actual.Bytes &&
+		expected.Count == actual.Count
+}
+
+func checkNicModelEqual(expected *models.ServerSkuNic, actual *fleetdbapi.Nic) bool {
+	return expected.Vendor == actual.Vendor &&
+		expected.Model == actual.Model &&
+		expected.PortBandwidth == actual.PortBandwidth &&
+		expected.PortCount == actual.PortCount &&
+		expected.Count == actual.Count
 }

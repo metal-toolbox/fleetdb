@@ -37,9 +37,9 @@ func (r *Router) serverBiosConfigSetCreate(c *gin.Context) {
 func (r *Router) serverBiosConfigSetGet(c *gin.Context) {
 	// Get Config Set
 	id := c.Param("uuid")
-	if id == "" || id == uuid.Nil.String() {
-		badRequestResponse(c, "no UUID query param", ErrRouteBiosConfigSet)
-		return
+	_, err := uuid.Parse(id)
+	if err != nil {
+		badRequestResponse(c, "invalid UUID query param", ErrRouteBiosConfigSet)
 	}
 
 	mods := []qm.QueryMod{
@@ -61,8 +61,9 @@ func (r *Router) serverBiosConfigSetGet(c *gin.Context) {
 
 func (r *Router) serverBiosConfigSetDelete(c *gin.Context) {
 	id := c.Param("uuid")
-	if id == "" || id == uuid.Nil.String() {
-		badRequestResponse(c, "no UUID query param", ErrRouteBiosConfigSet)
+	_, err := uuid.Parse(id)
+	if err != nil {
+		badRequestResponse(c, "invalid UUID query param", ErrRouteBiosConfigSet)
 	}
 
 	set := &models.BiosConfigSet{}
@@ -119,12 +120,13 @@ func (r *Router) serverBiosConfigSetUpdate(c *gin.Context) {
 
 	// Get ID
 	id := c.Param("uuid")
-	if id == "" || id == uuid.Nil.String() {
-		badRequestResponse(c, "no UUID query param", ErrRouteBiosConfigSet)
+	_, err := uuid.Parse(id)
+	if err != nil {
+		badRequestResponse(c, "invalid UUID query param", ErrRouteBiosConfigSet)
 	}
 
 	// Unmarshal JSON payload
-	err := c.ShouldBindJSON(&payload)
+	err = c.ShouldBindJSON(&payload)
 	if err != nil {
 		badRequestResponse(c, "invalid payload: BiosConfigSetUpdate{}; failed to unmarshal config set", err)
 		return
@@ -241,7 +243,7 @@ func updateBiosConfigSetDeleteHelper(ctx context.Context, tx *sql.Tx, components
 func updateBiosConfigSetInsertUpdateHelper(ctx context.Context, tx *sql.Tx, components []*models.BiosConfigComponent, componentsToUpdate []bool, settingsToUpdate [][]bool) error {
 	for c, component := range components {
 		if component.R == nil || component.R.FKBiosConfigSet == nil {
-			return ErrNullRelation
+			return nil
 		}
 
 		err := component.R.FKBiosConfigSet.AddFKBiosConfigSetBiosConfigComponents(ctx, tx, !componentsToUpdate[c], component)

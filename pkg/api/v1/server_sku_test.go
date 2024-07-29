@@ -12,7 +12,6 @@ import (
 )
 
 var ServerSkuTest = fleetdbapi.ServerSku{
-	ID:               "",
 	Name:             "DreamMachine",
 	Version:          "version",
 	Vendor:           "AMD",
@@ -24,56 +23,48 @@ var ServerSkuTest = fleetdbapi.ServerSku{
 	CPUCores:         96,
 	CPUHertz:         2500000000,
 	CPUCount:         1,
-	AuxDevices: []fleetdbapi.ServerSkuAuxDevice{
+	AuxDevices: []fleetdbapi.AuxDevice{
 		{
-			SkuID:      "",
 			Vendor:     "AMD",
 			Model:      "W7900",
 			DeviceType: "Dedicated GPU",
 			Details:    []byte(`{"slot": 2,"stream-processors": 6144,"compute-units": 96,"tflops": 122.64,"memory-type": "GDDR6","memory-bytes": 48000000000,"TBP": 299}`),
 		},
 		{
-			SkuID:      "",
 			Vendor:     "AMD",
 			Model:      "W7900",
 			DeviceType: "Dedicated GPU",
 			Details:    []byte(`{"slot": 3,"stream-processors": 6144,"compute-units": 96,"tflops": 122.64,"memory-type": "GDDR6","memory-bytes": 48000000000,"TBP": 299}`),
 		},
 	},
-	Disks: []fleetdbapi.ServerSkuDisk{
+	Disks: []fleetdbapi.Disk{
 		{
-			SkuID:    "",
 			Bytes:    8000000000000,
 			Protocol: "SATA",
 			Count:    1,
 		},
 		{
-			SkuID:    "",
 			Bytes:    4000000000000,
 			Protocol: "NVME",
 			Count:    1,
 		},
 	},
-	Memory: []fleetdbapi.ServerSkuMemory{
+	Memory: []fleetdbapi.Memory{
 		{
-			SkuID: "",
 			Bytes: 8000000000,
 			Count: 2,
 		},
 		{
-			SkuID: "",
 			Bytes: 8000000000,
 			Count: 2,
 		},
 	},
-	Nics: []fleetdbapi.ServerSkuNic{
+	Nics: []fleetdbapi.Nic{
 		{
-			SkuID:         "",
 			PortBandwidth: 1000000000,
 			PortCount:     2,
 		},
 		{
-			SkuID:         "",
 			PortBandwidth: 10000000000,
 			PortCount:     1,
 		},
@@ -82,7 +73,8 @@ var ServerSkuTest = fleetdbapi.ServerSku{
 
 func TestServerSkuCreate(t *testing.T) {
 	mockClientTests(t, func(ctx context.Context, respCode int, expectError bool) error {
-		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource created", Slug: ServerSkuTest.ID})
+		id := uuid.NewString()
+		jsonResponse, err := json.Marshal(fleetdbapi.ServerResponse{Message: "resource created", Slug: id})
 		require.NoError(t, err)
 
 		c := mockClient(string(jsonResponse), respCode)
@@ -95,7 +87,7 @@ func TestServerSkuCreate(t *testing.T) {
 		}
 
 		require.NotNil(t, resp) // stop testing if resp is nil
-		assert.Equal(t, ServerSkuTest.ID, resp.Slug)
+		assert.Equal(t, id, resp.Slug)
 
 		return err
 	})

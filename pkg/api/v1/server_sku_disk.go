@@ -1,27 +1,23 @@
 package fleetdbapi
 
 import (
-	"time"
-
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
-// ServerSkuDisk represents a SKU Disk Layout for a Server
-type ServerSkuDisk struct {
-	ID        string    `json:"id"`
-	SkuID     string    `json:"sku_id" binding:"required"`
-	Bytes     int64     `json:"bytes" binding:"required"`
-	Protocol  string    `json:"protocol" binding:"required"`
-	Count     int64     `json:"count" binding:"required"`
-	CreatedAt time.Time `json:"created_at,omitempty"`
-	UpdatedAt time.Time `json:"updated_at,omitempty"`
+// Disk represents a Sku Disk Layout for a Server
+type Disk struct {
+	Vendor   string `json:"vendor" binding:"required"`
+	Model    string `json:"model" binding:"required"`
+	Bytes    int64  `json:"bytes" binding:"required"`
+	Protocol string `json:"protocol" binding:"required"`
+	Count    int64  `json:"count" binding:"required"`
 }
 
-// toDBModelServerSkuDisk converts a ServerSkuDisk into a models.ServerSkuDisk (created by sqlboiler)
-func (disk *ServerSkuDisk) toDBModelServerSkuDisk() *models.ServerSkuDisk {
+// toDBModelServerSkuDisk converts a Disk struct into a models.ServerSkuDisk
+func (disk *Disk) toDBModelServerSkuDisk() *models.ServerSkuDisk {
 	model := &models.ServerSkuDisk{
-		ID:       disk.ID,
-		SkuID:    disk.SkuID,
+		Vendor:   disk.Vendor,
+		Model:    disk.Model,
 		Bytes:    disk.Bytes,
 		Protocol: disk.Protocol,
 		Count:    disk.Count,
@@ -30,13 +26,11 @@ func (disk *ServerSkuDisk) toDBModelServerSkuDisk() *models.ServerSkuDisk {
 	return model
 }
 
-// fromDBModelServerSkuDisk converts a models.ServerSkuDisk (created by sqlboiler) into a ServerSkuDisk
-func (disk *ServerSkuDisk) fromDBModelServerSkuDisk(model *models.ServerSkuDisk) {
-	disk.ID = model.ID
-	disk.SkuID = model.SkuID
+// fromDBModelServerSkuDisk converts a models.ServerSkuDisk into a Disk struct
+func (disk *Disk) fromDBModelServerSkuDisk(model *models.ServerSkuDisk) {
+	disk.Vendor = model.Vendor
+	disk.Model = model.Model
 	disk.Bytes = model.Bytes
 	disk.Protocol = model.Protocol
 	disk.Count = model.Count
-	disk.CreatedAt = model.CreatedAt.Time
-	disk.UpdatedAt = model.UpdatedAt.Time
 }

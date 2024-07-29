@@ -14,21 +14,21 @@ import (
 
 // ServerSkuQuery defines values you can query ServerSkus with. Empty strings are ignored. Empty Arrays are ignored.
 type ServerSkuQuery struct {
-	Name             string                    `query:"name"`
-	Version          string                    `query:"version"`
-	Vendor           string                    `query:"vendor"`
-	Chassis          string                    `query:"chassis"`
-	BMCModel         string                    `query:"bmc_model"`
-	MotherboardModel string                    `query:"motherboard_model"`
-	CPUVendor        string                    `query:"cpu_vendor"`
-	CPUModel         string                    `query:"cpu_model"`
-	CPUCores         []int64                   `query:"cpu_cores"`
-	CPUHertz         []int64                   `query:"cpu_hertz"`
-	CPUCount         []int64                   `query:"cpu_count"`
-	AuxDevices       []ServerSkuAuxDeviceQuery `query:"aux_devices"`
-	Disks            []ServerSkuDiskQuery      `query:"disks"`
-	Memory           []ServerSkuMemoryQuery    `query:"memory"`
-	Nics             []ServerSkuNicQuery       `query:"nics"`
+	Name             string           `query:"name"`
+	Version          string           `query:"version"`
+	Vendor           string           `query:"vendor"`
+	Chassis          string           `query:"chassis"`
+	BMCModel         string           `query:"bmc_model"`
+	MotherboardModel string           `query:"motherboard_model"`
+	CPUVendor        string           `query:"cpu_vendor"`
+	CPUModel         string           `query:"cpu_model"`
+	CPUCores         []int64          `query:"cpu_cores"`
+	CPUHertz         []int64          `query:"cpu_hertz"`
+	CPUCount         []int64          `query:"cpu_count"`
+	AuxDevices       []AuxDeviceQuery `query:"aux_devices"`
+	Disks            []DiskQuery      `query:"disks"`
+	Memory           []MemoryQuery    `query:"memory"`
+	Nics             []NicQuery       `query:"nics"`
 }
 
 // ServerSkuQueryParams defines a ServerSkuQuery struct and operators you can use to query ServerSkus with. If LogicalOperator is an empty string, it will default to OperatorLogicalAND. If ComparitorOperator is an empty string, it will default to OperatorComparitorEqual
@@ -49,7 +49,7 @@ type ServerSkuListParams struct {
 	Pagination PaginationParams       `query:"page"`
 }
 
-// SetQuery implements the queryParams interface
+// setQuery implements the queryParams interface
 func (p *ServerSkuListParams) setQuery(q url.Values) {
 	if p == nil {
 		return
@@ -91,7 +91,7 @@ func parseServerSkuListParams(c *gin.Context) (*ServerSkuListParams, error) {
 	return &params, nil
 }
 
-// QueryMods converts the list params into sql conditions that can be added to sql queries
+// queryMods converts the list params into sql conditions that can be added to sql queries
 func (p *ServerSkuListParams) queryMods() []qm.QueryMod {
 	mods := []qm.QueryMod{qm.Distinct(fmt.Sprintf("\"%s\".*", models.TableNames.ServerSku))}
 

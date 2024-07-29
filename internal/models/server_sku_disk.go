@@ -26,6 +26,8 @@ import (
 type ServerSkuDisk struct {
 	ID        string    `boil:"id" json:"id" toml:"id" yaml:"id"`
 	SkuID     string    `boil:"sku_id" json:"sku_id" toml:"sku_id" yaml:"sku_id"`
+	Vendor    string    `boil:"vendor" json:"vendor" toml:"vendor" yaml:"vendor"`
+	Model     string    `boil:"model" json:"model" toml:"model" yaml:"model"`
 	Bytes     int64     `boil:"bytes" json:"bytes" toml:"bytes" yaml:"bytes"`
 	Protocol  string    `boil:"protocol" json:"protocol" toml:"protocol" yaml:"protocol"`
 	Count     int64     `boil:"count" json:"count" toml:"count" yaml:"count"`
@@ -39,6 +41,8 @@ type ServerSkuDisk struct {
 var ServerSkuDiskColumns = struct {
 	ID        string
 	SkuID     string
+	Vendor    string
+	Model     string
 	Bytes     string
 	Protocol  string
 	Count     string
@@ -47,6 +51,8 @@ var ServerSkuDiskColumns = struct {
 }{
 	ID:        "id",
 	SkuID:     "sku_id",
+	Vendor:    "vendor",
+	Model:     "model",
 	Bytes:     "bytes",
 	Protocol:  "protocol",
 	Count:     "count",
@@ -57,6 +63,8 @@ var ServerSkuDiskColumns = struct {
 var ServerSkuDiskTableColumns = struct {
 	ID        string
 	SkuID     string
+	Vendor    string
+	Model     string
 	Bytes     string
 	Protocol  string
 	Count     string
@@ -65,6 +73,8 @@ var ServerSkuDiskTableColumns = struct {
 }{
 	ID:        "server_sku_disk.id",
 	SkuID:     "server_sku_disk.sku_id",
+	Vendor:    "server_sku_disk.vendor",
+	Model:     "server_sku_disk.model",
 	Bytes:     "server_sku_disk.bytes",
 	Protocol:  "server_sku_disk.protocol",
 	Count:     "server_sku_disk.count",
@@ -77,6 +87,8 @@ var ServerSkuDiskTableColumns = struct {
 var ServerSkuDiskWhere = struct {
 	ID        whereHelperstring
 	SkuID     whereHelperstring
+	Vendor    whereHelperstring
+	Model     whereHelperstring
 	Bytes     whereHelperint64
 	Protocol  whereHelperstring
 	Count     whereHelperint64
@@ -85,6 +97,8 @@ var ServerSkuDiskWhere = struct {
 }{
 	ID:        whereHelperstring{field: "\"server_sku_disk\".\"id\""},
 	SkuID:     whereHelperstring{field: "\"server_sku_disk\".\"sku_id\""},
+	Vendor:    whereHelperstring{field: "\"server_sku_disk\".\"vendor\""},
+	Model:     whereHelperstring{field: "\"server_sku_disk\".\"model\""},
 	Bytes:     whereHelperint64{field: "\"server_sku_disk\".\"bytes\""},
 	Protocol:  whereHelperstring{field: "\"server_sku_disk\".\"protocol\""},
 	Count:     whereHelperint64{field: "\"server_sku_disk\".\"count\""},
@@ -120,8 +134,8 @@ func (r *serverSkuDiskR) GetSku() *ServerSku {
 type serverSkuDiskL struct{}
 
 var (
-	serverSkuDiskAllColumns            = []string{"id", "sku_id", "bytes", "protocol", "count", "created_at", "updated_at"}
-	serverSkuDiskColumnsWithoutDefault = []string{"sku_id", "bytes", "protocol", "count"}
+	serverSkuDiskAllColumns            = []string{"id", "sku_id", "vendor", "model", "bytes", "protocol", "count", "created_at", "updated_at"}
+	serverSkuDiskColumnsWithoutDefault = []string{"sku_id", "vendor", "model", "bytes", "protocol", "count"}
 	serverSkuDiskColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
 	serverSkuDiskPrimaryKeyColumns     = []string{"id"}
 	serverSkuDiskGeneratedColumns      = []string{}

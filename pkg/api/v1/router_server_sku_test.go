@@ -148,113 +148,113 @@ func TestIntegrationServerSkuGet(t *testing.T) {
 	}
 }
 
-// func TestIntegrationServerSkuUpdate(t *testing.T) {
-// 	s := serverTest(t)
+func TestIntegrationServerSkuUpdate(t *testing.T) {
+	s := serverTest(t)
 
-// 	realClientTests(t, func(realClientTestCtx context.Context, authToken string, _ int, expectedError bool) error {
-// 		s.Client.SetToken(authToken)
+	realClientTests(t, func(realClientTestCtx context.Context, authToken string, _ int, expectedError bool) error {
+		s.Client.SetToken(authToken)
 
-// 		ServerSkuTemp := ServerSkuTest
-// 		var parsedID uuid.UUID
-// 		var err error
+		ServerSkuTemp := ServerSkuTest
+		var parsedID uuid.UUID
+		var err error
 
-// 		if expectedError {
-// 			parsedID, err = uuid.NewUUID()
-// 			require.NoError(t, err)
-// 		} else {
-// 			ServerSkuTemp.Name = "Integration Test Server Sku Update"
-// 			ServerSkuTemp.Version = "Test Version"
-// 			resp, err := s.Client.CreateServerSku(realClientTestCtx, ServerSkuTemp)
-// 			require.NoError(t, err)
-// 			require.NotNil(t, resp)
+		if expectedError {
+			parsedID, err = uuid.NewUUID()
+			require.NoError(t, err)
+		} else {
+			ServerSkuTemp.Name = "Integration Test Server Sku Update"
+			ServerSkuTemp.Version = "Test Version"
+			resp, err := s.Client.CreateServerSku(realClientTestCtx, ServerSkuTemp)
+			require.NoError(t, err)
+			require.NotNil(t, resp)
 
-// 			parsedID, err = uuid.Parse(resp.Slug)
-// 			require.NoError(t, err)
+			parsedID, err = uuid.Parse(resp.Slug)
+			require.NoError(t, err)
 
-// 			resp, err = s.Client.GetServerSku(realClientTestCtx, parsedID)
-// 			require.NoError(t, err)
-// 			require.NotNil(t, resp)
+			resp, err = s.Client.GetServerSku(realClientTestCtx, parsedID)
+			require.NoError(t, err)
+			require.NotNil(t, resp)
 
-// 			ServerSkuTemp = *resp.Record.(*fleetdbapi.ServerSku)
-// 		}
+			ServerSkuTemp = *resp.Record.(*fleetdbapi.ServerSku)
+		}
 
-// 		ServerSkuTemp.Version = "Test Version 2"
-// 		ServerSkuTemp.AuxDevices[0].Vendor = "AMDX"
-// 		ServerSkuTemp.Disks[0].Bytes = 50
-// 		ServerSkuTemp.Memory[0].Bytes = 50
-// 		ServerSkuTemp.Nics[0].PortCount = 99
-// 		_, err = s.Client.UpdateServerSku(realClientTestCtx, parsedID, ServerSkuTemp)
-// 		if err != nil {
-// 			return err
-// 		}
+		ServerSkuTemp.Version = "Test Version 2"
+		ServerSkuTemp.AuxDevices[0].Vendor = "AMDX"
+		ServerSkuTemp.Disks[0].Bytes = 50
+		ServerSkuTemp.Memory[0].Bytes = 50
+		ServerSkuTemp.Nics[0].PortCount = 99
+		_, err = s.Client.UpdateServerSku(realClientTestCtx, parsedID, ServerSkuTemp)
+		if err != nil {
+			return err
+		}
 
-// 		if !expectedError {
-// 			resp, err := s.Client.GetServerSku(realClientTestCtx, parsedID)
-// 			require.NoError(t, err)
-// 			require.NotNil(t, resp)
+		if !expectedError {
+			resp, err := s.Client.GetServerSku(realClientTestCtx, parsedID)
+			require.NoError(t, err)
+			require.NotNil(t, resp)
 
-// 			sku := *resp.Record.(*fleetdbapi.ServerSku)
+			sku := *resp.Record.(*fleetdbapi.ServerSku)
 
-// 			assert.Equal(t, ServerSkuTemp, sku)
-// 		}
+			assert.Equal(t, ServerSkuTemp, sku)
+		}
 
-// 		return nil
-// 	})
+		return nil
+	})
 
-// 	var testCases = []struct {
-// 		testName      string
-// 		id            string
-// 		expectedError bool
-// 	}{
-// 		{
-// 			"server sku: update; success",
-// 			dbtools.FixtureServerSku.ID,
-// 			false,
-// 		},
-// 		{
-// 			"server sku: update; invalide uuid",
-// 			uuid.NewString(),
-// 			true,
-// 		},
-// 	}
+	var testCases = []struct {
+		testName      string
+		id            string
+		expectedError bool
+	}{
+		{
+			"server sku: update; success",
+			dbtools.FixtureServerSku.ID,
+			false,
+		},
+		{
+			"server sku: update; invalid uuid",
+			uuid.NewString(),
+			true,
+		},
+	}
 
-// 	for _, tc := range testCases {
-// 		t.Run(tc.testName, func(t *testing.T) {
-// 			ServerSkuTemp := fleetdbapi.ServerSku{}
+	for _, tc := range testCases {
+		t.Run(tc.testName, func(t *testing.T) {
+			ServerSkuTemp := fleetdbapi.ServerSku{}
 
-// 			parsedID, err := uuid.Parse(tc.id)
-// 			require.NoError(t, err)
+			parsedID, err := uuid.Parse(tc.id)
+			require.NoError(t, err)
 
-// 			if !tc.expectedError {
-// 				resp, err := s.Client.GetServerSku(context.TODO(), parsedID)
-// 				require.NoError(t, err)
-// 				require.NotNil(t, resp)
+			if !tc.expectedError {
+				resp, err := s.Client.GetServerSku(context.TODO(), parsedID)
+				require.NoError(t, err)
+				require.NotNil(t, resp)
 
-// 				ServerSkuTemp = *resp.Record.(*fleetdbapi.ServerSku)
-// 				ServerSkuTemp.Version = "Test Version 2"
-// 				ServerSkuTemp.AuxDevices[0].Vendor = "AMDX"
-// 				ServerSkuTemp.Disks[0].Bytes = 50
-// 				ServerSkuTemp.Memory[0].Bytes = 50
-// 				ServerSkuTemp.Nics[0].PortCount = 99
-// 			}
+				ServerSkuTemp = *resp.Record.(*fleetdbapi.ServerSku)
+				ServerSkuTemp.Version = "Test Version 2"
+				ServerSkuTemp.AuxDevices[0].Vendor = "AMDX"
+				ServerSkuTemp.Disks[0].Bytes = 50
+				ServerSkuTemp.Memory[0].Bytes = 50
+				ServerSkuTemp.Nics[0].PortCount = 99
+			}
 
-// 			resp, err := s.Client.UpdateServerSku(context.TODO(), parsedID, ServerSkuTemp)
+			resp, err := s.Client.UpdateServerSku(context.TODO(), parsedID, ServerSkuTemp)
 
-// 			if tc.expectedError {
-// 				assert.Error(t, err)
-// 				assert.Nil(t, resp)
-// 			} else {
-// 				resp, err := s.Client.GetServerSku(context.TODO(), parsedID)
-// 				assert.NoError(t, err)
-// 				assert.NotNil(t, resp)
+			if tc.expectedError {
+				assert.Error(t, err)
+				assert.Nil(t, resp)
+			} else {
+				resp, err := s.Client.GetServerSku(context.TODO(), parsedID)
+				assert.NoError(t, err)
+				assert.NotNil(t, resp)
 
-// 				sku := *resp.Record.(*fleetdbapi.ServerSku)
+				sku := *resp.Record.(*fleetdbapi.ServerSku)
 
-// 				assert.Equal(t, ServerSkuTemp, sku)
-// 			}
-// 		})
-// 	}
-// }
+				assert.Equal(t, ServerSkuTemp, sku)
+			}
+		})
+	}
+}
 
 func TestIntegrationServerSkuDelete(t *testing.T) {
 	s := serverTest(t)

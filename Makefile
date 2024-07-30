@@ -56,15 +56,15 @@ vendor:
 
 ## setup docker compose test env
 docker-up:
-	@docker-compose -f quickstart.yml up -d crdb
+	@docker compose -f quickstart.yml up -d crdb
 
 ## stop docker compose test env
 docker-down:
-	@docker-compose -f quickstart.yml down
+	@docker compose -f quickstart.yml down
 
 ## clean docker volumes
 docker-clean:
-	@docker-compose -f quickstart.yml down --volumes
+	@docker compose -f quickstart.yml down --volumes
 
 ## setup devel database
 dev-database: | vendor

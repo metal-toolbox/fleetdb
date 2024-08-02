@@ -18,7 +18,6 @@ type BiosConfigSetting struct {
 	UpdatedAt time.Time `json:"updated_at"`
 }
 
-// toDBModelBiosConfigSetting converts a BiosConfigSetting into a models.BiosConfigSetting
 func (ccs *BiosConfigSetting) toDBModelBiosConfigSetting() *models.BiosConfigSetting {
 	dbccs := &models.BiosConfigSetting{
 		SettingsKey:   ccs.Key,
@@ -29,16 +28,6 @@ func (ccs *BiosConfigSetting) toDBModelBiosConfigSetting() *models.BiosConfigSet
 	return dbccs
 }
 
-// toDBModelBiosConfigSettingDeep converts a BiosConfigSetting into a models.BiosConfigSetting. It also includes all relations, doing a deep copy
-func (ccs *BiosConfigSetting) toDBModelBiosConfigSettingDeep(cc *models.BiosConfigComponent) *models.BiosConfigSetting {
-	dbccs := ccs.toDBModelBiosConfigSetting()
-	dbccs.R = dbccs.R.NewStruct()
-	dbccs.R.FKBiosConfigComponent = cc
-
-	return dbccs
-}
-
-// fromDBModelBiosConfigSetting converts a models.BiosConfigSetting into a BiosConfigSetting
 func (ccs *BiosConfigSetting) fromDBModelBiosConfigSetting(setting *models.BiosConfigSetting) {
 	ccs.ID = setting.ID
 	ccs.Key = setting.SettingsKey

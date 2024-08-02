@@ -16,14 +16,6 @@ var (
 	ErrNoNextPage = errors.New("no next page found")
 	// ErrUUIDParse is returned when the UUID is invalid.
 	ErrUUIDParse = errors.New("UUID parse error")
-
-	// Route Errors
-	errRouteBase          = "error fullfilling %s request"
-	ErrRouteServerSku     = fmt.Errorf(errRouteBase, "server sku")
-	ErrRouteBiosConfigSet = fmt.Errorf(errRouteBase, "bios config set")
-
-	// SQL Boiler Erors
-	ErrNullRelation = errors.New("sqlboiler relation was unexpectedly null")
 )
 
 // ClientError is returned when invalid arguments are provided to the client
@@ -50,7 +42,7 @@ func (e ServerError) Error() string {
 
 func loggedRollback(r *Router, tx *sql.Tx) {
 	err := tx.Rollback()
-	if err != nil && !errors.Is(err, sql.ErrTxDone) {
+	if err != nil {
 		r.Logger.Error("Failed transaction, attempting rollback", zap.Error(err))
 	}
 }

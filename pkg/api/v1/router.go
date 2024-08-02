@@ -161,16 +161,6 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 		srvCfgSets.PUT("/:uuid", amw.AuthRequired(readScopes("server-bios-config-sets")), r.serverBiosConfigSetUpdate)
 		srvCfgSets.DELETE("/:uuid", amw.AuthRequired(readScopes("server-bios-config-sets")), r.serverBiosConfigSetDelete)
 	}
-
-	// /server-skus
-	srvServerSkus := rg.Group(fmt.Sprintf("/%s", serverSkuEndpoint))
-	{
-		srvServerSkus.GET("", amw.AuthRequired(readScopes(serverSkuEndpoint)), r.serverSkuList)
-		srvServerSkus.POST("", amw.AuthRequired(readScopes(serverSkuEndpoint)), r.serverSkuCreate)
-		srvServerSkus.GET("/:uuid", amw.AuthRequired(readScopes(serverSkuEndpoint)), r.serverSkuGet)
-		srvServerSkus.PUT("/:uuid", amw.AuthRequired(readScopes(serverSkuEndpoint)), r.serverSkuUpdate)
-		srvServerSkus.DELETE("/:uuid", amw.AuthRequired(readScopes(serverSkuEndpoint)), r.serverSkuDelete)
-	}
 }
 
 func createScopes(items ...string) []string {

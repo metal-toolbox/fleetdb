@@ -1,7 +1,9 @@
 package fleetdbapi_test
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 
 	"fmt"
 	"testing"
@@ -121,8 +123,6 @@ func TestIntegrationServerBiosConfigSetGet(t *testing.T) {
 			return err
 		}
 
-		require.NotNil(t, resp)
-
 		assertEntireBiosConfigSetEqual(t,
 			dbtools.FixtureBiosConfigSet,
 			dbtools.FixtureBiosConfigComponents,
@@ -158,11 +158,12 @@ func TestIntegrationServerBiosConfigSetGet(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.testName, func(t *testing.T) {
 			id, err := uuid.Parse(tc.BiosConfigSetID)
-			require.NoError(t, err)
+			assert.NoError(t, err)
 
 			resp, err := s.Client.GetServerBiosConfigSet(context.TODO(), id)
 
 			if tc.expectedError {
+				assert.Nil(t, resp)
 				assert.Nil(t, resp)
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tc.msg)
@@ -172,12 +173,14 @@ func TestIntegrationServerBiosConfigSetGet(t *testing.T) {
 				assert.NotNil(t, resp)
 				assert.Contains(t, resp.Message, tc.msg)
 
+				var set = resp.Record.(*fleetdbapi.BiosConfigSet)
+
 				// Fixtures are stored as models.BiosConfigSet, while the API returns fleetdbapi.BiosConfigSet, so we must manually compare the values
 				assertEntireBiosConfigSetEqual(t,
 					dbtools.FixtureBiosConfigSet,
 					dbtools.FixtureBiosConfigComponents,
 					dbtools.FixtureBiosConfigSettings,
-					resp.Record.(*fleetdbapi.BiosConfigSet))
+					set)
 			}
 		})
 	}
@@ -415,61 +418,21 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 
 	// Setup for queries
 	BiosConfigSetSetup := BiosConfigSetTest
-
-	// Item 1
 	BiosConfigSetSetup.ID = ""
 	BiosConfigSetSetup.Name = "List Test 1"
 	resp, err := s.Client.CreateServerBiosConfigSet(context.TODO(), BiosConfigSetSetup)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
-	// Item 2
+
 	BiosConfigSetSetup.ID = ""
 	BiosConfigSetSetup.Name = "List Test 2"
-	var tempComponentsArray []fleetdbapi.BiosConfigComponent
-	for i := range BiosConfigSetSetup.Components { // Remove PCIE devices from components
-		if BiosConfigSetSetup.Components[i].Model != "PCIE" {
-			tempComponentsArray = append(tempComponentsArray, BiosConfigSetSetup.Components[i])
-		}
-	}
-	backupComponents := BiosConfigSetSetup.Components
-	BiosConfigSetSetup.Components = tempComponentsArray
-
 	resp, err = s.Client.CreateServerBiosConfigSet(context.TODO(), BiosConfigSetSetup)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
 
-	// Item 3
 	BiosConfigSetSetup.ID = ""
 	BiosConfigSetSetup.Name = "List Test 3"
-	newComponent := fleetdbapi.BiosConfigComponent{
-		Name:   "TP-LinkNetwork Adapter",
-		Vendor: "TP-Link",
-		Model:  "PCIE",
-		Settings: []fleetdbapi.BiosConfigSetting{
-			{
-				Key:   "PXEEnable",
-				Value: "true",
-				Raw:   []byte(`{}`),
-			},
-			{
-				Key:   "SRIOVEnable",
-				Value: "false",
-			},
-			{
-				Key:   "position",
-				Value: "2",
-				Raw:   []byte(`{ "lanes": 8 }`),
-			},
-		},
-	}
-	BiosConfigSetSetup.Components = append(backupComponents, newComponent) // Add Additional PCIE device for param test 5
-
-	for i := range BiosConfigSetSetup.Components { // Change SM Motherboard to Dell
-		if BiosConfigSetSetup.Components[i].Name == "SM Motherboard" {
-			BiosConfigSetSetup.Components[i].Name = "Dell Motherboard"
-		}
-	}
-
+	BiosConfigSetSetup.Components[0].Name = "Dell Motherboard"
 	resp, err = s.Client.CreateServerBiosConfigSet(context.TODO(), BiosConfigSetSetup)
 	require.NoError(t, err)
 	require.NotNil(t, resp)
@@ -549,7 +512,6 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 			Preload: false,
 		},
 	}
-
 	// Get all but the 3rd based on components "SM Motherboard"
 	listTestParams4 := fleetdbapi.BiosConfigSetListParams{
 		Params: []fleetdbapi.BiosConfigSetQueryParams{
@@ -577,33 +539,6 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 		},
 	}
 
-	// Get all but second based on PCIE devices. This is to test "DISTINCT", since Item 3 has two PCIE components
-	listTestParams5 := fleetdbapi.BiosConfigSetListParams{
-		Params: []fleetdbapi.BiosConfigSetQueryParams{
-			{
-				Set: fleetdbapi.BiosConfigSetQuery{
-					Name: "List Test",
-				},
-				LogicalOperator:    fleetdbapi.OperatorLogicalAND,
-				ComparitorOperator: fleetdbapi.OperatorComparitorLike,
-			},
-			{
-				Set: fleetdbapi.BiosConfigSetQuery{
-					Components: []fleetdbapi.BiosConfigComponentQuery{
-						{
-							Model: "PCIE",
-						},
-					},
-				},
-				LogicalOperator:    fleetdbapi.OperatorLogicalAND,
-				ComparitorOperator: fleetdbapi.OperatorComparitorEqual,
-			},
-		},
-		Pagination: fleetdbapi.PaginationParams{
-			Preload: true,
-		},
-	}
-
 	var testCases = []struct {
 		testName      string
 		params        fleetdbapi.BiosConfigSetListParams
@@ -611,38 +546,32 @@ func TestIntegrationServerBiosConfigSetList(t *testing.T) {
 		expectedError bool
 	}{
 		{
-			"config set router: config set list; find none",
+			"config set router: config set list; success 0",
 			listTestParams0,
 			0,
 			false,
 		},
 		{
-			"config set router: config set list; find all",
+			"config set router: config set list; success 1",
 			listTestParams1,
 			3,
 			false,
 		},
 		{
-			"config set router: config set list; NOT test",
+			"config set router: config set list; success 2",
 			listTestParams2,
 			2,
 			false,
 		},
 		{
-			"config set router: config set list; wildcard test",
+			"config set router: config set list; success 3",
 			listTestParams3,
 			3,
 			false,
 		},
 		{
-			"config set router: config set list; component query test",
+			"config set router: config set list; success 4",
 			listTestParams4,
-			2,
-			false,
-		},
-		{
-			"config set router: config set list; DISTINCT test",
-			listTestParams5,
 			2,
 			false,
 		},
@@ -734,7 +663,15 @@ func assertBiosConfigSettingEqual(t *testing.T, expected *models.BiosConfigSetti
 
 	if expected.Raw.IsZero() {
 		assert.Nil(t, actual.Raw)
-	} else {
-		assert.JSONEq(t, string(expected.Raw.JSON), string(actual.Raw))
+	} else { // JSON []byte can have excess namespace, so lets remove that when comparing
+		var expectedBuffer bytes.Buffer
+		err := json.Compact(&expectedBuffer, expected.Raw.JSON)
+		require.NoError(t, err)
+
+		var actualBuffer bytes.Buffer
+		err = json.Compact(&actualBuffer, actual.Raw)
+		require.NoError(t, err)
+
+		assert.Equal(t, expectedBuffer.Bytes(), actualBuffer.Bytes())
 	}
 }

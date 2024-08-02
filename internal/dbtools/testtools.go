@@ -127,12 +127,6 @@ func cleanDB(t *testing.T) {
 	deleteFixture(ctx, t, models.BiosConfigComponents())
 	deleteFixture(ctx, t, models.BiosConfigSets())
 
-	deleteFixture(ctx, t, models.ServerSkuNics())
-	deleteFixture(ctx, t, models.ServerSkuMemories())
-	deleteFixture(ctx, t, models.ServerSkuDisks())
-	deleteFixture(ctx, t, models.ServerSkuAuxDevices())
-	deleteFixture(ctx, t, models.ServerSkus())
-
 	testDB.Exec("SET sql_safe_updates = true;")
 }
 

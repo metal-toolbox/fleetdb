@@ -14,6 +14,12 @@ import (
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
+var (
+	errBiosConfigSetRoute = errors.New("error fullfilling config set request")
+	errConfigListRoute    = errors.New("error fullfilling config set list request")
+	errNullRelation       = errors.New("sqlboiler relation was unexpectedly null")
+)
+
 func (r *Router) serverBiosConfigSetCreate(c *gin.Context) {
 	var payload BiosConfigSet
 
@@ -38,7 +44,7 @@ func (r *Router) serverBiosConfigSetGet(c *gin.Context) {
 	// Get Config Set
 	id := c.Param("uuid")
 	if id == "" || id == uuid.Nil.String() {
-		badRequestResponse(c, "no UUID query param", ErrRouteBiosConfigSet)
+		badRequestResponse(c, "no UUID query param", errBiosConfigSetRoute)
 		return
 	}
 
@@ -54,7 +60,11 @@ func (r *Router) serverBiosConfigSetGet(c *gin.Context) {
 
 	// Convert to Marshallable struct
 	var set BiosConfigSet
-	set.fromDBModelBiosConfigSet(dbBiosConfigSet)
+	err = set.fromDBModelBiosConfigSet(dbBiosConfigSet)
+	if err != nil {
+		dbErrorResponse(c, err)
+		return
+	}
 
 	itemResponse(c, set)
 }
@@ -62,7 +72,7 @@ func (r *Router) serverBiosConfigSetGet(c *gin.Context) {
 func (r *Router) serverBiosConfigSetDelete(c *gin.Context) {
 	id := c.Param("uuid")
 	if id == "" || id == uuid.Nil.String() {
-		badRequestResponse(c, "no UUID query param", ErrRouteBiosConfigSet)
+		badRequestResponse(c, "no UUID query param", errBiosConfigSetRoute)
 	}
 
 	set := &models.BiosConfigSet{}
@@ -81,7 +91,7 @@ func (r *Router) serverBiosConfigSetDelete(c *gin.Context) {
 func (r *Router) serverBiosConfigSetList(c *gin.Context) {
 	params, err := parseBiosConfigSetListParams(c)
 	if err != nil {
-		badRequestResponse(c, "invalid query params", ErrRouteBiosConfigSet)
+		badRequestResponse(c, "invalid query params", errConfigListRoute)
 		return
 	}
 
@@ -102,7 +112,11 @@ func (r *Router) serverBiosConfigSetList(c *gin.Context) {
 	sets := make([]BiosConfigSet, len(dbSets))
 
 	for i, dbSet := range dbSets {
-		sets[i].fromDBModelBiosConfigSet(dbSet)
+		err = sets[i].fromDBModelBiosConfigSet(dbSet)
+		if err != nil {
+			dbErrorResponse(c, err)
+			return
+		}
 	}
 
 	pd := paginationData{
@@ -120,7 +134,7 @@ func (r *Router) serverBiosConfigSetUpdate(c *gin.Context) {
 	// Get ID
 	id := c.Param("uuid")
 	if id == "" || id == uuid.Nil.String() {
-		badRequestResponse(c, "no UUID query param", ErrRouteBiosConfigSet)
+		badRequestResponse(c, "no UUID query param", errBiosConfigSetRoute)
 	}
 
 	// Unmarshal JSON payload
@@ -158,11 +172,12 @@ func (r *Router) updateBiosConfigSet(ctx context.Context, set *BiosConfigSet, ol
 
 	defer loggedRollback(r, tx)
 
-	dbSet := set.toDBModelBiosConfigSetDeep()
+	dbSet := set.toDBModelBiosConfigSet()
+	dbSet.ID = set.ID
 
 	_, err = dbSet.Update(ctx, tx, boil.Infer())
 	if err != nil {
-		return "", errors.Wrap(err, fmt.Sprintf("ID: %s", dbSet.ID))
+		return "", errors.Wrap(err, fmt.Sprintf("IDs: %s", dbSet.ID))
 	}
 
 	var oldComponents []*models.BiosConfigComponent
@@ -240,8 +255,8 @@ func updateBiosConfigSetDeleteHelper(ctx context.Context, tx *sql.Tx, components
 
 func updateBiosConfigSetInsertUpdateHelper(ctx context.Context, tx *sql.Tx, components []*models.BiosConfigComponent, componentsToUpdate []bool, settingsToUpdate [][]bool) error {
 	for c, component := range components {
-		if component.R == nil || component.R.FKBiosConfigSet == nil {
-			return ErrNullRelation
+		if component.R == nil {
+			return errNullRelation
 		}
 
 		err := component.R.FKBiosConfigSet.AddFKBiosConfigSetBiosConfigComponents(ctx, tx, !componentsToUpdate[c], component)

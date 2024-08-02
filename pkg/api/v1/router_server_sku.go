@@ -36,9 +36,8 @@ func (r *Router) serverSkuCreate(c *gin.Context) {
 func (r *Router) serverSkuGet(c *gin.Context) {
 	// Get ID
 	id := c.Param("uuid")
-	_, err := uuid.Parse(id)
-	if err != nil {
-		badRequestResponse(c, "invalid UUID query param", ErrRouteServerSku)
+	if id == "" || id == uuid.Nil.String() {
+		badRequestResponse(c, "no UUID query param", ErrRouteServerSku)
 		return
 	}
 
@@ -66,14 +65,12 @@ func (r *Router) serverSkuUpdate(c *gin.Context) {
 
 	// Get ID
 	id := c.Param("uuid")
-	_, err := uuid.Parse(id)
-	if err != nil {
-		badRequestResponse(c, "invalid UUID query param", ErrRouteServerSku)
-		return
+	if id == "" || id == uuid.Nil.String() {
+		badRequestResponse(c, "no UUID query param", ErrRouteServerSku)
 	}
 
 	// Unmarshal JSON payload
-	err = c.ShouldBindJSON(&payload)
+	err := c.ShouldBindJSON(&payload)
 	if err != nil {
 		badRequestResponse(c, "invalid payload; failed to unmarshal sku", err)
 		return
@@ -106,10 +103,8 @@ func (r *Router) serverSkuUpdate(c *gin.Context) {
 func (r *Router) serverSkuDelete(c *gin.Context) {
 	// Get ID
 	id := c.Param("uuid")
-	_, err := uuid.Parse(id)
-	if err != nil {
-		badRequestResponse(c, "invalid UUID query param", ErrRouteServerSku)
-		return
+	if id == "" || id == uuid.Nil.String() {
+		badRequestResponse(c, "no UUID query param", ErrRouteServerSku)
 	}
 
 	set := &models.ServerSku{}
@@ -134,7 +129,7 @@ func (r *Router) serverSkuList(c *gin.Context) {
 
 	mods := params.queryMods()
 
-	count, err := models.ServerSkus().Count(c.Request.Context(), r.DB)
+	count, err := models.BiosConfigSets().Count(c.Request.Context(), r.DB)
 	if err != nil {
 		dbErrorResponse(c, err)
 		return

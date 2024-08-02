@@ -21,6 +21,9 @@ var (
 	errRouteBase          = "error fullfilling %s request"
 	ErrRouteServerSku     = fmt.Errorf(errRouteBase, "server sku")
 	ErrRouteBiosConfigSet = fmt.Errorf(errRouteBase, "bios config set")
+
+	// SQL Boiler Erors
+	ErrNullRelation = errors.New("sqlboiler relation was unexpectedly null")
 )
 
 // ClientError is returned when invalid arguments are provided to the client

@@ -26,8 +26,6 @@ import (
 type ServerSkuMemory struct {
 	ID        string    `boil:"id" json:"id" toml:"id" yaml:"id"`
 	SkuID     string    `boil:"sku_id" json:"sku_id" toml:"sku_id" yaml:"sku_id"`
-	Vendor    string    `boil:"vendor" json:"vendor" toml:"vendor" yaml:"vendor"`
-	Model     string    `boil:"model" json:"model" toml:"model" yaml:"model"`
 	Bytes     int64     `boil:"bytes" json:"bytes" toml:"bytes" yaml:"bytes"`
 	Count     int64     `boil:"count" json:"count" toml:"count" yaml:"count"`
 	CreatedAt null.Time `boil:"created_at" json:"created_at,omitempty" toml:"created_at" yaml:"created_at,omitempty"`
@@ -40,8 +38,6 @@ type ServerSkuMemory struct {
 var ServerSkuMemoryColumns = struct {
 	ID        string
 	SkuID     string
-	Vendor    string
-	Model     string
 	Bytes     string
 	Count     string
 	CreatedAt string
@@ -49,8 +45,6 @@ var ServerSkuMemoryColumns = struct {
 }{
 	ID:        "id",
 	SkuID:     "sku_id",
-	Vendor:    "vendor",
-	Model:     "model",
 	Bytes:     "bytes",
 	Count:     "count",
 	CreatedAt: "created_at",
@@ -60,8 +54,6 @@ var ServerSkuMemoryColumns = struct {
 var ServerSkuMemoryTableColumns = struct {
 	ID        string
 	SkuID     string
-	Vendor    string
-	Model     string
 	Bytes     string
 	Count     string
 	CreatedAt string
@@ -69,8 +61,6 @@ var ServerSkuMemoryTableColumns = struct {
 }{
 	ID:        "server_sku_memory.id",
 	SkuID:     "server_sku_memory.sku_id",
-	Vendor:    "server_sku_memory.vendor",
-	Model:     "server_sku_memory.model",
 	Bytes:     "server_sku_memory.bytes",
 	Count:     "server_sku_memory.count",
 	CreatedAt: "server_sku_memory.created_at",
@@ -82,8 +72,6 @@ var ServerSkuMemoryTableColumns = struct {
 var ServerSkuMemoryWhere = struct {
 	ID        whereHelperstring
 	SkuID     whereHelperstring
-	Vendor    whereHelperstring
-	Model     whereHelperstring
 	Bytes     whereHelperint64
 	Count     whereHelperint64
 	CreatedAt whereHelpernull_Time
@@ -91,8 +79,6 @@ var ServerSkuMemoryWhere = struct {
 }{
 	ID:        whereHelperstring{field: "\"server_sku_memory\".\"id\""},
 	SkuID:     whereHelperstring{field: "\"server_sku_memory\".\"sku_id\""},
-	Vendor:    whereHelperstring{field: "\"server_sku_memory\".\"vendor\""},
-	Model:     whereHelperstring{field: "\"server_sku_memory\".\"model\""},
 	Bytes:     whereHelperint64{field: "\"server_sku_memory\".\"bytes\""},
 	Count:     whereHelperint64{field: "\"server_sku_memory\".\"count\""},
 	CreatedAt: whereHelpernull_Time{field: "\"server_sku_memory\".\"created_at\""},
@@ -127,8 +113,8 @@ func (r *serverSkuMemoryR) GetSku() *ServerSku {
 type serverSkuMemoryL struct{}
 
 var (
-	serverSkuMemoryAllColumns            = []string{"id", "sku_id", "vendor", "model", "bytes", "count", "created_at", "updated_at"}
-	serverSkuMemoryColumnsWithoutDefault = []string{"sku_id", "vendor", "model", "bytes", "count"}
+	serverSkuMemoryAllColumns            = []string{"id", "sku_id", "bytes", "count", "created_at", "updated_at"}
+	serverSkuMemoryColumnsWithoutDefault = []string{"sku_id", "bytes", "count"}
 	serverSkuMemoryColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
 	serverSkuMemoryPrimaryKeyColumns     = []string{"id"}
 	serverSkuMemoryGeneratedColumns      = []string{}

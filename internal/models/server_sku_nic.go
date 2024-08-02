@@ -26,8 +26,6 @@ import (
 type ServerSkuNic struct {
 	ID            string    `boil:"id" json:"id" toml:"id" yaml:"id"`
 	SkuID         string    `boil:"sku_id" json:"sku_id" toml:"sku_id" yaml:"sku_id"`
-	Vendor        string    `boil:"vendor" json:"vendor" toml:"vendor" yaml:"vendor"`
-	Model         string    `boil:"model" json:"model" toml:"model" yaml:"model"`
 	PortBandwidth int64     `boil:"port_bandwidth" json:"port_bandwidth" toml:"port_bandwidth" yaml:"port_bandwidth"`
 	PortCount     int64     `boil:"port_count" json:"port_count" toml:"port_count" yaml:"port_count"`
 	Count         int64     `boil:"count" json:"count" toml:"count" yaml:"count"`
@@ -41,8 +39,6 @@ type ServerSkuNic struct {
 var ServerSkuNicColumns = struct {
 	ID            string
 	SkuID         string
-	Vendor        string
-	Model         string
 	PortBandwidth string
 	PortCount     string
 	Count         string
@@ -51,8 +47,6 @@ var ServerSkuNicColumns = struct {
 }{
 	ID:            "id",
 	SkuID:         "sku_id",
-	Vendor:        "vendor",
-	Model:         "model",
 	PortBandwidth: "port_bandwidth",
 	PortCount:     "port_count",
 	Count:         "count",
@@ -63,8 +57,6 @@ var ServerSkuNicColumns = struct {
 var ServerSkuNicTableColumns = struct {
 	ID            string
 	SkuID         string
-	Vendor        string
-	Model         string
 	PortBandwidth string
 	PortCount     string
 	Count         string
@@ -73,8 +65,6 @@ var ServerSkuNicTableColumns = struct {
 }{
 	ID:            "server_sku_nic.id",
 	SkuID:         "server_sku_nic.sku_id",
-	Vendor:        "server_sku_nic.vendor",
-	Model:         "server_sku_nic.model",
 	PortBandwidth: "server_sku_nic.port_bandwidth",
 	PortCount:     "server_sku_nic.port_count",
 	Count:         "server_sku_nic.count",
@@ -87,8 +77,6 @@ var ServerSkuNicTableColumns = struct {
 var ServerSkuNicWhere = struct {
 	ID            whereHelperstring
 	SkuID         whereHelperstring
-	Vendor        whereHelperstring
-	Model         whereHelperstring
 	PortBandwidth whereHelperint64
 	PortCount     whereHelperint64
 	Count         whereHelperint64
@@ -97,8 +85,6 @@ var ServerSkuNicWhere = struct {
 }{
 	ID:            whereHelperstring{field: "\"server_sku_nic\".\"id\""},
 	SkuID:         whereHelperstring{field: "\"server_sku_nic\".\"sku_id\""},
-	Vendor:        whereHelperstring{field: "\"server_sku_nic\".\"vendor\""},
-	Model:         whereHelperstring{field: "\"server_sku_nic\".\"model\""},
 	PortBandwidth: whereHelperint64{field: "\"server_sku_nic\".\"port_bandwidth\""},
 	PortCount:     whereHelperint64{field: "\"server_sku_nic\".\"port_count\""},
 	Count:         whereHelperint64{field: "\"server_sku_nic\".\"count\""},
@@ -134,8 +120,8 @@ func (r *serverSkuNicR) GetSku() *ServerSku {
 type serverSkuNicL struct{}
 
 var (
-	serverSkuNicAllColumns            = []string{"id", "sku_id", "vendor", "model", "port_bandwidth", "port_count", "count", "created_at", "updated_at"}
-	serverSkuNicColumnsWithoutDefault = []string{"sku_id", "vendor", "model", "port_bandwidth", "port_count", "count"}
+	serverSkuNicAllColumns            = []string{"id", "sku_id", "port_bandwidth", "port_count", "count", "created_at", "updated_at"}
+	serverSkuNicColumnsWithoutDefault = []string{"sku_id", "port_bandwidth", "port_count", "count"}
 	serverSkuNicColumnsWithDefault    = []string{"id", "created_at", "updated_at"}
 	serverSkuNicPrimaryKeyColumns     = []string{"id"}
 	serverSkuNicGeneratedColumns      = []string{}

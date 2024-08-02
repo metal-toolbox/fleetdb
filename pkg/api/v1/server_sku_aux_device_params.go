@@ -6,15 +6,15 @@ import (
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
-// AuxDeviceQuery defines values you can query Aux Devices with. Empty strings are ignored.
-type AuxDeviceQuery struct {
+// ServerSkuAuxDeviceQuery defines values you can query BiosConfigComponents with. Empty strings are ignored.
+type ServerSkuAuxDeviceQuery struct {
 	Vendor     string `query:"vendor"`
 	Model      string `query:"model"`
 	DeviceType string `query:"device_type"`
 }
 
-// queryMods converts the list params into sql conditions that can be added to sql queries
-func (ssku *AuxDeviceQuery) queryMods(comparitor OperatorComparitorType) []qm.QueryMod {
+// QueryMods converts the list params into sql conditions that can be added to sql queries
+func (ssku *ServerSkuAuxDeviceQuery) queryMods(comparitor OperatorComparitorType) []qm.QueryMod {
 	mods := []qm.QueryMod{}
 
 	mods = appendOperatorQueryMod(mods, comparitor, models.ServerSkuAuxDeviceTableColumns.Vendor, ssku.Vendor)

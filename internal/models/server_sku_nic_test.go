@@ -735,7 +735,7 @@ func testServerSkuNicsSelect(t *testing.T) {
 }
 
 var (
-	serverSkuNicDBTypes = map[string]string{`ID`: `uuid`, `SkuID`: `uuid`, `Vendor`: `string`, `Model`: `string`, `PortBandwidth`: `int8`, `PortCount`: `int8`, `Count`: `int8`, `CreatedAt`: `timestamptz`, `UpdatedAt`: `timestamptz`}
+	serverSkuNicDBTypes = map[string]string{`ID`: `uuid`, `SkuID`: `uuid`, `PortBandwidth`: `int8`, `PortCount`: `int8`, `Count`: `int8`, `CreatedAt`: `timestamptz`, `UpdatedAt`: `timestamptz`}
 	_                   = bytes.MinRead
 )
 

@@ -735,7 +735,7 @@ func testServerSkuMemoriesSelect(t *testing.T) {
 }
 
 var (
-	serverSkuMemoryDBTypes = map[string]string{`ID`: `uuid`, `SkuID`: `uuid`, `Vendor`: `string`, `Model`: `string`, `Bytes`: `int8`, `Count`: `int8`, `CreatedAt`: `timestamptz`, `UpdatedAt`: `timestamptz`}
+	serverSkuMemoryDBTypes = map[string]string{`ID`: `uuid`, `SkuID`: `uuid`, `Bytes`: `int8`, `Count`: `int8`, `CreatedAt`: `timestamptz`, `UpdatedAt`: `timestamptz`}
 	_                      = bytes.MinRead
 )
 

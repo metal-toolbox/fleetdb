@@ -735,7 +735,7 @@ func testServerSkuDisksSelect(t *testing.T) {
 }
 
 var (
-	serverSkuDiskDBTypes = map[string]string{`ID`: `uuid`, `SkuID`: `uuid`, `Vendor`: `string`, `Model`: `string`, `Bytes`: `int8`, `Protocol`: `string`, `Count`: `int8`, `CreatedAt`: `timestamptz`, `UpdatedAt`: `timestamptz`}
+	serverSkuDiskDBTypes = map[string]string{`ID`: `uuid`, `SkuID`: `uuid`, `Bytes`: `int8`, `Protocol`: `string`, `Count`: `int8`, `CreatedAt`: `timestamptz`, `UpdatedAt`: `timestamptz`}
 	_                    = bytes.MinRead
 )
 

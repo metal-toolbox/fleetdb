@@ -43,7 +43,7 @@ func (sku *ServerSku) toDBModelServerSku() *models.ServerSku {
 }
 
 // toDBModelServerSkuDeep converts a ServerSku into a models.ServerSku. It also includes all relations, doing a deep copy
-func (sku *ServerSku) toDBModelServerSkuDeep(id string) *models.ServerSku {
+func (sku *ServerSku) toDBModelServerSkuDeep() *models.ServerSku {
 	dbSku := sku.toDBModelServerSku()
 
 	if len(sku.AuxDevices) > 0 || len(sku.Disks) > 0 || len(sku.Memory) > 0 || len(sku.Nics) > 0 {
@@ -51,22 +51,18 @@ func (sku *ServerSku) toDBModelServerSkuDeep(id string) *models.ServerSku {
 
 		for i := range sku.AuxDevices {
 			dbSku.R.SkuServerSkuAuxDevices = append(dbSku.R.SkuServerSkuAuxDevices, sku.AuxDevices[i].toDBModelServerSkuAuxDevice())
-			dbSku.R.SkuServerSkuAuxDevices[i].SkuID = id
 		}
 
 		for i := range sku.Disks {
 			dbSku.R.SkuServerSkuDisks = append(dbSku.R.SkuServerSkuDisks, sku.Disks[i].toDBModelServerSkuDisk())
-			dbSku.R.SkuServerSkuDisks[i].SkuID = id
 		}
 
 		for i := range sku.Memory {
 			dbSku.R.SkuServerSkuMemories = append(dbSku.R.SkuServerSkuMemories, sku.Memory[i].toDBModelServerSkuMemory())
-			dbSku.R.SkuServerSkuMemories[i].SkuID = id
 		}
 
 		for i := range sku.Nics {
 			dbSku.R.SkuServerSkuNics = append(dbSku.R.SkuServerSkuNics, sku.Nics[i].toDBModelServerSkuNic())
-			dbSku.R.SkuServerSkuNics[i].SkuID = id
 		}
 	}
 

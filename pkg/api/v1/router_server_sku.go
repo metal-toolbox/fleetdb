@@ -298,6 +298,7 @@ func (r *Router) updateServerSkuTransaction(ctx context.Context, sku *models.Ser
 func (r *Router) updateServerSkuAuxDevices(ctx context.Context, tx *sql.Tx, sku *models.ServerSku, oldSku *models.ServerSku) error {
 	var oldAuxDevices []*models.ServerSkuAuxDevice
 	var auxDevices []*models.ServerSkuAuxDevice
+	var isOldAuxDevices []bool
 
 	if oldSku.R != nil {
 		oldAuxDevices = oldSku.R.SkuServerSkuAuxDevices
@@ -305,6 +306,7 @@ func (r *Router) updateServerSkuAuxDevices(ctx context.Context, tx *sql.Tx, sku 
 
 	if sku.R != nil {
 		auxDevices = sku.R.SkuServerSkuAuxDevices
+		isOldAuxDevices = make([]bool, len(sku.R.SkuServerSkuAuxDevices))
 	}
 
 	// Find aux devices no longer present and remove them
@@ -315,6 +317,7 @@ func (r *Router) updateServerSkuAuxDevices(ctx context.Context, tx *sql.Tx, sku 
 				auxDevices[i].Model == oldAuxDevice.Model &&
 				auxDevices[i].ID == "" {
 				auxDevices[i].ID = oldAuxDevice.ID
+				isOldAuxDevices[i] = true
 				auxDeviceFound = true
 				break
 			}
@@ -329,12 +332,12 @@ func (r *Router) updateServerSkuAuxDevices(ctx context.Context, tx *sql.Tx, sku 
 	}
 
 	// Upsert aux devices
-	for _, auxDevice := range auxDevices {
+	for i, auxDevice := range auxDevices {
 		var err error
-		if auxDevice.ID == "" {
-			err = auxDevice.Insert(ctx, tx, boil.Infer())
-		} else {
+		if isOldAuxDevices[i] {
 			_, err = auxDevice.Update(ctx, tx, boil.Infer())
+		} else {
+			err = auxDevice.Insert(ctx, tx, boil.Infer())
 		}
 		if err != nil {
 			return err
@@ -347,6 +350,7 @@ func (r *Router) updateServerSkuAuxDevices(ctx context.Context, tx *sql.Tx, sku 
 func (r *Router) updateServerSkuDisks(ctx context.Context, tx *sql.Tx, sku *models.ServerSku, oldSku *models.ServerSku) error {
 	var oldDisks []*models.ServerSkuDisk
 	var disks []*models.ServerSkuDisk
+	var isOldDisks []bool
 
 	if oldSku.R != nil {
 		oldDisks = oldSku.R.SkuServerSkuDisks
@@ -354,6 +358,7 @@ func (r *Router) updateServerSkuDisks(ctx context.Context, tx *sql.Tx, sku *mode
 
 	if sku.R != nil {
 		disks = sku.R.SkuServerSkuDisks
+		isOldDisks = make([]bool, len(sku.R.SkuServerSkuDisks))
 	}
 
 	// Find disks no longer present and remove them
@@ -364,6 +369,7 @@ func (r *Router) updateServerSkuDisks(ctx context.Context, tx *sql.Tx, sku *mode
 				disks[i].Model == oldDisk.Model &&
 				disks[i].ID == "" {
 				disks[i].ID = oldDisk.ID
+				isOldDisks[i] = true
 				diskFound = true
 				break
 			}
@@ -378,12 +384,12 @@ func (r *Router) updateServerSkuDisks(ctx context.Context, tx *sql.Tx, sku *mode
 	}
 
 	// Upsert disks
-	for _, disk := range disks {
+	for i, disk := range disks {
 		var err error
-		if disk.ID == "" {
-			err = disk.Insert(ctx, tx, boil.Infer())
-		} else {
+		if isOldDisks[i] {
 			_, err = disk.Update(ctx, tx, boil.Infer())
+		} else {
+			err = disk.Insert(ctx, tx, boil.Infer())
 		}
 		if err != nil {
 			return err
@@ -396,6 +402,7 @@ func (r *Router) updateServerSkuDisks(ctx context.Context, tx *sql.Tx, sku *mode
 func (r *Router) updateServerSkuMemories(ctx context.Context, tx *sql.Tx, sku *models.ServerSku, oldSku *models.ServerSku) error {
 	var oldMemorys []*models.ServerSkuMemory
 	var memories []*models.ServerSkuMemory
+	var isOldMemories []bool
 
 	if oldSku.R != nil {
 		oldMemorys = oldSku.R.SkuServerSkuMemories
@@ -403,6 +410,7 @@ func (r *Router) updateServerSkuMemories(ctx context.Context, tx *sql.Tx, sku *m
 
 	if sku.R != nil {
 		memories = sku.R.SkuServerSkuMemories
+		isOldMemories = make([]bool, len(sku.R.SkuServerSkuMemories))
 	}
 
 	// Find memories no longer present and remove them
@@ -413,6 +421,7 @@ func (r *Router) updateServerSkuMemories(ctx context.Context, tx *sql.Tx, sku *m
 				memories[i].Model == oldMemory.Model &&
 				memories[i].ID == "" {
 				memories[i].ID = oldMemory.ID
+				isOldMemories[i] = true
 				memoryFound = true
 				break
 			}
@@ -427,12 +436,12 @@ func (r *Router) updateServerSkuMemories(ctx context.Context, tx *sql.Tx, sku *m
 	}
 
 	// Upsert memories
-	for _, memory := range memories {
+	for i, memory := range memories {
 		var err error
-		if memory.ID == "" {
-			err = memory.Insert(ctx, tx, boil.Infer())
-		} else {
+		if isOldMemories[i] {
 			_, err = memory.Update(ctx, tx, boil.Infer())
+		} else {
+			err = memory.Insert(ctx, tx, boil.Infer())
 		}
 		if err != nil {
 			return err
@@ -445,6 +454,7 @@ func (r *Router) updateServerSkuMemories(ctx context.Context, tx *sql.Tx, sku *m
 func (r *Router) updateServerSkuNics(ctx context.Context, tx *sql.Tx, sku *models.ServerSku, oldSku *models.ServerSku) error {
 	var oldNics []*models.ServerSkuNic
 	var nics []*models.ServerSkuNic
+	var isOldNics []bool
 
 	if oldSku.R != nil {
 		oldNics = oldSku.R.SkuServerSkuNics
@@ -452,6 +462,7 @@ func (r *Router) updateServerSkuNics(ctx context.Context, tx *sql.Tx, sku *model
 
 	if sku.R != nil {
 		nics = sku.R.SkuServerSkuNics
+		isOldNics = make([]bool, len(sku.R.SkuServerSkuNics))
 	}
 
 	// Find nics no longer present and remove them
@@ -462,6 +473,7 @@ func (r *Router) updateServerSkuNics(ctx context.Context, tx *sql.Tx, sku *model
 				nics[i].Model == oldNic.Model &&
 				nics[i].ID == "" {
 				nics[i].ID = oldNic.ID
+				isOldNics[i] = true
 				nicFound = true
 				break
 			}
@@ -476,12 +488,12 @@ func (r *Router) updateServerSkuNics(ctx context.Context, tx *sql.Tx, sku *model
 	}
 
 	// Upsert nics
-	for _, nic := range nics {
+	for i, nic := range nics {
 		var err error
-		if nic.ID == "" {
-			err = nic.Insert(ctx, tx, boil.Infer())
-		} else {
+		if isOldNics[i] {
 			_, err = nic.Update(ctx, tx, boil.Infer())
+		} else {
+			err = nic.Insert(ctx, tx, boil.Infer())
 		}
 		if err != nil {
 			return err

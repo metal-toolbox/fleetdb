@@ -250,7 +250,7 @@ func TestIntegrationServerSkuUpdate(t *testing.T) {
 
 				sku := *resp.Record.(*fleetdbapi.ServerSku)
 
-				assertServerSkuEqual(t, &ServerSkuTemp, &sku)
+				assert.Equal(t, ServerSkuTemp, sku)
 			}
 		})
 	}

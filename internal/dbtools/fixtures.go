@@ -101,12 +101,6 @@ var (
 	FixtureEventHistoryServer    *models.Server
 	FixtureEventHistoryRelatedID uuid.UUID
 	FixtureEventHistories        []*models.EventHistory
-
-	FixtureServerSku           *models.ServerSku
-	FixtureServerSkuAuxDevices []*models.ServerSkuAuxDevice
-	FixtureServerSkuDisks      []*models.ServerSkuDisk
-	FixtureServerSkuMemory     []*models.ServerSkuMemory
-	FixtureServerSkuNics       []*models.ServerSkuNic
 )
 
 func addFixtures(t *testing.T) error {
@@ -186,10 +180,6 @@ func addFixtures(t *testing.T) error {
 	}
 
 	if err := setupConfigSet(ctx, testDB); err != nil {
-		return err
-	}
-
-	if err := setupServerSku(ctx, testDB); err != nil {
 		return err
 	}
 
@@ -893,107 +883,6 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 	FixtureBiosConfigSet = &configSet
 	FixtureBiosConfigComponents = components
 	FixtureBiosConfigSettings = settings
-
-	return nil
-}
-
-//nolint:gomnd
-func setupServerSku(ctx context.Context, db *sqlx.DB) error {
-	auxDevices := []*models.ServerSkuAuxDevice{
-		{
-			Vendor:     "Nvidia",
-			Model:      "RTX 9090 TI",
-			DeviceType: "Dedicated GPU",
-			Details:    []byte(`{}`),
-		},
-		{
-			Vendor:     "Quantis",
-			Model:      "PCIe-240M",
-			DeviceType: "Other",
-			Details:    []byte(`{"slot": 1,"chip": "IDQ20MC1","entropy-bandwidth": 240000000}`),
-		},
-	}
-
-	disks := []*models.ServerSkuDisk{
-		{
-			Bytes:    100,
-			Protocol: "SATA",
-			Count:    2,
-		},
-		{
-			Bytes:    10000,
-			Protocol: "NVMe",
-			Count:    1,
-		},
-		{
-			Bytes:    2000000,
-			Protocol: "PCIE",
-			Count:    6,
-		},
-	}
-
-	memory := []*models.ServerSkuMemory{
-		{
-			Bytes: 50,
-			Count: 2,
-		},
-		{
-			Bytes: 500,
-			Count: 2,
-		},
-	}
-
-	nics := []*models.ServerSkuNic{
-		{
-			PortBandwidth: 1000001,
-			PortCount:     4,
-		},
-	}
-
-	sku := &models.ServerSku{
-		Name:             "Cool Sku",
-		Version:          "1.0",
-		Vendor:           "CoolShop",
-		Chassis:          "4U",
-		BMCModel:         "1",
-		MotherboardModel: "Momboard 3000",
-		CPUVendor:        "AMD",
-		CPUModel:         "EPYC 9754S",
-		CPUCores:         128,
-		CPUHertz:         2250000000,
-		CPUCount:         2,
-	}
-
-	err := sku.Insert(ctx, db, boil.Infer())
-	if err != nil {
-		return err
-	}
-
-	err = sku.AddSkuServerSkuAuxDevices(ctx, db, true, auxDevices...)
-	if err != nil {
-		return err
-	}
-
-	err = sku.AddSkuServerSkuDisks(ctx, db, true, disks...)
-	if err != nil {
-		return err
-	}
-
-	err = sku.AddSkuServerSkuMemories(ctx, db, true, memory...)
-	if err != nil {
-		return err
-	}
-
-	err = sku.AddSkuServerSkuNics(ctx, db, true, nics...)
-	if err != nil {
-		return err
-	}
-
-	FixtureServerSkuAuxDevices = auxDevices
-	FixtureServerSkuDisks = disks
-	FixtureServerSkuMemory = memory
-	FixtureServerSkuNics = nics
-	FixtureServerSku = sku
 
 	return nil
 }

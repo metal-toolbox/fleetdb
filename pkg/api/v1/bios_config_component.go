@@ -17,28 +17,11 @@ type BiosConfigComponent struct {
 	UpdatedAt time.Time           `json:"updated_at"`
 }
 
-// toDBModelBiosConfigComponent converts a BiosConfigComponent into a models.BiosConfigComponent
 func (cc *BiosConfigComponent) toDBModelBiosConfigComponent() *models.BiosConfigComponent {
 	dbcc := &models.BiosConfigComponent{
 		Name:   cc.Name,
 		Vendor: cc.Vendor,
 		Model:  cc.Model,
-	}
-
-	return dbcc
-}
-
-// toDBModelBiosConfigComponentDeep converts a BiosConfigComponent into a models.BiosConfigComponent. It also includes all relations, doing a deep copy
-func (cc *BiosConfigComponent) toDBModelBiosConfigComponentDeep(set *models.BiosConfigSet) *models.BiosConfigComponent {
-	dbcc := cc.toDBModelBiosConfigComponent()
-
-	if len(cc.Settings) > 0 {
-		dbcc.R = dbcc.R.NewStruct()
-		dbcc.R.FKBiosConfigSet = set
-
-		for _, setting := range cc.Settings {
-			dbcc.R.FKBiosConfigComponentBiosConfigSettings = append(dbcc.R.FKBiosConfigComponentBiosConfigSettings, setting.toDBModelBiosConfigSettingDeep(dbcc))
-		}
 	}
 
 	return dbcc

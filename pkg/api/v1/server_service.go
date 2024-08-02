@@ -20,7 +20,6 @@ const (
 	serverCredentialTypeEndpoint        = "server-credential-types"
 	serverComponentFirmwareSetsEndpoint = "server-component-firmware-sets"
 	serverBiosConfigSetEndpoint         = "server-bios-config-sets"
-	serverSkuEndpoint                   = "server-skus"
 	bomInfoEndpoint                     = "bill-of-materials"
 	uploadFileEndpoint                  = "batch-upload"
 	bomByMacAOCAddressEndpoint          = "aoc-mac-address"
@@ -84,14 +83,8 @@ type ClientInterface interface {
 	CreateServerBiosConfigSet(context.Context, BiosConfigSet) (*uuid.UUID, *ServerResponse, error)
 	GetServerBiosConfigSet(context.Context, uuid.UUID) (*BiosConfigSet, *ServerResponse, error)
 	DeleteServerBiosConfigSet(context.Context, uuid.UUID) (*ServerResponse, error)
-	ListServerBiosConfigSet(context.Context, *BiosConfigSetListParams) (*ServerResponse, error)
+	ListServerBiosConfigSet(context.Context) (*ServerResponse, error)
 	UpdateServerBiosConfigSet(context.Context, uuid.UUID, BiosConfigSet) (*ServerResponse, error)
-
-	CreateServerSku(context.Context, ServerSku) (*uuid.UUID, *ServerResponse, error)
-	GetServerSku(context.Context, uuid.UUID) (*ServerResponse, error)
-	UpdateServerSku(context.Context, uuid.UUID, ServerSku) (*ServerResponse, error)
-	DeleteServerSku(context.Context, uuid.UUID) (*ServerResponse, error)
-	ListServerSkus(context.Context, *ServerSkuListParams) (*ServerResponse, error)
 }
 
 // Create will attempt to create a server in Hollow and return the new server's UUID
@@ -585,64 +578,4 @@ func (c *Client) UpdateServerBiosConfigSet(ctx context.Context, id uuid.UUID, se
 	}
 
 	return resp, nil
-}
-
-// CreateServerSku will store the ServerSku, and return the generated UUID of the ServerSku
-func (c *Client) CreateServerSku(ctx context.Context, sku ServerSku) (*ServerResponse, error) {
-	resp, err := c.post(ctx, serverSkuEndpoint, sku)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-// GetServerSku will retrieve the ServerSku referred to by the given ID if found
-func (c *Client) GetServerSku(ctx context.Context, id uuid.UUID) (*ServerResponse, error) {
-	path := fmt.Sprintf("%s/%s", serverSkuEndpoint, id)
-	cfg := &ServerSku{}
-	resp := ServerResponse{Record: cfg}
-
-	if err := c.get(ctx, path, &resp); err != nil {
-		return nil, err
-	}
-
-	return &resp, nil
-}
-
-// UpdateServerSku will update a config set.
-// Note: Empty IDs are assumed new items to add. Items not present are assumed to be deleted.
-func (c *Client) UpdateServerSku(ctx context.Context, id uuid.UUID, set ServerSku) (*ServerResponse, error) {
-	path := fmt.Sprintf("%s/%s", serverSkuEndpoint, id)
-	resp, err := c.put(ctx, path, set)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-// DeleteServerSku will delete the ServerSku referred to by the given ID if found
-func (c *Client) DeleteServerSku(ctx context.Context, id uuid.UUID) (*ServerResponse, error) {
-	path := fmt.Sprintf("%s/%s", serverSkuEndpoint, id)
-
-	resp, err := c.delete(ctx, path)
-	if err != nil {
-		return nil, err
-	}
-
-	return resp, nil
-}
-
-// ListServerSku will return a list of ServerSku referred to by the given  More details about querying at the type definition of ServerSkuListParams.
-func (c *Client) ListServerSku(ctx context.Context, params *ServerSkuListParams) (*ServerResponse, error) {
-	cfg := &[]ServerSku{}
-	resp := ServerResponse{Records: cfg}
-
-	err := c.list(ctx, serverSkuEndpoint, params, &resp)
-	if err != nil {
-		return nil, err
-	}
-
-	return &resp, nil
 }

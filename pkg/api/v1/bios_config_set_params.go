@@ -80,7 +80,7 @@ func parseBiosConfigSetListParams(c *gin.Context) (*BiosConfigSetListParams, err
 
 // queryMods converts the list params into sql conditions that can be added to sql queries
 func (p *BiosConfigSetListParams) queryMods() []qm.QueryMod {
-	mods := []qm.QueryMod{qm.Distinct(fmt.Sprintf("\"%s\".*", models.TableNames.BiosConfigSets))}
+	mods := []qm.QueryMod{}
 
 	// Only INNER JOIN if we have query params for settings or components
 	haveComponents := false

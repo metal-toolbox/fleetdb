@@ -195,7 +195,7 @@ func TestIntegrationServerSkuUpdate(t *testing.T) {
 
 			sku := *resp.Record.(*fleetdbapi.ServerSku)
 
-			assertServerSkuEqual(t, &ServerSkuTemp, &sku)
+			assert.Equal(t, ServerSkuTemp, sku)
 		}
 
 		return nil
@@ -481,24 +481,6 @@ func TestIntegrationServerSkuList(t *testing.T) {
 			assert.Equal(t, tc.expectedCount, len(*resp.Records.(*[]fleetdbapi.ServerSku)))
 		})
 	}
-}
-
-func assertServerSkuEqual(t *testing.T, expected *fleetdbapi.ServerSku, actual *fleetdbapi.ServerSku) {
-	assert.Equal(t, expected.Name, actual.Name)
-	assert.Equal(t, expected.Version, actual.Version)
-	assert.Equal(t, expected.Vendor, actual.Vendor)
-	assert.Equal(t, expected.Chassis, actual.Chassis)
-	assert.Equal(t, expected.BMCModel, actual.BMCModel)
-	assert.Equal(t, expected.MotherboardModel, actual.MotherboardModel)
-	assert.Equal(t, expected.CPUVendor, actual.CPUVendor)
-	assert.Equal(t, expected.CPUModel, actual.CPUModel)
-	assert.Equal(t, expected.CPUCores, actual.CPUCores)
-	assert.Equal(t, expected.CPUHertz, actual.CPUHertz)
-	assert.Equal(t, expected.CPUCount, actual.CPUCount)
-	assert.ElementsMatch(t, expected.AuxDevices, actual.AuxDevices)
-	assert.ElementsMatch(t, expected.Disks, actual.Disks)
-	assert.ElementsMatch(t, expected.Memory, actual.Memory)
-	assert.ElementsMatch(t, expected.Nics, actual.Nics)
 }
 
 func assertEntireServerSkuModelEqual(t *testing.T,

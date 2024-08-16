@@ -72,29 +72,19 @@ var FirmwareSetValidationFactWhere = struct {
 
 // FirmwareSetValidationFactRels is where relationship names are stored.
 var FirmwareSetValidationFactRels = struct {
-	TargetServer string
-	FirmwareSet  string
+	FirmwareSet string
 }{
-	TargetServer: "TargetServer",
-	FirmwareSet:  "FirmwareSet",
+	FirmwareSet: "FirmwareSet",
 }
 
 // firmwareSetValidationFactR is where relationships are stored.
 type firmwareSetValidationFactR struct {
-	TargetServer *Server               `boil:"TargetServer" json:"TargetServer" toml:"TargetServer" yaml:"TargetServer"`
-	FirmwareSet  *ComponentFirmwareSet `boil:"FirmwareSet" json:"FirmwareSet" toml:"FirmwareSet" yaml:"FirmwareSet"`
+	FirmwareSet *ComponentFirmwareSet `boil:"FirmwareSet" json:"FirmwareSet" toml:"FirmwareSet" yaml:"FirmwareSet"`
 }
 
 // NewStruct creates a new relationship struct
 func (*firmwareSetValidationFactR) NewStruct() *firmwareSetValidationFactR {
 	return &firmwareSetValidationFactR{}
-}
-
-func (r *firmwareSetValidationFactR) GetTargetServer() *Server {
-	if r == nil {
-		return nil
-	}
-	return r.TargetServer
 }
 
 func (r *firmwareSetValidationFactR) GetFirmwareSet() *ComponentFirmwareSet {
@@ -393,17 +383,6 @@ func (q firmwareSetValidationFactQuery) Exists(ctx context.Context, exec boil.Co
 	return count > 0, nil
 }
 
-// TargetServer pointed to by the foreign key.
-func (o *FirmwareSetValidationFact) TargetServer(mods ...qm.QueryMod) serverQuery {
-	queryMods := []qm.QueryMod{
-		qm.Where("\"id\" = ?", o.TargetServerID),
-	}
-
-	queryMods = append(queryMods, mods...)
-
-	return Servers(queryMods...)
-}
-
 // FirmwareSet pointed to by the foreign key.
 func (o *FirmwareSetValidationFact) FirmwareSet(mods ...qm.QueryMod) componentFirmwareSetQuery {
 	queryMods := []qm.QueryMod{
@@ -413,127 +392,6 @@ func (o *FirmwareSetValidationFact) FirmwareSet(mods ...qm.QueryMod) componentFi
 	queryMods = append(queryMods, mods...)
 
 	return ComponentFirmwareSets(queryMods...)
-}
-
-// LoadTargetServer allows an eager lookup of values, cached into the
-// loaded structs of the objects. This is for an N-1 relationship.
-func (firmwareSetValidationFactL) LoadTargetServer(ctx context.Context, e boil.ContextExecutor, singular bool, maybeFirmwareSetValidationFact interface{}, mods queries.Applicator) error {
-	var slice []*FirmwareSetValidationFact
-	var object *FirmwareSetValidationFact
-
-	if singular {
-		var ok bool
-		object, ok = maybeFirmwareSetValidationFact.(*FirmwareSetValidationFact)
-		if !ok {
-			object = new(FirmwareSetValidationFact)
-			ok = queries.SetFromEmbeddedStruct(&object, &maybeFirmwareSetValidationFact)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeFirmwareSetValidationFact))
-			}
-		}
-	} else {
-		s, ok := maybeFirmwareSetValidationFact.(*[]*FirmwareSetValidationFact)
-		if ok {
-			slice = *s
-		} else {
-			ok = queries.SetFromEmbeddedStruct(&slice, maybeFirmwareSetValidationFact)
-			if !ok {
-				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeFirmwareSetValidationFact))
-			}
-		}
-	}
-
-	args := make([]interface{}, 0, 1)
-	if singular {
-		if object.R == nil {
-			object.R = &firmwareSetValidationFactR{}
-		}
-		args = append(args, object.TargetServerID)
-
-	} else {
-	Outer:
-		for _, obj := range slice {
-			if obj.R == nil {
-				obj.R = &firmwareSetValidationFactR{}
-			}
-
-			for _, a := range args {
-				if a == obj.TargetServerID {
-					continue Outer
-				}
-			}
-
-			args = append(args, obj.TargetServerID)
-
-		}
-	}
-
-	if len(args) == 0 {
-		return nil
-	}
-
-	query := NewQuery(
-		qm.From(`servers`),
-		qm.WhereIn(`servers.id in ?`, args...),
-		qmhelper.WhereIsNull(`servers.deleted_at`),
-	)
-	if mods != nil {
-		mods.Apply(query)
-	}
-
-	results, err := query.QueryContext(ctx, e)
-	if err != nil {
-		return errors.Wrap(err, "failed to eager load Server")
-	}
-
-	var resultSlice []*Server
-	if err = queries.Bind(results, &resultSlice); err != nil {
-		return errors.Wrap(err, "failed to bind eager loaded slice Server")
-	}
-
-	if err = results.Close(); err != nil {
-		return errors.Wrap(err, "failed to close results of eager load for servers")
-	}
-	if err = results.Err(); err != nil {
-		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for servers")
-	}
-
-	if len(serverAfterSelectHooks) != 0 {
-		for _, obj := range resultSlice {
-			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
-				return err
-			}
-		}
-	}
-
-	if len(resultSlice) == 0 {
-		return nil
-	}
-
-	if singular {
-		foreign := resultSlice[0]
-		object.R.TargetServer = foreign
-		if foreign.R == nil {
-			foreign.R = &serverR{}
-		}
-		foreign.R.TargetServerFirmwareSetValidationFacts = append(foreign.R.TargetServerFirmwareSetValidationFacts, object)
-		return nil
-	}
-
-	for _, local := range slice {
-		for _, foreign := range resultSlice {
-			if local.TargetServerID == foreign.ID {
-				local.R.TargetServer = foreign
-				if foreign.R == nil {
-					foreign.R = &serverR{}
-				}
-				foreign.R.TargetServerFirmwareSetValidationFacts = append(foreign.R.TargetServerFirmwareSetValidationFacts, local)
-				break
-			}
-		}
-	}
-
-	return nil
 }
 
 // LoadFirmwareSet allows an eager lookup of values, cached into the
@@ -651,53 +509,6 @@ func (firmwareSetValidationFactL) LoadFirmwareSet(ctx context.Context, e boil.Co
 				break
 			}
 		}
-	}
-
-	return nil
-}
-
-// SetTargetServer of the firmwareSetValidationFact to the related item.
-// Sets o.R.TargetServer to related.
-// Adds o to related.R.TargetServerFirmwareSetValidationFacts.
-func (o *FirmwareSetValidationFact) SetTargetServer(ctx context.Context, exec boil.ContextExecutor, insert bool, related *Server) error {
-	var err error
-	if insert {
-		if err = related.Insert(ctx, exec, boil.Infer()); err != nil {
-			return errors.Wrap(err, "failed to insert into foreign table")
-		}
-	}
-
-	updateQuery := fmt.Sprintf(
-		"UPDATE \"firmware_set_validation_facts\" SET %s WHERE %s",
-		strmangle.SetParamNames("\"", "\"", 1, []string{"target_server_id"}),
-		strmangle.WhereClause("\"", "\"", 2, firmwareSetValidationFactPrimaryKeyColumns),
-	)
-	values := []interface{}{related.ID, o.ID}
-
-	if boil.IsDebug(ctx) {
-		writer := boil.DebugWriterFrom(ctx)
-		fmt.Fprintln(writer, updateQuery)
-		fmt.Fprintln(writer, values)
-	}
-	if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
-		return errors.Wrap(err, "failed to update local table")
-	}
-
-	o.TargetServerID = related.ID
-	if o.R == nil {
-		o.R = &firmwareSetValidationFactR{
-			TargetServer: related,
-		}
-	} else {
-		o.R.TargetServer = related
-	}
-
-	if related.R == nil {
-		related.R = &serverR{
-			TargetServerFirmwareSetValidationFacts: FirmwareSetValidationFactSlice{o},
-		}
-	} else {
-		related.R.TargetServerFirmwareSetValidationFacts = append(related.R.TargetServerFirmwareSetValidationFacts, o)
 	}
 
 	return nil

@@ -542,67 +542,6 @@ func testFirmwareSetValidationFactsInsertWhitelist(t *testing.T) {
 	}
 }
 
-func testFirmwareSetValidationFactToOneServerUsingTargetServer(t *testing.T) {
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var local FirmwareSetValidationFact
-	var foreign Server
-
-	seed := randomize.NewSeed()
-	if err := randomize.Struct(seed, &local, firmwareSetValidationFactDBTypes, false, firmwareSetValidationFactColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize FirmwareSetValidationFact struct: %s", err)
-	}
-	if err := randomize.Struct(seed, &foreign, serverDBTypes, false, serverColumnsWithDefault...); err != nil {
-		t.Errorf("Unable to randomize Server struct: %s", err)
-	}
-
-	if err := foreign.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	local.TargetServerID = foreign.ID
-	if err := local.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	check, err := local.TargetServer().One(ctx, tx)
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	if check.ID != foreign.ID {
-		t.Errorf("want: %v, got %v", foreign.ID, check.ID)
-	}
-
-	ranAfterSelectHook := false
-	AddServerHook(boil.AfterSelectHook, func(ctx context.Context, e boil.ContextExecutor, o *Server) error {
-		ranAfterSelectHook = true
-		return nil
-	})
-
-	slice := FirmwareSetValidationFactSlice{&local}
-	if err = local.L.LoadTargetServer(ctx, tx, false, (*[]*FirmwareSetValidationFact)(&slice), nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.TargetServer == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	local.R.TargetServer = nil
-	if err = local.L.LoadTargetServer(ctx, tx, true, &local, nil); err != nil {
-		t.Fatal(err)
-	}
-	if local.R.TargetServer == nil {
-		t.Error("struct should have been eager loaded")
-	}
-
-	if !ranAfterSelectHook {
-		t.Error("failed to run AfterSelect hook for relationship")
-	}
-}
-
 func testFirmwareSetValidationFactToOneComponentFirmwareSetUsingFirmwareSet(t *testing.T) {
 	ctx := context.Background()
 	tx := MustTx(boil.BeginTx(ctx, nil))
@@ -664,63 +603,6 @@ func testFirmwareSetValidationFactToOneComponentFirmwareSetUsingFirmwareSet(t *t
 	}
 }
 
-func testFirmwareSetValidationFactToOneSetOpServerUsingTargetServer(t *testing.T) {
-	var err error
-
-	ctx := context.Background()
-	tx := MustTx(boil.BeginTx(ctx, nil))
-	defer func() { _ = tx.Rollback() }()
-
-	var a FirmwareSetValidationFact
-	var b, c Server
-
-	seed := randomize.NewSeed()
-	if err = randomize.Struct(seed, &a, firmwareSetValidationFactDBTypes, false, strmangle.SetComplement(firmwareSetValidationFactPrimaryKeyColumns, firmwareSetValidationFactColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &b, serverDBTypes, false, strmangle.SetComplement(serverPrimaryKeyColumns, serverColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-	if err = randomize.Struct(seed, &c, serverDBTypes, false, strmangle.SetComplement(serverPrimaryKeyColumns, serverColumnsWithoutDefault)...); err != nil {
-		t.Fatal(err)
-	}
-
-	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
-		t.Fatal(err)
-	}
-
-	for i, x := range []*Server{&b, &c} {
-		err = a.SetTargetServer(ctx, tx, i != 0, x)
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		if a.R.TargetServer != x {
-			t.Error("relationship struct not set to correct value")
-		}
-
-		if x.R.TargetServerFirmwareSetValidationFacts[0] != &a {
-			t.Error("failed to append to foreign relationship struct")
-		}
-		if a.TargetServerID != x.ID {
-			t.Error("foreign key was wrong value", a.TargetServerID)
-		}
-
-		zero := reflect.Zero(reflect.TypeOf(a.TargetServerID))
-		reflect.Indirect(reflect.ValueOf(&a.TargetServerID)).Set(zero)
-
-		if err = a.Reload(ctx, tx); err != nil {
-			t.Fatal("failed to reload", err)
-		}
-
-		if a.TargetServerID != x.ID {
-			t.Error("foreign key was wrong value", a.TargetServerID, x.ID)
-		}
-	}
-}
 func testFirmwareSetValidationFactToOneSetOpComponentFirmwareSetUsingFirmwareSet(t *testing.T) {
 	var err error
 

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"path"
+	"time"
 
 	"github.com/google/uuid"
 	rivets "github.com/metal-toolbox/rivets/types"
@@ -63,6 +64,7 @@ type ClientInterface interface {
 	ListServerComponentFirmwareSet(context.Context, *ComponentFirmwareSetListParams) ([]ComponentFirmwareSet, *ServerResponse, error)
 	ListFirmwareSets(context.Context, *ComponentFirmwareSetListParams) ([]ComponentFirmwareSet, *ServerResponse, error)
 	DeleteServerComponentFirmwareSet(context.Context, uuid.UUID) (*ServerResponse, error)
+	ValidateFirmwareSet(context.Context, uuid.UUID, uuid.UUID, time.Time) error
 
 	GetCredential(context.Context, uuid.UUID, string) (*ServerCredential, *ServerResponse, error)
 	SetCredential(context.Context, uuid.UUID, string, string) (*ServerResponse, error)
@@ -370,6 +372,20 @@ func (c *Client) UpdateComponentFirmwareSetRequest(ctx context.Context, fwSetUUI
 func (c *Client) RemoveServerComponentFirmwareSetFirmware(ctx context.Context, fwSetUUID uuid.UUID, firmwareSet ComponentFirmwareSetRequest) (*ServerResponse, error) {
 	path := fmt.Sprintf("%s/%s/remove-firmware", serverComponentFirmwareSetsEndpoint, fwSetUUID)
 	return c.post(ctx, path, firmwareSet)
+}
+
+// ValidateFirmwareSet inserts or updates a record containing facts about the validation of this
+// particular firmware set. On a successful execution the API returns 204 (http.StatusNoContent), so
+// there is nothing useful to put into a ServerResponse.
+func (c *Client) ValidateFirmwareSet(ctx context.Context, srvID, fwSetID uuid.UUID, on time.Time) error {
+	path := fmt.Sprintf("%s/validate-firmware-set", serverComponentFirmwareSetsEndpoint)
+	facts := FirmwareSetValidation{
+		TargetServer: srvID,
+		FirmwareSet:  fwSetID,
+		PerformedOn:  on,
+	}
+	_, err := c.post(ctx, path, facts)
+	return err
 }
 
 // GetCredential will return the secret for the secret type for the given server UUID

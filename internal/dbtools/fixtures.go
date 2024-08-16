@@ -101,6 +101,9 @@ var (
 	FixtureEventHistoryServer    *models.Server
 	FixtureEventHistoryRelatedID uuid.UUID
 	FixtureEventHistories        []*models.EventHistory
+
+	FixtureFWValidationServer *models.Server
+	FixtureFWValidationSet    *models.ComponentFirmwareSet
 )
 
 func addFixtures(t *testing.T) error {
@@ -180,6 +183,10 @@ func addFixtures(t *testing.T) error {
 	}
 
 	if err := setupConfigSet(ctx, testDB); err != nil {
+		return err
+	}
+
+	if err := setupFWValidationFixtures(ctx, testDB); err != nil {
 		return err
 	}
 
@@ -883,6 +890,24 @@ func setupConfigSet(ctx context.Context, db *sqlx.DB) error {
 	FixtureBiosConfigSet = &configSet
 	FixtureBiosConfigComponents = components
 	FixtureBiosConfigSettings = settings
+
+	return nil
+}
+
+func setupFWValidationFixtures(ctx context.Context, db *sqlx.DB) error {
+	FixtureFWValidationServer = &models.Server{
+		Name:         null.StringFrom("firmware-validation"),
+		FacilityCode: null.StringFrom("tf2"),
+	}
+
+	if err := FixtureFWValidationServer.Insert(ctx, db, boil.Infer()); err != nil {
+		return errors.Wrap(err, "firmware validation server fixture")
+	}
+
+	FixtureFWValidationSet = &models.ComponentFirmwareSet{Name: "firmware-validation"}
+	if err := FixtureFWValidationSet.Insert(ctx, db, boil.Infer()); err != nil {
+		return errors.Wrap(err, "firmware validation set fixture")
+	}
 
 	return nil
 }

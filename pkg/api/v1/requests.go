@@ -99,6 +99,13 @@ func (c *Client) do(req *http.Request, result interface{}) error {
 
 	defer resp.Body.Close()
 
+	switch resp.StatusCode {
+	case http.StatusNoContent, http.StatusResetContent:
+		// these statuses are not allowed to have body content
+		return nil
+	default:
+	}
+
 	data, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return err

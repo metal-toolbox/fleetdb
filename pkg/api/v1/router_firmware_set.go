@@ -740,8 +740,8 @@ func (r *Router) validateFirmwareSet(c *gin.Context) {
 		models.FirmwareSetValidationFactWhere.FirmwareSetID.EQ(payload.FirmwareSet.String()),
 	).One(ctx, txn)
 
-	switch err {
-	case nil:
+	switch {
+	case err == nil:
 		fact.ID = existing.ID
 		_, updErr := fact.Update(ctx, txn, boil.Infer())
 		if updErr != nil {
@@ -755,7 +755,7 @@ func (r *Router) validateFirmwareSet(c *gin.Context) {
 			dbErrorResponse2(c, "update firmware validation", updErr)
 			return
 		}
-	case sql.ErrNoRows:
+	case errors.Is(err, sql.ErrNoRows):
 		writeErr := fact.Insert(ctx, txn, boil.Infer())
 		if writeErr != nil {
 			r.Logger.With(

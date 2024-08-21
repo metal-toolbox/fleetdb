@@ -18,6 +18,7 @@ func TestUpsert(t *testing.T) {
 	t.Run("ComponentFirmwareSetMaps", testComponentFirmwareSetMapsUpsert)
 	t.Run("ComponentFirmwareVersions", testComponentFirmwareVersionsUpsert)
 	t.Run("EventHistories", testEventHistoriesUpsert)
+	t.Run("FirmwareSetValidationFacts", testFirmwareSetValidationFactsUpsert)
 	t.Run("ServerComponentTypes", testServerComponentTypesUpsert)
 	t.Run("ServerComponents", testServerComponentsUpsert)
 	t.Run("ServerCredentialTypes", testServerCredentialTypesUpsert)

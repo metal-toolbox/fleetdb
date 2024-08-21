@@ -107,12 +107,25 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 	// /server-component-firmware-sets
 	srvCmpntFwSets := rg.Group("/server-component-firmware-sets")
 	{
-		srvCmpntFwSets.GET("", amw.AuthRequired(readScopes("server-component-firmware-sets")), r.serverComponentFirmwareSetList)
-		srvCmpntFwSets.POST("", amw.AuthRequired(createScopes("server-component-firmware-sets")), r.serverComponentFirmwareSetCreate)
-		srvCmpntFwSets.GET("/:uuid", amw.AuthRequired(readScopes("server-component-firmware-sets")), r.serverComponentFirmwareSetGet)
-		srvCmpntFwSets.PUT("/:uuid", amw.AuthRequired(updateScopes("server-component-firmware-sets")), r.serverComponentFirmwareSetUpdate)
-		srvCmpntFwSets.DELETE("/:uuid", amw.AuthRequired(deleteScopes("server-component-firmware-sets")), r.serverComponentFirmwareSetDelete)
-		srvCmpntFwSets.POST("/:uuid/remove-firmware", amw.AuthRequired(deleteScopes("server-component-firmware-sets")), r.serverComponentFirmwareSetRemoveFirmware)
+		createScopeMiddleware := amw.AuthRequired(createScopes("server-component-firmware-sets"))
+		readScopeMiddleware := amw.AuthRequired(readScopes("server-component-firmware-sets"))
+		updateScopeMiddleware := amw.AuthRequired(updateScopes("server-component-firmware-sets"))
+		deleteScopeMiddleware := amw.AuthRequired(deleteScopes("server-component-firmware-sets"))
+
+		// list all sets
+		srvCmpntFwSets.GET("", readScopeMiddleware, r.serverComponentFirmwareSetList)
+
+		// create/read/update/delete individual firmware sets
+		srvCmpntFwSets.POST("", createScopeMiddleware, r.serverComponentFirmwareSetCreate)
+		srvCmpntFwSets.GET("/:uuid", readScopeMiddleware, r.serverComponentFirmwareSetGet)
+		srvCmpntFwSets.PUT("/:uuid", updateScopeMiddleware, r.serverComponentFirmwareSetUpdate)
+		srvCmpntFwSets.DELETE("/:uuid", deleteScopeMiddleware, r.serverComponentFirmwareSetDelete)
+
+		// remove a component firmware from the set
+		srvCmpntFwSets.POST("/:uuid/remove-firmware", deleteScopeMiddleware, r.serverComponentFirmwareSetRemoveFirmware)
+
+		// mark the set as validated
+		srvCmpntFwSets.POST("/validate-firmware-set", updateScopeMiddleware, r.validateFirmwareSet)
 	}
 
 	// /bill-of-materials

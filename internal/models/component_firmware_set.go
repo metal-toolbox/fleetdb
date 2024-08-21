@@ -73,17 +73,20 @@ var ComponentFirmwareSetWhere = struct {
 
 // ComponentFirmwareSetRels is where relationship names are stored.
 var ComponentFirmwareSetRels = struct {
-	FirmwareSetAttributesFirmwareSets   string
-	FirmwareSetComponentFirmwareSetMaps string
+	FirmwareSetAttributesFirmwareSets     string
+	FirmwareSetComponentFirmwareSetMaps   string
+	FirmwareSetFirmwareSetValidationFacts string
 }{
-	FirmwareSetAttributesFirmwareSets:   "FirmwareSetAttributesFirmwareSets",
-	FirmwareSetComponentFirmwareSetMaps: "FirmwareSetComponentFirmwareSetMaps",
+	FirmwareSetAttributesFirmwareSets:     "FirmwareSetAttributesFirmwareSets",
+	FirmwareSetComponentFirmwareSetMaps:   "FirmwareSetComponentFirmwareSetMaps",
+	FirmwareSetFirmwareSetValidationFacts: "FirmwareSetFirmwareSetValidationFacts",
 }
 
 // componentFirmwareSetR is where relationships are stored.
 type componentFirmwareSetR struct {
-	FirmwareSetAttributesFirmwareSets   AttributesFirmwareSetSlice   `boil:"FirmwareSetAttributesFirmwareSets" json:"FirmwareSetAttributesFirmwareSets" toml:"FirmwareSetAttributesFirmwareSets" yaml:"FirmwareSetAttributesFirmwareSets"`
-	FirmwareSetComponentFirmwareSetMaps ComponentFirmwareSetMapSlice `boil:"FirmwareSetComponentFirmwareSetMaps" json:"FirmwareSetComponentFirmwareSetMaps" toml:"FirmwareSetComponentFirmwareSetMaps" yaml:"FirmwareSetComponentFirmwareSetMaps"`
+	FirmwareSetAttributesFirmwareSets     AttributesFirmwareSetSlice     `boil:"FirmwareSetAttributesFirmwareSets" json:"FirmwareSetAttributesFirmwareSets" toml:"FirmwareSetAttributesFirmwareSets" yaml:"FirmwareSetAttributesFirmwareSets"`
+	FirmwareSetComponentFirmwareSetMaps   ComponentFirmwareSetMapSlice   `boil:"FirmwareSetComponentFirmwareSetMaps" json:"FirmwareSetComponentFirmwareSetMaps" toml:"FirmwareSetComponentFirmwareSetMaps" yaml:"FirmwareSetComponentFirmwareSetMaps"`
+	FirmwareSetFirmwareSetValidationFacts FirmwareSetValidationFactSlice `boil:"FirmwareSetFirmwareSetValidationFacts" json:"FirmwareSetFirmwareSetValidationFacts" toml:"FirmwareSetFirmwareSetValidationFacts" yaml:"FirmwareSetFirmwareSetValidationFacts"`
 }
 
 // NewStruct creates a new relationship struct
@@ -103,6 +106,13 @@ func (r *componentFirmwareSetR) GetFirmwareSetComponentFirmwareSetMaps() Compone
 		return nil
 	}
 	return r.FirmwareSetComponentFirmwareSetMaps
+}
+
+func (r *componentFirmwareSetR) GetFirmwareSetFirmwareSetValidationFacts() FirmwareSetValidationFactSlice {
+	if r == nil {
+		return nil
+	}
+	return r.FirmwareSetFirmwareSetValidationFacts
 }
 
 // componentFirmwareSetL is where Load methods for each relationship are stored.
@@ -422,6 +432,20 @@ func (o *ComponentFirmwareSet) FirmwareSetComponentFirmwareSetMaps(mods ...qm.Qu
 	return ComponentFirmwareSetMaps(queryMods...)
 }
 
+// FirmwareSetFirmwareSetValidationFacts retrieves all the firmware_set_validation_fact's FirmwareSetValidationFacts with an executor via firmware_set_id column.
+func (o *ComponentFirmwareSet) FirmwareSetFirmwareSetValidationFacts(mods ...qm.QueryMod) firmwareSetValidationFactQuery {
+	var queryMods []qm.QueryMod
+	if len(mods) != 0 {
+		queryMods = append(queryMods, mods...)
+	}
+
+	queryMods = append(queryMods,
+		qm.Where("\"firmware_set_validation_facts\".\"firmware_set_id\"=?", o.ID),
+	)
+
+	return FirmwareSetValidationFacts(queryMods...)
+}
+
 // LoadFirmwareSetAttributesFirmwareSets allows an eager lookup of values, cached into the
 // loaded structs of the objects. This is for a 1-M or N-M relationship.
 func (componentFirmwareSetL) LoadFirmwareSetAttributesFirmwareSets(ctx context.Context, e boil.ContextExecutor, singular bool, maybeComponentFirmwareSet interface{}, mods queries.Applicator) error {
@@ -650,6 +674,120 @@ func (componentFirmwareSetL) LoadFirmwareSetComponentFirmwareSetMaps(ctx context
 	return nil
 }
 
+// LoadFirmwareSetFirmwareSetValidationFacts allows an eager lookup of values, cached into the
+// loaded structs of the objects. This is for a 1-M or N-M relationship.
+func (componentFirmwareSetL) LoadFirmwareSetFirmwareSetValidationFacts(ctx context.Context, e boil.ContextExecutor, singular bool, maybeComponentFirmwareSet interface{}, mods queries.Applicator) error {
+	var slice []*ComponentFirmwareSet
+	var object *ComponentFirmwareSet
+
+	if singular {
+		var ok bool
+		object, ok = maybeComponentFirmwareSet.(*ComponentFirmwareSet)
+		if !ok {
+			object = new(ComponentFirmwareSet)
+			ok = queries.SetFromEmbeddedStruct(&object, &maybeComponentFirmwareSet)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", object, maybeComponentFirmwareSet))
+			}
+		}
+	} else {
+		s, ok := maybeComponentFirmwareSet.(*[]*ComponentFirmwareSet)
+		if ok {
+			slice = *s
+		} else {
+			ok = queries.SetFromEmbeddedStruct(&slice, maybeComponentFirmwareSet)
+			if !ok {
+				return errors.New(fmt.Sprintf("failed to set %T from embedded struct %T", slice, maybeComponentFirmwareSet))
+			}
+		}
+	}
+
+	args := make([]interface{}, 0, 1)
+	if singular {
+		if object.R == nil {
+			object.R = &componentFirmwareSetR{}
+		}
+		args = append(args, object.ID)
+	} else {
+	Outer:
+		for _, obj := range slice {
+			if obj.R == nil {
+				obj.R = &componentFirmwareSetR{}
+			}
+
+			for _, a := range args {
+				if a == obj.ID {
+					continue Outer
+				}
+			}
+
+			args = append(args, obj.ID)
+		}
+	}
+
+	if len(args) == 0 {
+		return nil
+	}
+
+	query := NewQuery(
+		qm.From(`firmware_set_validation_facts`),
+		qm.WhereIn(`firmware_set_validation_facts.firmware_set_id in ?`, args...),
+	)
+	if mods != nil {
+		mods.Apply(query)
+	}
+
+	results, err := query.QueryContext(ctx, e)
+	if err != nil {
+		return errors.Wrap(err, "failed to eager load firmware_set_validation_facts")
+	}
+
+	var resultSlice []*FirmwareSetValidationFact
+	if err = queries.Bind(results, &resultSlice); err != nil {
+		return errors.Wrap(err, "failed to bind eager loaded slice firmware_set_validation_facts")
+	}
+
+	if err = results.Close(); err != nil {
+		return errors.Wrap(err, "failed to close results in eager load on firmware_set_validation_facts")
+	}
+	if err = results.Err(); err != nil {
+		return errors.Wrap(err, "error occurred during iteration of eager loaded relations for firmware_set_validation_facts")
+	}
+
+	if len(firmwareSetValidationFactAfterSelectHooks) != 0 {
+		for _, obj := range resultSlice {
+			if err := obj.doAfterSelectHooks(ctx, e); err != nil {
+				return err
+			}
+		}
+	}
+	if singular {
+		object.R.FirmwareSetFirmwareSetValidationFacts = resultSlice
+		for _, foreign := range resultSlice {
+			if foreign.R == nil {
+				foreign.R = &firmwareSetValidationFactR{}
+			}
+			foreign.R.FirmwareSet = object
+		}
+		return nil
+	}
+
+	for _, foreign := range resultSlice {
+		for _, local := range slice {
+			if local.ID == foreign.FirmwareSetID {
+				local.R.FirmwareSetFirmwareSetValidationFacts = append(local.R.FirmwareSetFirmwareSetValidationFacts, foreign)
+				if foreign.R == nil {
+					foreign.R = &firmwareSetValidationFactR{}
+				}
+				foreign.R.FirmwareSet = local
+				break
+			}
+		}
+	}
+
+	return nil
+}
+
 // AddFirmwareSetAttributesFirmwareSets adds the given related objects to the existing relationships
 // of the component_firmware_set, optionally inserting them as new records.
 // Appends related to o.R.FirmwareSetAttributesFirmwareSets.
@@ -821,6 +959,59 @@ func (o *ComponentFirmwareSet) AddFirmwareSetComponentFirmwareSetMaps(ctx contex
 	for _, rel := range related {
 		if rel.R == nil {
 			rel.R = &componentFirmwareSetMapR{
+				FirmwareSet: o,
+			}
+		} else {
+			rel.R.FirmwareSet = o
+		}
+	}
+	return nil
+}
+
+// AddFirmwareSetFirmwareSetValidationFacts adds the given related objects to the existing relationships
+// of the component_firmware_set, optionally inserting them as new records.
+// Appends related to o.R.FirmwareSetFirmwareSetValidationFacts.
+// Sets related.R.FirmwareSet appropriately.
+func (o *ComponentFirmwareSet) AddFirmwareSetFirmwareSetValidationFacts(ctx context.Context, exec boil.ContextExecutor, insert bool, related ...*FirmwareSetValidationFact) error {
+	var err error
+	for _, rel := range related {
+		if insert {
+			rel.FirmwareSetID = o.ID
+			if err = rel.Insert(ctx, exec, boil.Infer()); err != nil {
+				return errors.Wrap(err, "failed to insert into foreign table")
+			}
+		} else {
+			updateQuery := fmt.Sprintf(
+				"UPDATE \"firmware_set_validation_facts\" SET %s WHERE %s",
+				strmangle.SetParamNames("\"", "\"", 1, []string{"firmware_set_id"}),
+				strmangle.WhereClause("\"", "\"", 2, firmwareSetValidationFactPrimaryKeyColumns),
+			)
+			values := []interface{}{o.ID, rel.ID}
+
+			if boil.IsDebug(ctx) {
+				writer := boil.DebugWriterFrom(ctx)
+				fmt.Fprintln(writer, updateQuery)
+				fmt.Fprintln(writer, values)
+			}
+			if _, err = exec.ExecContext(ctx, updateQuery, values...); err != nil {
+				return errors.Wrap(err, "failed to update foreign table")
+			}
+
+			rel.FirmwareSetID = o.ID
+		}
+	}
+
+	if o.R == nil {
+		o.R = &componentFirmwareSetR{
+			FirmwareSetFirmwareSetValidationFacts: related,
+		}
+	} else {
+		o.R.FirmwareSetFirmwareSetValidationFacts = append(o.R.FirmwareSetFirmwareSetValidationFacts, related...)
+	}
+
+	for _, rel := range related {
+		if rel.R == nil {
+			rel.R = &firmwareSetValidationFactR{
 				FirmwareSet: o,
 			}
 		} else {

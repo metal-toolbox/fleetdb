@@ -697,6 +697,84 @@ func testComponentFirmwareSetToManyFirmwareSetComponentFirmwareSetMaps(t *testin
 	}
 }
 
+func testComponentFirmwareSetToManyFirmwareSetFirmwareSetValidationFacts(t *testing.T) {
+	var err error
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a ComponentFirmwareSet
+	var b, c FirmwareSetValidationFact
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, componentFirmwareSetDBTypes, true, componentFirmwareSetColumnsWithDefault...); err != nil {
+		t.Errorf("Unable to randomize ComponentFirmwareSet struct: %s", err)
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	if err = randomize.Struct(seed, &b, firmwareSetValidationFactDBTypes, false, firmwareSetValidationFactColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+	if err = randomize.Struct(seed, &c, firmwareSetValidationFactDBTypes, false, firmwareSetValidationFactColumnsWithDefault...); err != nil {
+		t.Fatal(err)
+	}
+
+	b.FirmwareSetID = a.ID
+	c.FirmwareSetID = a.ID
+
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	check, err := a.FirmwareSetFirmwareSetValidationFacts().All(ctx, tx)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	bFound, cFound := false, false
+	for _, v := range check {
+		if v.FirmwareSetID == b.FirmwareSetID {
+			bFound = true
+		}
+		if v.FirmwareSetID == c.FirmwareSetID {
+			cFound = true
+		}
+	}
+
+	if !bFound {
+		t.Error("expected to find b")
+	}
+	if !cFound {
+		t.Error("expected to find c")
+	}
+
+	slice := ComponentFirmwareSetSlice{&a}
+	if err = a.L.LoadFirmwareSetFirmwareSetValidationFacts(ctx, tx, false, (*[]*ComponentFirmwareSet)(&slice), nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FirmwareSetFirmwareSetValidationFacts); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	a.R.FirmwareSetFirmwareSetValidationFacts = nil
+	if err = a.L.LoadFirmwareSetFirmwareSetValidationFacts(ctx, tx, true, &a, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got := len(a.R.FirmwareSetFirmwareSetValidationFacts); got != 2 {
+		t.Error("number of eager loaded records wrong, got:", got)
+	}
+
+	if t.Failed() {
+		t.Logf("%#v", check)
+	}
+}
+
 func testComponentFirmwareSetToManyAddOpFirmwareSetAttributesFirmwareSets(t *testing.T) {
 	var err error
 
@@ -1015,6 +1093,81 @@ func testComponentFirmwareSetToManyAddOpFirmwareSetComponentFirmwareSetMaps(t *t
 		}
 
 		count, err := a.FirmwareSetComponentFirmwareSetMaps().Count(ctx, tx)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if want := int64((i + 1) * 2); count != want {
+			t.Error("want", want, "got", count)
+		}
+	}
+}
+func testComponentFirmwareSetToManyAddOpFirmwareSetFirmwareSetValidationFacts(t *testing.T) {
+	var err error
+
+	ctx := context.Background()
+	tx := MustTx(boil.BeginTx(ctx, nil))
+	defer func() { _ = tx.Rollback() }()
+
+	var a ComponentFirmwareSet
+	var b, c, d, e FirmwareSetValidationFact
+
+	seed := randomize.NewSeed()
+	if err = randomize.Struct(seed, &a, componentFirmwareSetDBTypes, false, strmangle.SetComplement(componentFirmwareSetPrimaryKeyColumns, componentFirmwareSetColumnsWithoutDefault)...); err != nil {
+		t.Fatal(err)
+	}
+	foreigners := []*FirmwareSetValidationFact{&b, &c, &d, &e}
+	for _, x := range foreigners {
+		if err = randomize.Struct(seed, x, firmwareSetValidationFactDBTypes, false, strmangle.SetComplement(firmwareSetValidationFactPrimaryKeyColumns, firmwareSetValidationFactColumnsWithoutDefault)...); err != nil {
+			t.Fatal(err)
+		}
+	}
+
+	if err := a.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = b.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+	if err = c.Insert(ctx, tx, boil.Infer()); err != nil {
+		t.Fatal(err)
+	}
+
+	foreignersSplitByInsertion := [][]*FirmwareSetValidationFact{
+		{&b, &c},
+		{&d, &e},
+	}
+
+	for i, x := range foreignersSplitByInsertion {
+		err = a.AddFirmwareSetFirmwareSetValidationFacts(ctx, tx, i != 0, x...)
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		first := x[0]
+		second := x[1]
+
+		if a.ID != first.FirmwareSetID {
+			t.Error("foreign key was wrong value", a.ID, first.FirmwareSetID)
+		}
+		if a.ID != second.FirmwareSetID {
+			t.Error("foreign key was wrong value", a.ID, second.FirmwareSetID)
+		}
+
+		if first.R.FirmwareSet != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+		if second.R.FirmwareSet != &a {
+			t.Error("relationship was not added properly to the foreign slice")
+		}
+
+		if a.R.FirmwareSetFirmwareSetValidationFacts[i*2] != first {
+			t.Error("relationship struct slice not set to correct value")
+		}
+		if a.R.FirmwareSetFirmwareSetValidationFacts[i*2+1] != second {
+			t.Error("relationship struct slice not set to correct value")
+		}
+
+		count, err := a.FirmwareSetFirmwareSetValidationFacts().Count(ctx, tx)
 		if err != nil {
 			t.Fatal(err)
 		}

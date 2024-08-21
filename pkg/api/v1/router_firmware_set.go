@@ -3,6 +3,7 @@ package fleetdbapi
 import (
 	"context"
 	"database/sql"
+	"net/http"
 
 	"fmt"
 	"strings"
@@ -13,7 +14,9 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"go.uber.org/zap"
 
+	"github.com/metal-toolbox/fleetdb/internal/metrics"
 	"github.com/metal-toolbox/fleetdb/internal/models"
 )
 
@@ -697,4 +700,90 @@ func (r *Router) firmwareSetDeleteMappingTx(ctx context.Context, _ *models.Compo
 	}
 
 	return tx.Commit()
+}
+
+// We allow multiple calls for the same firmware-set and server-id because firmware sets are mutable.
+// We will update any record in place, or create a new one as needed.
+func (r *Router) validateFirmwareSet(c *gin.Context) {
+	var payload FirmwareSetValidation
+	if err := c.ShouldBindJSON(&payload); err != nil {
+		badRequestResponse(c, "invalid validation payload", err)
+		return
+	}
+	ctx := c.Request.Context()
+	txn, err := r.DB.BeginTx(ctx, nil)
+	if err != nil {
+		dbErrorResponse2(c, "starting transaction", err)
+		return
+	}
+
+	doRollback := false
+	rollbackFn := func() {
+		if doRollback {
+			if rbErr := txn.Rollback(); rbErr != nil {
+				r.Logger.With(
+					zap.Error(rbErr),
+				).Warn("rollback error on firmware validation")
+				metrics.DBError("rollback firmware validation")
+			}
+		}
+	}
+	defer rollbackFn()
+
+	fact := models.FirmwareSetValidationFact{
+		TargetServerID: payload.TargetServer.String(),
+		FirmwareSetID:  payload.FirmwareSet.String(),
+		PerformedOn:    payload.PerformedOn,
+	}
+
+	existing, err := models.FirmwareSetValidationFacts(
+		models.FirmwareSetValidationFactWhere.FirmwareSetID.EQ(payload.FirmwareSet.String()),
+	).One(ctx, txn)
+
+	switch {
+	case err == nil:
+		fact.ID = existing.ID
+		_, updErr := fact.Update(ctx, txn, boil.Infer())
+		if updErr != nil {
+			r.Logger.With(
+				zap.Error(updErr),
+				zap.String("firmware.set", payload.FirmwareSet.String()),
+				zap.String("target.server", payload.TargetServer.String()),
+			).Warn("updating existing firmware validation record")
+			metrics.DBError("update firmware validation")
+			doRollback = true
+			dbErrorResponse2(c, "update firmware validation", updErr)
+			return
+		}
+	case errors.Is(err, sql.ErrNoRows):
+		writeErr := fact.Insert(ctx, txn, boil.Infer())
+		if writeErr != nil {
+			r.Logger.With(
+				zap.Error(writeErr),
+				zap.String("firmware.set", payload.FirmwareSet.String()),
+				zap.String("target.server", payload.TargetServer.String()),
+			).Warn("inserting existing firmware validation record")
+			metrics.DBError("insert firmware validation")
+			doRollback = true
+			dbErrorResponse2(c, "insert firmware validation", writeErr)
+			return
+		}
+	default:
+		dbErrorResponse2(c, "checking database for existing", err)
+		return
+	}
+
+	if txErr := txn.Commit(); txErr != nil {
+		r.Logger.With(
+			zap.Error(txErr),
+			zap.String("firmware.set", payload.FirmwareSet.String()),
+			zap.String("target.server", payload.TargetServer.String()),
+		).Warn("commit firmware validation record")
+		doRollback = true
+		metrics.DBError("commit firmware validation transaction")
+		dbErrorResponse2(c, "commit firmware validation transaction", txErr)
+		return
+	}
+
+	c.JSON(http.StatusNoContent, nil)
 }

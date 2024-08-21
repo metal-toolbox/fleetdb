@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/google/uuid"
 	"github.com/stretchr/testify/assert"
@@ -610,7 +611,7 @@ func TestIntegrationServerComponentFirmwareSetList(t *testing.T) {
 			},
 			nil,
 			nil,
-			5,
+			6,
 			2,
 			false,
 			"",
@@ -978,4 +979,39 @@ func TestIntegrationServerComponentFirmwareSetRemoveFirmware(t *testing.T) {
 			assert.Contains(t, tt.expectedResponse, resp.Message)
 		})
 	}
+}
+
+func TestIntegrationValidateFirmwareSet(t *testing.T) {
+	s := serverTest(t)
+
+	t.Logf("validation set fixture: %v", dbtools.FixtureFWValidationSet)
+	setID, err := uuid.Parse(dbtools.FixtureFWValidationSet.ID)
+	require.NoError(t, err)
+
+	srvID, err := uuid.Parse(dbtools.FixtureFWValidationServer.ID)
+	require.NoError(t, err)
+
+	realClientTests(t, func(ctx context.Context, authToken string, respCode int, expectError bool) error {
+		s.Client.SetToken(authToken)
+
+		on := time.Now()
+
+		err := s.Client.ValidateFirmwareSet(ctx, srvID, setID, on)
+		if !expectError {
+			require.NoError(t, err)
+		}
+		return err
+	})
+
+	// Updating an existing validation is kosher.
+	err = s.Client.ValidateFirmwareSet(context.TODO(), srvID, setID, time.Now())
+	require.NoError(t, err, "update with fixture server id failed")
+
+	// Validate the same firmware with a non-fixture server id -- expect success
+	err = s.Client.ValidateFirmwareSet(context.TODO(), uuid.New(), setID, time.Now())
+	require.NoError(t, err, "update with unregistered server id failed")
+
+	// bogus firmware set id
+	err = s.Client.ValidateFirmwareSet(context.TODO(), uuid.New(), uuid.New(), time.Now())
+	require.Error(t, err, "update with bogus firmware set id succeeded")
 }

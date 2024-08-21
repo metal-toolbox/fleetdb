@@ -101,3 +101,9 @@ func (sc *ComponentFirmwareSetRequest) toDBModelFirmwareSet() (*models.Component
 
 	return s, nil
 }
+
+type FirmwareSetValidation struct {
+	TargetServer uuid.UUID `json:"target_server" binding:"required"`
+	FirmwareSet  uuid.UUID `json:"firmware_set" binding:"required"`
+	PerformedOn  time.Time `json:"performed_on" binding:"required"`
+}

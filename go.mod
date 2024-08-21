@@ -20,7 +20,7 @@ require (
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/spf13/viper v1.19.0
 	github.com/stretchr/testify v1.9.0
-	github.com/volatiletech/null/v8 v8.1.2
+	github.com/volatiletech/null/v9 v9.0.0
 	github.com/volatiletech/randomize v0.0.1
 	github.com/volatiletech/sqlboiler/v4 v4.16.2
 	github.com/volatiletech/strmangle v0.0.6
@@ -36,6 +36,7 @@ require (
 	github.com/bmc-toolbox/common v0.0.0-20240723142833-87832458b53b
 	github.com/hetiansu5/urlquery v1.2.7
 	github.com/metal-toolbox/rivets v1.2.0
+	github.com/volatiletech/null/v8 v8.1.2
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	go.hollow.sh/toolbox v0.6.3
 	go.infratographer.com/x v0.5.3

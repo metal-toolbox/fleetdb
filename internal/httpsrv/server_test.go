@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/metal-toolbox/rivets/ginjwt"
 	"github.com/stretchr/testify/assert"
-	"go.hollow.sh/toolbox/ginjwt"
 	"go.uber.org/zap"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"

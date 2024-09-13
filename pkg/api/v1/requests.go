@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"go.hollow.sh/toolbox/version"
+	"github.com/metal-toolbox/rivets/version"
 )
 
 func newGetRequest(ctx context.Context, uri, path string) (*http.Request, error) {

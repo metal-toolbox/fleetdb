@@ -2,7 +2,7 @@
 package config
 
 import (
-	"go.hollow.sh/toolbox/ginjwt"
+	"github.com/metal-toolbox/rivets/ginjwt"
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/loggingx"
 	"go.infratographer.com/x/otelx"

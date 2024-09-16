@@ -33,7 +33,7 @@ require (
 )
 
 require (
-	github.com/bmc-toolbox/common v0.0.0-20240723142833-87832458b53b
+	github.com/bmc-toolbox/common v0.0.0-20240806132831-ba8adc6a35e3
 	github.com/hetiansu5/urlquery v1.2.7
 	github.com/metal-toolbox/rivets v1.3.7
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible

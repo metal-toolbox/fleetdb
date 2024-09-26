@@ -7,8 +7,8 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
+	"github.com/metal-toolbox/rivets/ginjwt"
 	"github.com/stretchr/testify/require"
-	"go.hollow.sh/toolbox/ginjwt"
 	"go.uber.org/zap"
 	"gopkg.in/square/go-jose.v2"
 	"gopkg.in/square/go-jose.v2/jwt"

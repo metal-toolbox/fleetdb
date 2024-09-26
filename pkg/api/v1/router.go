@@ -7,9 +7,9 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	"github.com/metal-toolbox/rivets/ginauth"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
-	"go.hollow.sh/toolbox/ginauth"
 	"go.uber.org/zap"
 	"gocloud.dev/secrets"
 

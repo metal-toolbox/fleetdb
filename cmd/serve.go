@@ -4,10 +4,10 @@ import (
 	"context"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/metal-toolbox/rivets/ginjwt"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/volatiletech/sqlboiler/boil"
-	"go.hollow.sh/toolbox/ginjwt"
 	"go.infratographer.com/x/crdbx"
 	"go.infratographer.com/x/otelx"
 	"go.infratographer.com/x/viperx"

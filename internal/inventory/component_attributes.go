@@ -29,11 +29,21 @@ func componentAttributesFromJSON(byt []byte) (*rivets.ComponentAttributes, error
 	return ca, nil
 }
 
+// for historical reasons, alloy used to store firmware data like this using a different API
+// we create this here to maintain compatibility with old data
+type firmwareContainer struct {
+	Firmware *common.Firmware `json:"firmware,omitempty"`
+}
+
 func mustFirmwareJSON(fw *common.Firmware) []byte {
 	if fw == nil {
 		return nil
 	}
-	byt, err := json.Marshal(fw)
+
+	fwc := &firmwareContainer{
+		Firmware: fw,
+	}
+	byt, err := json.Marshal(fwc)
 	if err != nil {
 		panic("bad firmware payload")
 	}
@@ -44,12 +54,12 @@ func firmwareFromJSON(byt []byte) (*common.Firmware, error) {
 	if byt == nil {
 		return nil, nil
 	}
-	fw := &common.Firmware{}
-	err := json.Unmarshal(byt, fw)
+	fwc := &firmwareContainer{}
+	err := json.Unmarshal(byt, fwc)
 	if err != nil {
 		return nil, err
 	}
-	return fw, nil
+	return fwc.Firmware, nil
 }
 
 type statusContainer struct {

@@ -35,7 +35,7 @@ require (
 require (
 	github.com/bmc-toolbox/common v0.0.0-20240926143744-8c478be881d7
 	github.com/hetiansu5/urlquery v1.2.7
-	github.com/metal-toolbox/rivets v1.3.7
+	github.com/metal-toolbox/rivets v1.3.8
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	go.infratographer.com/x v0.5.3
 	gocloud.dev v0.38.0

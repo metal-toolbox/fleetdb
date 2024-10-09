@@ -1,6 +1,8 @@
 module github.com/metal-toolbox/fleetdb
 
-go 1.22
+go 1.22.0
+
+toolchain go1.23.2
 
 require (
 	github.com/XSAM/otelsql v0.32.0 // indirect
@@ -39,7 +41,7 @@ require (
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	go.infratographer.com/x v0.5.3
 	gocloud.dev v0.38.0
-	golang.org/x/exp v0.0.0-20240719175910-8a7402abbf56
+	golang.org/x/exp v0.0.0-20241009180824-f66d83c29e7c
 )
 
 require (

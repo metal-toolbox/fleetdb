@@ -116,7 +116,7 @@ func TestBiosConfigSetQueryMods(t *testing.T) {
 		},
 	}
 
-	mods := []qm.QueryMod{}
+	mods := []qm.QueryMod{qm.Distinct(fmt.Sprintf("\"%s\".*", models.TableNames.BiosConfigSets))}
 	whereMods := []qm.QueryMod{}
 	whereMods = appendOperatorQueryMod(whereMods, OperatorComparitorLike, models.BiosConfigComponentTableColumns.Name, testBiosConfigSetQueryParams.Params[0].Set.Components[0].Name)
 	whereMods = []qm.QueryMod{

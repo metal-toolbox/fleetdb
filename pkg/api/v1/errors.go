@@ -16,6 +16,10 @@ var (
 	ErrNoNextPage = errors.New("no next page found")
 	// ErrUUIDParse is returned when the UUID is invalid.
 	ErrUUIDParse = errors.New("UUID parse error")
+
+	// Route Errors
+	errRouteBase          = "error fullfilling %s request"
+	ErrRouteBiosConfigSet = fmt.Errorf(errRouteBase, "bios config set")
 )
 
 // ClientError is returned when invalid arguments are provided to the client
@@ -42,7 +46,7 @@ func (e ServerError) Error() string {
 
 func loggedRollback(r *Router, tx *sql.Tx) {
 	err := tx.Rollback()
-	if err != nil {
+	if err != nil && !errors.Is(err, sql.ErrTxDone) {
 		r.Logger.Error("Failed transaction, attempting rollback", zap.Error(err))
 	}
 }

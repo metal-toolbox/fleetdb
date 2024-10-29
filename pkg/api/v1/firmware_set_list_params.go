@@ -19,6 +19,7 @@ type ComponentFirmwareSetListParams struct {
 	AttributeListParams []AttributeListParams
 }
 
+// setQuery implements the queryParams interface
 func (p *ComponentFirmwareSetListParams) setQuery(q url.Values) {
 	if p == nil {
 		return

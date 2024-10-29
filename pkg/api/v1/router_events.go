@@ -101,7 +101,7 @@ func (r *Router) getServerEvents(c *gin.Context) {
 	}
 
 	limit := pageParams.Limit // default is 100
-	if limit > 1000 {         //nolint:gomnd // it's fine
+	if limit > 1000 {         //nolint:mnd // it's fine
 		limit = 1000 // more than 1000 event records in a single shot is sus
 	}
 

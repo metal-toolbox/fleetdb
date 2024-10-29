@@ -85,7 +85,7 @@ type ClientInterface interface {
 	CreateServerBiosConfigSet(context.Context, BiosConfigSet) (*uuid.UUID, *ServerResponse, error)
 	GetServerBiosConfigSet(context.Context, uuid.UUID) (*BiosConfigSet, *ServerResponse, error)
 	DeleteServerBiosConfigSet(context.Context, uuid.UUID) (*ServerResponse, error)
-	ListServerBiosConfigSet(context.Context) (*ServerResponse, error)
+	ListServerBiosConfigSet(context.Context, *BiosConfigSetListParams) (*ServerResponse, error)
 	UpdateServerBiosConfigSet(context.Context, uuid.UUID, BiosConfigSet) (*ServerResponse, error)
 }
 

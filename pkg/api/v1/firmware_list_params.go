@@ -20,6 +20,7 @@ type ComponentFirmwareVersionListParams struct {
 	Pagination *PaginationParams
 }
 
+// setQuery implements the queryParams interface
 func (p *ComponentFirmwareVersionListParams) setQuery(q url.Values) {
 	if p == nil {
 		return

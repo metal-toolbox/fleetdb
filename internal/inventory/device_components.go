@@ -239,21 +239,31 @@ func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 		}
 
 		st, err := retrieveComponentStatusVA(ctx, exec, rec.ID, getStatusNamespace(inband))
-		switch err {
-		case nil, sql.ErrNoRows:
-		default:
-			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" status"+":"+err.Error())
+		if err != nil {
+			zap.L().With(
+				zap.String("rec.ID", rec.ID),
+				zap.String("rec.Name", rec.Name.String),
+			).Warn(err.Error())
+
+			// Relax error
+
+			// switch err {
+			// case nil, sql.ErrNoRows:
+			// default:
+			// 	return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" status"+":"+err.Error())
+			// }
+		} else {
+			comp := &rivets.Component{
+				Name:       rec.Name.String,
+				Vendor:     rec.Vendor.String,
+				Model:      rec.Model.String,
+				Serial:     rec.Serial.String,
+				Firmware:   fw,
+				Status:     st,
+				Attributes: attr,
+			}
+			comps = append(comps, comp)
 		}
-		comp := &rivets.Component{
-			Name:       rec.Name.String,
-			Vendor:     rec.Vendor.String,
-			Model:      rec.Model.String,
-			Serial:     rec.Serial.String,
-			Firmware:   fw,
-			Status:     st,
-			Attributes: attr,
-		}
-		comps = append(comps, comp)
 	}
 
 	return comps, nil

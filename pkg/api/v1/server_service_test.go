@@ -11,7 +11,7 @@ import (
 
 	fleetdbapi "github.com/metal-toolbox/fleetdb/pkg/api/v1"
 
-	rivets "github.com/metal-toolbox/rivets/types"
+	rivets "github.com/metal-toolbox/rivets/v2/types"
 )
 
 func TestFleetdbCreate(t *testing.T) {

@@ -6,7 +6,7 @@ import (
 	"encoding/json"
 
 	"github.com/google/uuid"
-	rivets "github.com/metal-toolbox/rivets/types"
+	rivets "github.com/metal-toolbox/rivets/v2/types"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"

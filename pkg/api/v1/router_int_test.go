@@ -7,7 +7,7 @@ import (
 	"time"
 
 	_ "github.com/lib/pq"
-	"github.com/metal-toolbox/rivets/ginjwt"
+	"github.com/metal-toolbox/rivets/v2/ginjwt"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"gopkg.in/go-jose/go-jose.v2"

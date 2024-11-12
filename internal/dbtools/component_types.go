@@ -4,9 +4,9 @@ import (
 	"context"
 	"database/sql"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/gosimple/slug"
 	"github.com/jmoiron/sqlx"
+	common "github.com/metal-toolbox/bmc-common"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 

@@ -6,11 +6,11 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/google/uuid"
+	common "github.com/metal-toolbox/bmc-common"
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/models"
-	rivets "github.com/metal-toolbox/rivets/types"
+	rivets "github.com/metal-toolbox/rivets/v2/types"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 

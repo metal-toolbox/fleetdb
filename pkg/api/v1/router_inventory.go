@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/gin-gonic/gin"
-	rivets "github.com/metal-toolbox/rivets/types"
+	rivets "github.com/metal-toolbox/rivets/v2/types"
 	"go.uber.org/zap"
 
 	"github.com/metal-toolbox/fleetdb/internal/inventory"

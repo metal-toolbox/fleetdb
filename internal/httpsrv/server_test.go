@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	"github.com/jmoiron/sqlx"
-	"github.com/metal-toolbox/rivets/ginjwt"
+	"github.com/metal-toolbox/rivets/v2/ginjwt"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
 

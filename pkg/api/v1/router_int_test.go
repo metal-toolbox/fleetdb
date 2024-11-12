@@ -10,8 +10,8 @@ import (
 	"github.com/metal-toolbox/rivets/ginjwt"
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
-	"gopkg.in/square/go-jose.v2"
-	"gopkg.in/square/go-jose.v2/jwt"
+	"gopkg.in/go-jose/go-jose.v2"
+	"gopkg.in/go-jose/go-jose.v2/jwt"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/httpsrv"

@@ -8,7 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	rivets "github.com/metal-toolbox/rivets/types"
+	rivets "github.com/metal-toolbox/rivets/v2/types"
 )
 
 const (

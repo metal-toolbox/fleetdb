@@ -4,9 +4,9 @@ import (
 	"context"
 	"testing"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/google/uuid"
-	rivets "github.com/metal-toolbox/rivets/types"
+	common "github.com/metal-toolbox/bmc-common"
+	rivets "github.com/metal-toolbox/rivets/v2/types"
 	"github.com/stretchr/testify/require"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"

@@ -3,8 +3,8 @@ package inventory
 import (
 	"encoding/json"
 
-	"github.com/bmc-toolbox/common"
-	rivets "github.com/metal-toolbox/rivets/types"
+	common "github.com/metal-toolbox/bmc-common"
+	rivets "github.com/metal-toolbox/rivets/v2/types"
 )
 
 func mustAttributesJSON(ca *rivets.ComponentAttributes) []byte {

@@ -9,7 +9,7 @@ import (
 	"net/http"
 	"net/url"
 
-	"github.com/metal-toolbox/rivets/version"
+	"github.com/metal-toolbox/rivets/v2/version"
 )
 
 func newGetRequest(ctx context.Context, uri, path string) (*http.Request, error) {

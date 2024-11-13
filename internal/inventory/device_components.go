@@ -5,8 +5,8 @@ import (
 	"database/sql"
 	"encoding/json"
 
-	"github.com/bmc-toolbox/common"
-	rivets "github.com/metal-toolbox/rivets/types"
+	common "github.com/metal-toolbox/bmc-common"
+	rivets "github.com/metal-toolbox/rivets/v2/types"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"

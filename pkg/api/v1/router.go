@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
-	"github.com/metal-toolbox/rivets/ginauth"
+	"github.com/metal-toolbox/rivets/v2/ginauth"
 	"github.com/pkg/errors"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"go.uber.org/zap"

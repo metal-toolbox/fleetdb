@@ -7,9 +7,9 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/bmc-toolbox/common"
 	"github.com/google/uuid"
 	"github.com/jmoiron/sqlx"
+	common "github.com/metal-toolbox/bmc-common"
 	"github.com/stretchr/testify/require"
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
@@ -17,7 +17,7 @@ import (
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/models"
-	rivets "github.com/metal-toolbox/rivets/types"
+	rivets "github.com/metal-toolbox/rivets/v2/types"
 )
 
 func mustCreateServerRecord(t *testing.T, db *sqlx.DB, name string) uuid.UUID {

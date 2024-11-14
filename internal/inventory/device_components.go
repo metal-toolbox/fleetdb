@@ -251,9 +251,10 @@ func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 		if err != nil {
 			// Relax error
 			zap.L().With(
+				zap.Error(err),
 				zap.String("rec.ID", rec.ID),
 				zap.String("rec.Name", rec.Name.String),
-			).Error(err.Error())
+			).Warn("error retrieving status versioned attribute")
 		} else {
 			comp.Status = st
 		}

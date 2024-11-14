@@ -253,7 +253,7 @@ func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 			zap.L().With(
 				zap.String("rec.ID", rec.ID),
 				zap.String("rec.Name", rec.Name.String),
-			).Warn(err.Error())
+			).Error(err.Error())
 		} else {
 			comp.Status = st
 		}

@@ -238,20 +238,25 @@ func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" firmware"+":"+err.Error())
 		}
 
-		st, err := retrieveComponentStatusVA(ctx, exec, rec.ID, getStatusNamespace(inband))
-		switch err {
-		case nil, sql.ErrNoRows:
-		default:
-			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" status"+":"+err.Error())
-		}
 		comp := &rivets.Component{
 			Name:       rec.Name.String,
 			Vendor:     rec.Vendor.String,
 			Model:      rec.Model.String,
 			Serial:     rec.Serial.String,
 			Firmware:   fw,
-			Status:     st,
 			Attributes: attr,
+		}
+
+		st, err := retrieveComponentStatusVA(ctx, exec, rec.ID, getStatusNamespace(inband))
+		if err != nil {
+			// Relax error
+			zap.L().With(
+				zap.Error(err),
+				zap.String("rec.ID", rec.ID),
+				zap.String("rec.Name", rec.Name.String),
+			).Warn("error retrieving status versioned attribute")
+		} else {
+			comp.Status = st
 		}
 		comps = append(comps, comp)
 	}

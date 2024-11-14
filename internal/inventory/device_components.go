@@ -70,8 +70,7 @@ func createOrUpdateComponent(ctx context.Context, exec boil.ContextExecutor, sc 
 
 // This encapsulates much of the repetitive work of getting a component to the database layer.
 func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmp *rivets.Component,
-	inband bool, deviceID string,
-) error {
+	inband bool, deviceID string) error {
 	name := cmp.Name
 	typeID, err := dbtools.ComponentTypeIDFromName(name)
 	if err != nil {
@@ -122,8 +121,7 @@ func composeRecords(ctx context.Context, exec boil.ContextExecutor, cmp *rivets.
 }
 
 func retrieveComponentAttributes(ctx context.Context, exec boil.ContextExecutor,
-	componentID, namespace string,
-) (*rivets.ComponentAttributes, error) {
+	componentID, namespace string) (*rivets.ComponentAttributes, error) {
 	ar, err := models.Attributes(
 		models.AttributeWhere.ServerComponentID.EQ(null.StringFrom(componentID)),
 		models.AttributeWhere.Namespace.EQ(namespace),
@@ -143,8 +141,7 @@ func retrieveComponentAttributes(ctx context.Context, exec boil.ContextExecutor,
 
 // we rely on the caller to know what v-attributes to retrieve and how to deserialize that data
 func retrieveVersionedAttribute(ctx context.Context, exec boil.ContextExecutor,
-	parentID, namespace string, isServer bool,
-) ([]byte, error) {
+	parentID, namespace string, isServer bool) ([]byte, error) {
 	var mods []qm.QueryMod
 	if isServer {
 		mods = append(mods, models.VersionedAttributeWhere.ServerID.EQ(null.StringFrom(parentID)))
@@ -165,8 +162,7 @@ func retrieveVersionedAttribute(ctx context.Context, exec boil.ContextExecutor,
 }
 
 func retrieveComponentFirmwareVA(ctx context.Context, exec boil.ContextExecutor,
-	parentID, namespace string,
-) (*common.Firmware, error) {
+	parentID, namespace string) (*common.Firmware, error) {
 	data, err := retrieveVersionedAttribute(ctx, exec, parentID, namespace, false)
 	switch err {
 	case sql.ErrNoRows:
@@ -184,8 +180,7 @@ func retrieveComponentFirmwareVA(ctx context.Context, exec boil.ContextExecutor,
 }
 
 func retrieveComponentStatusVA(ctx context.Context, exec boil.ContextExecutor, parentID,
-	namespace string,
-) (*common.Status, error) {
+	namespace string) (*common.Status, error) {
 	data, err := retrieveVersionedAttribute(ctx, exec, parentID, namespace, false)
 	switch err {
 	case sql.ErrNoRows:
@@ -206,12 +201,12 @@ func retrieveComponentStatusVA(ctx context.Context, exec boil.ContextExecutor, p
 // are composed into the *Common. We return the attributes so that the caller can reconsitute
 // the specific device type. This is basically the reverse of composeRecords.
 func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
-	inband bool, deviceID string,
-) ([]*rivets.Component, error) {
+	inband bool, deviceID string) ([]*rivets.Component, error) {
 	records, err := models.ServerComponents(
 		models.ServerComponentWhere.ServerID.EQ(deviceID),
 		qm.OrderBy(models.ServerComponentColumns.CreatedAt+" DESC"),
 	).All(ctx, exec)
+
 	if err != nil {
 		return nil, err
 	}
@@ -243,26 +238,26 @@ func componentsFromDatabase(ctx context.Context, exec boil.ContextExecutor,
 			return nil, errors.Wrap(err, "retrieving "+rec.Name.String+"-"+rec.ID+" firmware"+":"+err.Error())
 		}
 
+		comp := &rivets.Component{
+			Name:       rec.Name.String,
+			Vendor:     rec.Vendor.String,
+			Model:      rec.Model.String,
+			Serial:     rec.Serial.String,
+			Firmware:   fw,
+			Attributes: attr,
+		}
+
 		st, err := retrieveComponentStatusVA(ctx, exec, rec.ID, getStatusNamespace(inband))
 		if err != nil {
 			// Relax error
-
 			zap.L().With(
 				zap.String("rec.ID", rec.ID),
 				zap.String("rec.Name", rec.Name.String),
 			).Warn(err.Error())
 		} else {
-			comp := &rivets.Component{
-				Name:       rec.Name.String,
-				Vendor:     rec.Vendor.String,
-				Model:      rec.Model.String,
-				Serial:     rec.Serial.String,
-				Firmware:   fw,
-				Status:     st,
-				Attributes: attr,
-			}
-			comps = append(comps, comp)
+			comp.Status = st
 		}
+		comps = append(comps, comp)
 	}
 
 	return comps, nil

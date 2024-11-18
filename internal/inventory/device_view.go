@@ -11,6 +11,7 @@ import (
 	"github.com/volatiletech/null/v8"
 	"github.com/volatiletech/sqlboiler/v4/boil"
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
+	"go.uber.org/zap"
 
 	"github.com/metal-toolbox/fleetdb/internal/dbtools"
 	"github.com/metal-toolbox/fleetdb/internal/metrics"
@@ -37,11 +38,13 @@ var (
 	// XXX: enable this when Server supports UEFI variables
 	// alloyUefiVarsNamespace = "sh.hollow.alloy.server_uefi_variables" // this is a versioned attribute, we expect it to change
 	serverStatusNamespace = "sh.hollow.alloy.server_status" // versioned
+	bmcInfoNamespace      = "sh.hollow.bmc_info"
 
 	// metadata keys
-	modelKey  = "model"
-	vendorKey = "vendor"
-	serialKey = "serial"
+	modelKey      = "model"
+	vendorKey     = "vendor"
+	serialKey     = "serial"
+	bmcAddressKey = "address"
 	// XXX: again, enable after UEFI Variables are a thing. uefiVarsKey = "uefi-variables"
 
 	errBadServer    = errors.New("data is missing required field")
@@ -95,6 +98,15 @@ func (dv *DeviceView) vendorAttributes() json.RawMessage {
 	return byt
 }
 
+func (dv *DeviceView) bmcInfo() json.RawMessage {
+	m := map[string]string{
+		bmcAddressKey: dv.Inv.BMCAddress,
+	}
+	byt, _ := json.Marshal(m)
+
+	return byt
+}
+
 /* XXX: return this when rivet's Server datatype has a facility to store UEFI vars.
 func (dv *DeviceView) uefiVariables() (json.RawMessage, error) {
 	var varString string
@@ -117,6 +129,18 @@ func (dv *DeviceView) updateVendorAttributes(ctx context.Context, exec boil.Cont
 	return updateAnyAttribute(ctx, exec, true, dv.DeviceID.String(), alloyVendorNamespace, dv.vendorAttributes())
 }
 
+func (dv *DeviceView) updateBMCInfo(ctx context.Context, exec boil.ContextExecutor) error {
+	// bmc info is an optional attribute (for example, in-band inventory can't collect it) so only update
+	// if we have a non-zero value here.
+	if dv.Inv.BMCAddress == "" {
+		zap.L().With(
+			zap.String("server.id", dv.DeviceID.String()),
+		).Debug("no bmc info attribute")
+		return nil
+	}
+	return updateAnyAttribute(ctx, exec, true, dv.DeviceID.String(), bmcInfoNamespace, dv.bmcInfo())
+}
+
 // write all the versioned-attributes from this server
 func (dv *DeviceView) updateServerVAs(ctx context.Context, exec boil.ContextExecutor) error {
 	statusData, _ := json.Marshal(dv.Inv.Status)
@@ -129,6 +153,10 @@ func (dv *DeviceView) UpsertInventory(ctx context.Context, exec boil.ContextExec
 	// yes, this is a dopey, repetitive style that should be easy for folks to extend or modify
 	if err := dv.updateVendorAttributes(ctx, exec); err != nil {
 		return errors.Wrap(err, "server vendor attributes update")
+	}
+
+	if err := dv.updateBMCInfo(ctx, exec); err != nil {
+		return errors.Wrap(err, "bmc info update")
 	}
 
 	if err := dv.updateServerVAs(ctx, exec); err != nil {
@@ -172,6 +200,16 @@ func (dv *DeviceView) FromDatastore(ctx context.Context, exec boil.ContextExecut
 			dv.Inv.Vendor = m[vendorKey]
 			dv.Inv.Model = m[modelKey]
 			dv.Inv.Serial = m[serialKey]
+		case bmcInfoNamespace:
+			m := map[string]string{}
+			if err := a.Data.Unmarshal(&m); err == nil {
+				dv.Inv.BMCAddress = m[bmcAddressKey]
+			} else {
+				zap.L().With(
+					zap.Error(err),
+					zap.String("server.id", dv.DeviceID.String()),
+				).Warn("deserializing bmc info attribute")
+			}
 		default:
 		}
 	}

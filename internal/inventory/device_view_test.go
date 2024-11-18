@@ -71,7 +71,7 @@ func Test_DeviceViewUpdate(t *testing.T) {
 			},
 			DeviceID: srvID,
 		}
-		// make a server for out attributes
+		// make a server for our attributes
 		server := models.Server{
 			ID:           srvID.String(),
 			Name:         null.StringFrom("dvtest-server"),
@@ -86,6 +86,7 @@ func Test_DeviceViewUpdate(t *testing.T) {
 
 		// do it again to test the update
 		dv.Inv.Status = "different status"
+		dv.Inv.BMCAddress = "my bmc address"
 		err = dv.UpsertInventory(context.TODO(), db)
 		require.NoError(t, err)
 
@@ -96,6 +97,7 @@ func Test_DeviceViewUpdate(t *testing.T) {
 		err = read.FromDatastore(context.TODO(), db)
 		require.NoError(t, err)
 		require.Equal(t, "different status", read.Inv.Status)
+		require.Equal(t, "my bmc address", read.Inv.BMCAddress)
 
 		require.Len(t, read.Inv.Components, 1)
 		bios := read.Inv.Components[0]

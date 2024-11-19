@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/metal-toolbox/fleetdb/protogen/fleetservice"
 	rivets "github.com/metal-toolbox/rivets/v2/types"
 )
 
@@ -43,6 +44,7 @@ type ClientInterface interface {
 	UpdateAttributes(ctx context.Context, u uuid.UUID, ns string, data json.RawMessage) (*ServerResponse, error)
 
 	GetComponents(context.Context, uuid.UUID, *PaginationParams) ([]ServerComponent, *ServerResponse, error)
+	GetComponentsProto(context.Context, uuid.UUID, *PaginationParams) ([]ServerComponent, *ServerResponse, error)
 	ListComponents(context.Context, *ServerComponentListParams) ([]ServerComponent, *ServerResponse, error)
 	CreateComponents(context.Context, uuid.UUID, ServerComponentSlice) (*ServerResponse, error)
 	UpdateComponents(context.Context, uuid.UUID, ServerComponentSlice) (*ServerResponse, error)
@@ -191,6 +193,18 @@ func (c *Client) GetComponents(ctx context.Context, srvUUID uuid.UUID, params *P
 
 	path := fmt.Sprintf("%s/%s/%s", serversEndpoint, srvUUID, serverComponentsEndpoint)
 	if err := c.list(ctx, path, params, &r); err != nil {
+		return nil, nil, err
+	}
+
+	return *sc, &r, nil
+}
+
+func (c *Client) GetComponentsProto(ctx context.Context, srvUUID uuid.UUID, params *PaginationParams) (ServerComponentSlice, *fleetservice.GetComponentsResponse, error) {
+	sc := &ServerComponentSlice{}
+	r := fleetservice.GetComponentsResponse{}
+
+	path := fmt.Sprintf("%s/%s/components-proto", serversEndpoint, srvUUID)
+	if err := c.listProto(ctx, path, params, &r); err != nil {
 		return nil, nil, err
 	}
 

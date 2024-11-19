@@ -1,0 +1,37 @@
+syntax = "proto3";
+
+import "google/protobuf/timestamp.proto";
+
+// protoc --go_out=. proto/fleetservice.proto
+
+package fleetservice;
+
+option go_package = "protogen/fleetservice";
+
+// GetComponentsRequest ...
+message GetComponentsRequest {
+  string server_id = 1;
+}
+
+// Components
+message Components {
+  string id = 1;
+  string name = 2;          // Nullable string
+  string vendor = 3;        // Nullable string
+  string model = 4;         // Nullable string
+  string serial = 5;        // Nullable string
+  string server_component_type_id = 6;
+  string server_id = 7;
+  google.protobuf.Timestamp created_at = 8;      // Nullable timestamp
+  google.protobuf.Timestamp updated_at = 9;      // Nullable timestamp;
+}
+
+// GetComponentsResponse ...
+message GetComponentsResponse {
+  repeated Components components = 1;
+}
+
+// FleetService ...
+service FleetService {
+  rpc GetComponents (GetComponentsRequest) returns (GetComponentsResponse) {}
+}

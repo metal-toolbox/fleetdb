@@ -37,10 +37,12 @@ require (
 	github.com/hetiansu5/urlquery v1.2.7
 	github.com/metal-toolbox/bmc-common v1.0.2
 	github.com/metal-toolbox/rivets/v2 v2.0.0
+	github.com/vattle/sqlboiler v2.5.0+incompatible
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	go.infratographer.com/x v0.5.4
 	gocloud.dev v0.40.0
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
+	google.golang.org/protobuf v1.35.1
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
@@ -127,7 +129,6 @@ require (
 	google.golang.org/genproto/googleapis/api v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20241104194629-dd2ea8efbc28 // indirect
 	google.golang.org/grpc v1.67.1 // indirect
-	google.golang.org/protobuf v1.35.1 // indirect
 	gopkg.in/ini.v1 v1.67.0 // indirect
 	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

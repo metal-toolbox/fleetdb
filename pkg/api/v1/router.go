@@ -150,12 +150,17 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 		}
 	}
 
-	// inventory endpoints
+	// /inventory
 	srvInventory := rg.Group("/inventory")
 	{
 		// uuid is the server id
 		srvInventory.GET("/:uuid", amw.AuthRequired(readScopes("server")), r.getInventory)
 		srvInventory.PUT("/:uuid", amw.AuthRequired(updateScopes("server")), r.setInventory)
+		// /inventory/compare
+		srvInventoryCompare := srvInventory.Group("/compare")
+		{
+			srvInventoryCompare.POST("/:uuid", amw.AuthRequired(readScopes("server")), r.compareInventory)
+		}
 	}
 
 	srvEvents := rg.Group("/events")

@@ -50,7 +50,8 @@ var (
 	errBadServer    = errors.New("data is missing required field")
 	errBadComponent = errors.New("component data")
 
-	ErrNoInventory = errors.New("no inventory stored")
+	ErrBadInventoryMode = errors.New("bad inventory mode")
+	ErrNoInventory      = errors.New("no inventory stored")
 )
 
 // DeviceView encapsulates everything we need to get and set inventory data for servers

@@ -26,6 +26,7 @@ const (
 	bomByMacAOCAddressEndpoint          = "aoc-mac-address"
 	bomByMacBMCAddressEndpoint          = "bmc-mac-address"
 	inventoryEndpoint                   = "inventory"
+	inventoryCompareEndpoint            = "compare"
 )
 
 // ClientInterface provides an interface for the expected calls to interact with a fleetdb api
@@ -502,6 +503,18 @@ func (c *Client) SetServerInventory(ctx context.Context, srvID uuid.UUID,
 
 	path := fmt.Sprintf("%s/%s?mode=%s", inventoryEndpoint, srvID.String(), mode)
 	return c.put(ctx, path, srv)
+}
+
+// CompareServerInventory compare components in rivets.Server to components in the database
+func (c *Client) CompareServerInventory(ctx context.Context, srvID uuid.UUID,
+	srv *rivets.Server, inband bool) (*ServerResponse, error) {
+	mode := "outofband"
+	if inband {
+		mode = "inband"
+	}
+
+	path := fmt.Sprintf("%s/%s/%s?mode=%s", inventoryEndpoint, inventoryCompareEndpoint, srvID.String(), mode)
+	return c.post(ctx, path, srv)
 }
 
 // GetHistoryByID returns the details of the event with the given ID

@@ -35,7 +35,7 @@ require (
 
 require (
 	github.com/hetiansu5/urlquery v1.2.7
-	github.com/metal-toolbox/bmc-common v1.0.2
+	github.com/metal-toolbox/bmc-common v1.0.3
 	github.com/metal-toolbox/rivets/v2 v2.0.0
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	go.infratographer.com/x v0.5.4

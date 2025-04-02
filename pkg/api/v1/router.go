@@ -169,10 +169,10 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 	srvCfgSets := rg.Group("/server-bios-config-sets")
 	{
 		srvCfgSets.GET("", amw.AuthRequired(readScopes("server-bios-config-sets")), r.serverBiosConfigSetList)
-		srvCfgSets.POST("", amw.AuthRequired(readScopes("server-bios-config-sets")), r.serverBiosConfigSetCreate)
+		srvCfgSets.POST("", amw.AuthRequired(createScopes("server-bios-config-sets")), r.serverBiosConfigSetCreate)
 		srvCfgSets.GET("/:uuid", amw.AuthRequired(readScopes("server-bios-config-sets")), r.serverBiosConfigSetGet)
-		srvCfgSets.PUT("/:uuid", amw.AuthRequired(readScopes("server-bios-config-sets")), r.serverBiosConfigSetUpdate)
-		srvCfgSets.DELETE("/:uuid", amw.AuthRequired(readScopes("server-bios-config-sets")), r.serverBiosConfigSetDelete)
+		srvCfgSets.PUT("/:uuid", amw.AuthRequired(updateScopes("server-bios-config-sets")), r.serverBiosConfigSetUpdate)
+		srvCfgSets.DELETE("/:uuid", amw.AuthRequired(deleteScopes("server-bios-config-sets")), r.serverBiosConfigSetDelete)
 	}
 }
 

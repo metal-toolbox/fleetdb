@@ -1,3 +1,4 @@
+// Package metrics provides metrics setup for fleetdb
 package metrics
 
 import (

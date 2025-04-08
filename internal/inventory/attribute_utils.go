@@ -1,3 +1,5 @@
+// Package inventory provides utilities to manage inventory
+// within Attributes and Versioned Attributes
 package inventory
 
 import (

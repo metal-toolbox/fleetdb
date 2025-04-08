@@ -3,6 +3,7 @@ package fleetdbapi
 import (
 	"fmt"
 	"net/http"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -48,7 +49,7 @@ func (r *Router) serverCredentialGet(c *gin.Context) {
 		ServerID:   sID,
 		SecretType: dbS.R.ServerCredentialType.Slug,
 		Username:   dbS.Username,
-		Password:   decryptedValue,
+		Password:   strings.TrimSpace(decryptedValue), // BMS-1430; Some passwords have trailing whitespaces
 		CreatedAt:  dbS.CreatedAt,
 		UpdatedAt:  dbS.UpdatedAt,
 	}
@@ -113,7 +114,7 @@ func (r *Router) serverCredentialUpsert(c *gin.Context) {
 		return
 	}
 
-	encryptedValue, err := dbtools.Encrypt(c.Request.Context(), r.SecretsKeeper, newValue.Password)
+	encryptedValue, err := dbtools.Encrypt(c.Request.Context(), r.SecretsKeeper, strings.TrimSpace(newValue.Password)) // BMS-1430; Some passwords have trailing whitespaces
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, &ServerResponse{Message: "error encrypting secret value", Error: err.Error()})
 		return

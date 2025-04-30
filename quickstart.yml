@@ -27,7 +27,7 @@ services:
       - hollow
 
   crdb:
-    image: cockroachdb/cockroach:latest-v23.1
+    image: cockroachdb/cockroach:latest-v23.1.28
     volumes:
       - db:/cockroach/cockroach-data
     command: start-single-node --insecure

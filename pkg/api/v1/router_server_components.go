@@ -2,6 +2,7 @@ package fleetdbapi
 
 import (
 	"database/sql"
+	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
@@ -11,6 +12,7 @@ import (
 	"github.com/volatiletech/sqlboiler/v4/queries/qm"
 
 	"github.com/metal-toolbox/fleetdb/internal/models"
+	"github.com/metal-toolbox/fleetdb/protogen/fleetservice"
 )
 
 var (
@@ -107,6 +109,54 @@ func (r *Router) serverComponentGet(c *gin.Context) {
 	}
 
 	listResponse(c, comps, pd)
+}
+
+// serverComponentGet returns a response with the list of components referenced by the server UUID.
+func (r *Router) serverComponentGetProto(c *gin.Context) {
+	srv, err := r.loadServerFromParams(c)
+	if err != nil {
+		if errors.Is(err, ErrUUIDParse) {
+			badRequestResponse(c, "", err)
+			return
+		}
+
+		dbErrorResponse(c, err)
+
+		return
+	}
+
+	// - include Attributes, VersionedAttributes and ServerComponentyType relations
+	mods := []qm.QueryMod{
+		qm.Load("Attributes"),
+		qm.Load("VersionedAttributes", qm.Where("(namespace, created_at, server_component_id) IN (select namespace, max(created_at), server_component_id from versioned_attributes group by namespace, server_component_id)")),
+		qm.Load("ServerComponentType"),
+	}
+
+	dbComps, err := srv.ServerComponents(mods...).All(c.Request.Context(), r.DB)
+	if err != nil {
+		dbErrorResponse(c, err)
+		return
+	}
+
+	var cc []*fleetservice.Components
+	for _, comp := range dbComps {
+		cc = append(cc, &fleetservice.Components{
+			Id:                    comp.ID,
+			Name:                  comp.Name.String,
+			Vendor:                comp.Vendor.String,
+			Model:                 comp.Model.String,
+			Serial:                comp.Serial.String,
+			ServerComponentTypeId: comp.ServerComponentTypeID,
+			ServerId:              comp.ServerID,
+			// CreatedAt:             comp.CreatedAt.Time,
+			// UpdatedAt:             comp.UpdatedAt.Time,
+		})
+	}
+	rr := &fleetservice.GetComponentsResponse{
+		Components: cc,
+	}
+
+	c.ProtoBuf(http.StatusOK, rr)
 }
 
 // serverComponentsCreate stores a ServerComponentSlice object into the backend store.

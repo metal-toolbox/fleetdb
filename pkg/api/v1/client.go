@@ -8,6 +8,8 @@ import (
 	"net/url"
 	"os"
 	"strings"
+
+	"github.com/metal-toolbox/fleetdb/protogen/fleetservice"
 )
 
 var apiVersion = "v1"
@@ -162,6 +164,22 @@ func (c *Client) list(ctx context.Context, path string, params queryParams, resp
 	}
 
 	return c.do(request, &resp)
+}
+
+// list provides a reusable method for a standard list to a hollow server
+func (c *Client) listProto(ctx context.Context, path string, params queryParams, resp *fleetservice.GetComponentsResponse) error {
+	request, err := newGetRequest(ctx, c.url, path)
+	if err != nil {
+		return err
+	}
+
+	if params != nil {
+		q := request.URL.Query()
+		params.setQuery(q)
+		request.URL.RawQuery = q.Encode()
+	}
+
+	return c.doProto(request, resp)
 }
 
 // get provides a reusable method for a standard GET of a single item

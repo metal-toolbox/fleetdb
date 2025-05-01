@@ -9,7 +9,9 @@ import (
 	"net/http"
 	"net/url"
 
+	"github.com/metal-toolbox/fleetdb/protogen/fleetservice"
 	"github.com/metal-toolbox/rivets/v2/version"
+	"google.golang.org/protobuf/proto"
 )
 
 func newGetRequest(ctx context.Context, uri, path string) (*http.Request, error) {
@@ -112,4 +114,44 @@ func (c *Client) do(req *http.Request, result interface{}) error {
 	}
 
 	return json.Unmarshal(data, result)
+}
+
+func (c *Client) doProto(req *http.Request, result *fleetservice.GetComponentsResponse) error {
+	req.Header.Set("Authorization", fmt.Sprintf("bearer %s", c.authToken))
+	req.Header.Set("User-Agent", userAgentString())
+
+	// dump request if c.dumper is set
+	if err := c.dumpRequest(req); err != nil {
+		return err
+	}
+
+	resp, err := c.httpClient.Do(req)
+	if err != nil {
+		return err
+	}
+
+	// dump response if c.dumper is set
+	if err := c.dumpResponse(resp); err != nil {
+		return err
+	}
+
+	if err := ensureValidServerResponse(resp); err != nil {
+		return err
+	}
+
+	defer resp.Body.Close()
+
+	switch resp.StatusCode {
+	case http.StatusNoContent, http.StatusResetContent:
+		// these statuses are not allowed to have body content
+		return nil
+	default:
+	}
+
+	data, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return err
+	}
+
+	return proto.Unmarshal(data, result)
 }

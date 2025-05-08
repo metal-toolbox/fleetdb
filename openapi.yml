@@ -1,0 +1,265 @@
+openapi: '3.0.3'
+info:
+  title: FleetDB API (incomplete)
+  version: '1.0'
+servers:
+  - url: https://api.server.test/v1
+paths:
+  /server-bios-config-sets:
+    get:
+      description: Manage bios config-sets
+      responses:
+        '200':
+          description: List of all bios config-sets
+          content:
+           application/json:
+            schema:
+              type: array
+              items:
+                $ref: '#/components/schemas/BiosConfigSetsResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Data Store error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      description: Create a new bios config-set
+      responses:
+        '200':
+          description: Successfully created new bios config-set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BiosConfigSetResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Data Store error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /server-bios-config-sets/{configid}:
+    get:
+      description: Get a single bios config set
+      parameters:
+        - name: configid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully found bios config set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BiosConfigSetResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Data Store error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      description: Update bios config set
+      parameters:
+        - name: configid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BiosConfigSet'
+      responses:
+        '200':
+          description: Successfully updated new bios config-set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BiosConfigSetResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Data Store error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      description: Delete a bios config set
+      parameters:
+        - name: configid
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Successfully deleted bios config set
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BiosConfigSetResponse'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Resource not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Data Store error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+components:
+  schemas:
+    ServerResponse:
+      type: object
+      properties:
+        page_size:
+          type: integer
+        page:
+          type: integer
+        page_count:
+          type: integer
+        total_pages:
+          type: integer
+        total_record_count:
+          type: integer
+    BiosConfigSetResponse:
+        allOf:
+          - $ref: '#/components/schemas/ServerResponse'
+          - type: object
+            properties:
+              record:
+                $ref: '#/components/schemas/BiosConfigSet'
+    BiosConfigSetsResponse:
+      allOf:
+        - $ref: '#/components/schemas/ServerResponse'
+        - type: object
+          properties:
+            records:
+              $ref: '#/components/schemas/BiosConfigSets'
+    ErrorResponse:
+      allOf:
+        - $ref: '#/components/schemas/ServerResponse'
+        - type: object
+          properties:
+            error:
+              type: string
+            message:
+              type: string
+    BiosConfigSet:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        version:
+          type: string
+        components:
+          type: array
+          items:
+            $ref: '#/components/schemas/BiosConfigComponent'
+        created_at:
+          type: string
+          format: time
+        updated_at:
+          type: string
+          format: time
+    BiosConfigSets:
+      type: array
+      items:
+        $ref: '#/components/schemas/BiosConfigSet'
+    BiosConfigComponent:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        vendor:
+          type: string
+        model:
+          type: string
+        settings:
+          type: array
+          items:
+            $ref: '#/components/schemas/BiosConfigSetting'
+        created_at:
+          type: string
+          format: time
+        updated_at:
+          type: string
+          format: time
+    BiosConfigSetting:
+      type: object
+      properties:
+        id:
+          type: string
+        key:
+          type: string
+        value:
+          type: string
+        raw:
+          type: array
+          items:
+            type: string
+            format: byte
+        created_at:
+          type: string
+          format: time
+        updated_at:
+          type: string
+          format: time
+

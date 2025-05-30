@@ -1,4 +1,4 @@
-FROM alpine:3.20.2
+FROM alpine:3.22.0
 
 # Copy the binary that goreleaser built
 COPY fleetdb /fleetdb

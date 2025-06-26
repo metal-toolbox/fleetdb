@@ -41,7 +41,7 @@ require (
 	go.infratographer.com/x v0.5.4
 	gocloud.dev v0.40.0
 	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
-	gopkg.in/go-jose/go-jose.v2 v2.6.3
+	gopkg.in/go-jose/go-jose.v4 v4.1.1
 )
 
 require (

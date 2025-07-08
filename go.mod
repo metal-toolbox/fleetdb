@@ -2,7 +2,7 @@ module github.com/metal-toolbox/fleetdb
 
 go 1.22.7
 
-toolchain go1.23.1
+toolchain go1.24.5
 
 require (
 	github.com/XSAM/otelsql v0.35.0 // indirect

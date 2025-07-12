@@ -1,6 +1,6 @@
 module github.com/metal-toolbox/fleetdb
 
-go 1.22.7
+go 1.23.0
 
 toolchain go1.23.1
 
@@ -40,7 +40,7 @@ require (
 	github.com/volatiletech/sqlboiler v3.7.1+incompatible
 	go.infratographer.com/x v0.5.4
 	gocloud.dev v0.40.0
-	golang.org/x/exp v0.0.0-20241108190413-2d47ceb2692f
+	golang.org/x/exp v0.0.0-20250711185948-6ae5c78190dc
 	gopkg.in/go-jose/go-jose.v2 v2.6.3
 )
 
@@ -119,7 +119,7 @@ require (
 	golang.org/x/arch v0.12.0 // indirect
 	golang.org/x/crypto v0.29.0 // indirect
 	golang.org/x/net v0.31.0 // indirect
-	golang.org/x/sync v0.9.0 // indirect
+	golang.org/x/sync v0.16.0 // indirect
 	golang.org/x/sys v0.27.0 // indirect
 	golang.org/x/text v0.20.0 // indirect
 	golang.org/x/xerrors v0.0.0-20240903120638-7835f813f4da // indirect

@@ -53,6 +53,10 @@ func (r *Router) Routes(rg *gin.RouterGroup) {
 				srvAttrs.DELETE("/:namespace", amw.AuthRequired(deleteScopes("server", "server:attributes")), r.serverAttributesDelete)
 			}
 
+			srvComponentsProto := srv.Group("/components-proto")
+			{
+				srvComponentsProto.GET("", amw.AuthRequired(readScopes("server", "server:component")), r.serverComponentGetProto)
+			}
 			// /servers/:uuid/components
 			srvComponents := srv.Group("/components")
 			{
